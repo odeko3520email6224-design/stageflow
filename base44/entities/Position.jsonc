@@ -1,0 +1,55 @@
+{
+  "name": "Position",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "\u30a4\u30d9\u30f3\u30c8ID"
+    },
+    "name": {
+      "type": "string",
+      "description": "\u30dd\u30b8\u30b7\u30e7\u30f3\u540d\uff08\u4f8b\uff1a\u53d7\u4ed8A\u3001\u8a98\u5c0eB\uff09"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "\u53d7\u4ed8",
+        "\u8a98\u5c0e",
+        "\u8b66\u5099",
+        "\u305d\u306e\u4ed6"
+      ],
+      "default": "\u53d7\u4ed8",
+      "description": "\u5f79\u5272\u7a2e\u5225"
+    },
+    "staff_name": {
+      "type": "string",
+      "description": "\u62c5\u5f53\u30b9\u30bf\u30c3\u30d5\u540d"
+    },
+    "staff_count": {
+      "type": "number",
+      "description": "\u5fc5\u8981\u4eba\u6570",
+      "default": 1
+    },
+    "notes": {
+      "type": "string",
+      "description": "\u5099\u8003"
+    },
+    "map_x": {
+      "type": "number",
+      "description": "\u30de\u30c3\u30d7\u4e0a\u306eX\u5ea7\u6a19\uff08%\uff09"
+    },
+    "map_y": {
+      "type": "number",
+      "description": "\u30de\u30c3\u30d7\u4e0a\u306eY\u5ea7\u6a19\uff08%\uff09"
+    },
+    "color": {
+      "type": "string",
+      "description": "\u8868\u793a\u8272"
+    }
+  },
+  "required": [
+    "event_id",
+    "name",
+    "role"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "name": "MapArea",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "\u30a4\u30d9\u30f3\u30c8ID"
+    },
+    "name": {
+      "type": "string",
+      "description": "\u30a8\u30ea\u30a2\u540d\uff08\u4f8b\uff1a\u30b9\u30c6\u30fc\u30b8\u3001\u30e1\u30a4\u30f3\u5ba2\u5e2d\uff09"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "rectangle",
+        "circle"
+      ],
+      "default": "rectangle",
+      "description": "\u56f3\u5f62\u7a2e\u5225"
+    },
+    "x": {
+      "type": "number",
+      "description": "X\u5ea7\u6a19\uff08%\uff09"
+    },
+    "y": {
+      "type": "number",
+      "description": "Y\u5ea7\u6a19\uff08%\uff09"
+    },
+    "width": {
+      "type": "number",
+      "description": "\u5e45\uff08%\uff09"
+    },
+    "height": {
+      "type": "number",
+      "description": "\u9ad8\u3055\uff08%\uff09"
+    },
+    "color": {
+      "type": "string",
+      "description": "\u30a8\u30ea\u30a2\u8272",
+      "default": "#e2e8f0"
+    },
+    "order": {
+      "type": "number",
+      "description": "\u8868\u793a\u9806"
+    }
+  },
+  "required": [
+    "event_id",
+    "name",
+    "type"
+  ]
+}
