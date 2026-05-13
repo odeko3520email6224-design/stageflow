@@ -21,14 +21,23 @@
       "default": "\u53d7\u4ed8",
       "description": "\u5f79\u5272\u7a2e\u5225"
     },
-    "staff_name": {
+    "time_slot": {
       "type": "string",
-      "description": "\u62c5\u5f53\u30b9\u30bf\u30c3\u30d5\u540d"
+      "enum": [
+        "\u958b\u5834\u524d",
+        "\u958b\u6f14\u4e2d",
+        "\u7d42\u6f14\u5f8c"
+      ],
+      "default": "\u958b\u5834\u524d",
+      "description": "\u6642\u9593\u5e2f\u533a\u5206"
     },
-    "staff_count": {
-      "type": "number",
-      "description": "\u5fc5\u8981\u4eba\u6570",
-      "default": 1
+    "staff_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "\u62c5\u5f53\u30b9\u30bf\u30c3\u30d5\u540d\u30ea\u30b9\u30c8",
+      "default": []
     },
     "notes": {
       "type": "string",
@@ -50,6 +59,7 @@
   "required": [
     "event_id",
     "name",
-    "role"
+    "role",
+    "time_slot"
   ]
 }
