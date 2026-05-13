@@ -46,7 +46,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
   };
 
   const handleStaffKeyDown = (e) => {
-    if (e.key === "Enter") { e.preventDefault(); addStaff(); }
+    if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); addStaff(); }
   };
 
   return (
@@ -143,7 +143,13 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
           <Button
             className="flex-1"
             disabled={!form.name || mutation.isPending}
-            onClick={() => mutation.mutate(form)}
+            onClick={() => {
+              // 入力中のスタッフ名も忘れずに含める
+              const finalForm = newStaff.trim()
+                ? { ...form, staff_names: [...form.staff_names, newStaff.trim()] }
+                : form;
+              mutation.mutate(finalForm);
+            }}
           >
             {mutation.isPending ? "保存中..." : "保存"}
           </Button>
