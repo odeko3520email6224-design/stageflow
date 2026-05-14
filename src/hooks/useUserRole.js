@@ -18,6 +18,6 @@ export function useUserRole() {
   return {
     role,
     isAdmin: role === "admin",
-    canEdit: role === "admin",
+    canEdit: true,
   };
 }
