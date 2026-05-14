@@ -6,7 +6,7 @@ function generateHTML(event, positions, staff, type) {
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { 
         font-family: 'Noto Sans JP', 'Arial Unicode MS', sans-serif; 
-        padding: 8px 10px; 
+        padding: 12px 16px; 
         background: white;
         color: #000;
         font-size: 9px;
@@ -14,26 +14,26 @@ function generateHTML(event, positions, staff, type) {
       .title-block { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
       .event-title { font-size: 14px; font-weight: bold; }
       .event-info { font-size: 8px; color: #555; }
-      table { width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 4px; table-layout: fixed; }
-      td, th { border: 1px solid #999; padding: 2px 3px; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; word-break: break-all; }
+      table { width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 8px; }
+      td, th { border: 1px solid #999; padding: 3px 6px; vertical-align: middle; text-align: left; }
       
       /* 時間帯セクションヘッダー（サーモン色） */
       tr.slot-header td { 
         background: #f4a07a; 
         font-weight: bold; 
         text-align: left;
-        padding: 3px 6px;
+        padding: 4px 6px;
         font-size: 10px;
       }
       tr.slot-header td.count-cell {
-        text-align: center;
+        text-align: left;
       }
       
       /* カラムヘッダー行（グレー） */
       tr.col-header td { 
         background: #c8c8c8; 
         font-weight: bold; 
-        text-align: center;
+        text-align: left;
         font-size: 8px;
       }
       
@@ -42,35 +42,34 @@ function generateHTML(event, positions, staff, type) {
         background: #f5f0e8; 
         font-weight: bold; 
         text-align: left;
-        width: 80px;
+        white-space: nowrap;
       }
       
       /* 人数列 */
       td.count { 
         background: #f5f0e8; 
         text-align: center; 
-        width: 24px;
+        white-space: nowrap;
         font-weight: bold;
       }
       
       /* スタッフ名セル（薄い黄色） */
       td.staff-cell { 
         background: #fffde7; 
-        text-align: center;
-        width: 48px;
+        text-align: left;
+        white-space: nowrap;
       }
       
       /* 空セル */
       td.empty { 
         background: #ffffff; 
-        width: 48px;
+        white-space: nowrap;
       }
       
       /* 備考列 */
       td.notes { 
         background: #ffffff; 
         text-align: left;
-        width: 90px;
       }
       
       /* 空白区切り行 */
