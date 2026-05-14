@@ -28,7 +28,7 @@ export default function MapTemplateManagement({ eventId }) {
 
   // 現在のマップをテンプレートとして保存
   const handleSaveAsTemplate = async () => {
-    if (!newName.trim() || currentAreas.length === 0) return;
+    if (!newName.trim()) return;
     setSaving(true);
     const areasData = currentAreas.map(({ name, type, x, y, width, height, color, order }) => ({
       name, type, x, y, width, height, color, order,
@@ -73,27 +73,23 @@ export default function MapTemplateManagement({ eventId }) {
       {/* 現在のマップをテンプレート保存 */}
       <div className="bg-card border border-border rounded-xl p-3 mb-4">
         <p className="text-xs font-medium text-muted-foreground mb-2">現在のマップをテンプレートとして保存</p>
-        {currentAreas.length === 0 ? (
-          <p className="text-xs text-muted-foreground">会場マップタブでエリアを作成してから保存してください</p>
-        ) : (
-          <div className="flex gap-2">
-            <Input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="テンプレート名（例：ホールA）"
-              className="flex-1 h-8 text-sm"
-            />
-            <Button
-              size="sm"
-              className="gap-1 h-8 shrink-0"
-              disabled={!newName.trim() || saving}
-              onClick={handleSaveAsTemplate}
-            >
-              <Save className="w-3.5 h-3.5" />
-              {saving ? "保存中..." : "保存"}
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-2">
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="テンプレート名（例：ホールA）"
+            className="flex-1 h-8 text-sm"
+          />
+          <Button
+            size="sm"
+            className="gap-1 h-8 shrink-0"
+            disabled={!newName.trim() || saving}
+            onClick={handleSaveAsTemplate}
+          >
+            <Save className="w-3.5 h-3.5" />
+            {saving ? "保存中..." : "保存"}
+          </Button>
+        </div>
         {currentAreas.length > 0 && (
           <p className="text-[10px] text-muted-foreground mt-1.5">現在 {currentAreas.length} エリア登録中</p>
         )}

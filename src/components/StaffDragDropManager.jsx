@@ -129,7 +129,7 @@ export default function StaffDragDropManager({ eventId }) {
       )}
 
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold flex items-center gap-2"><ClipboardList className="w-5 h-5 text-primary" />ドラッグで配置</h2>
+        <h2 className="text-lg font-bold flex items-center gap-2"><ClipboardList className="w-5 h-5 text-primary" />ドラッグ配置表</h2>
       </div>
 
       <div className="space-y-3">
