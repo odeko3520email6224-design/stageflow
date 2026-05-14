@@ -130,35 +130,34 @@ export default function StaffManagement({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold flex items-center gap-2"><UserCog className="w-5 h-5 text-primary" />スタッフ管理</h2>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{staffList.length}名登録中</span>
-          <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setShowScrapeModal(true)}>
-            <Download className="w-3 h-3" />サイトから取得
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-sm font-bold flex items-center gap-1.5"><UserCog className="w-4 h-4 text-primary" />スタッフ管理</h2>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] text-muted-foreground">{staffList.length}名</span>
+          <Button size="sm" variant="outline" className="gap-0.5 h-6 text-[11px] px-2" onClick={() => setShowScrapeModal(true)}>
+            <Download className="w-2.5 h-2.5" />取得
           </Button>
         </div>
       </div>
 
       {/* Add form */}
-      <div className="bg-card border border-border rounded-xl p-3 mb-4">
-        <p className="text-xs font-medium mb-2 text-muted-foreground">スタッフを追加</p>
-        <div className="flex flex-col sm:flex-row gap-2">
+      <div className="bg-card border border-border rounded-xl p-2 mb-2">
+        <div className="flex gap-1.5">
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="スタッフ名"
-            className="flex-1 h-9 text-sm"
+            className="flex-1 h-8 text-sm"
           />
           <Input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="備考（任意）"
-            className="flex-1 h-9 text-sm"
+            placeholder="備考"
+            className="w-24 h-8 text-sm"
           />
-          <Button onClick={handleAdd} disabled={!name.trim() || createMutation.isPending} size="sm" className="gap-1 h-9 shrink-0">
-            <Plus className="w-3.5 h-3.5" />追加
+          <Button onClick={handleAdd} disabled={!name.trim() || createMutation.isPending} size="sm" className="gap-0.5 h-8 px-2 shrink-0">
+            <Plus className="w-3 h-3" />追加
           </Button>
         </div>
       </div>
@@ -174,44 +173,42 @@ export default function StaffManagement({ eventId }) {
           <p className="text-sm font-medium">スタッフが登録されていません</p>
         </div>
       ) : (
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           {staffList.map((staff) => {
             const assigned = assignedMap[staff.name] || [];
             const unassigned = assigned.length === 0;
             return (
-              <div key={staff.id} className={`bg-card border rounded-xl px-3 py-2.5 ${unassigned ? "border-amber-300" : "border-border"}`}>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+              <div key={staff.id} className={`bg-card border rounded-lg px-2.5 py-1.5 ${unassigned ? "border-amber-300" : "border-border"}`}>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
                     {staff.name.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <p className="font-medium text-sm">{staff.name}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="font-medium text-xs">{staff.name}</p>
                       {unassigned && (
                         <span className="flex items-center gap-0.5 text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full">
-                          <AlertCircle className="w-2.5 h-2.5" />未配置
+                          <AlertCircle className="w-2 h-2" />未配置
                         </span>
                       )}
                     </div>
-                    {staff.note && <p className="text-xs text-muted-foreground truncate">{staff.note}</p>}
+                    {staff.note && <p className="text-[10px] text-muted-foreground truncate">{staff.note}</p>}
                   </div>
                   <button
                     onClick={() => setEditingStaff(staff)}
-        
-                    className="p-1.5 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                    className="p-1 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors"
                   >
-                    <Pencil className="w-3.5 h-3.5" />
+                    <Pencil className="w-3 h-3" />
                   </button>
                   <button
                     onClick={() => { if (confirm(`「${staff.name}」を削除しますか？`)) deleteMutation.mutate(staff.id); }}
-        
-                    className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                    className="p-1 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3 h-3" />
                   </button>
                 </div>
                 {assigned.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap gap-1 pl-9">
+                  <div className="mt-1 flex flex-wrap gap-0.5 pl-8">
                     {assigned.map((a, i) => (
                       <span key={i} className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${TIME_SLOT_COLORS[a.slot]}`}>
                         {a.slot}：{a.posName}

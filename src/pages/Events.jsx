@@ -45,16 +45,16 @@ export default function Events() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-5xl mx-auto px-3 py-3">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">イベント一覧</h1>
-          <p className="text-muted-foreground mt-0.5 text-xs">コンサート・イベントを選択して配置管理を行います</p>
+          <h1 className="text-lg font-bold text-foreground tracking-tight">イベント一覧</h1>
+          <p className="text-muted-foreground text-[10px]">イベントを選択して配置管理</p>
         </div>
-        <Button onClick={() => { setEditingEvent(null); setShowModal(true); }} className="gap-1.5" size="sm" disabled={!isAdmin}>
-          <Plus className="w-4 h-4" />
-          新規イベント
+        <Button onClick={() => { setEditingEvent(null); setShowModal(true); }} className="gap-1" size="sm" disabled={!isAdmin}>
+          <Plus className="w-3.5 h-3.5" />
+          新規
         </Button>
       </div>
 
@@ -69,50 +69,50 @@ export default function Events() {
             <p className="text-sm mt-1">新規イベントを追加してください</p>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-2">
             {events.map((event) => (
               <Link
                 key={event.id}
                 to={`/events/${event.id}`}
-                className="group block bg-card border border-border rounded-xl p-4 hover:border-primary/40 hover:shadow-md transition-all duration-200"
+                className="group block bg-card border border-border rounded-xl px-3 py-2.5 hover:border-primary/40 hover:shadow-sm transition-all duration-200"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h2 className="text-base font-semibold text-foreground truncate">{event.name}</h2>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <h2 className="text-sm font-semibold text-foreground truncate">{event.name}</h2>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0 ${statusColor[event.status]}`}>
                         {event.status}
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
                       {event.date && (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {format(new Date(event.date), "yyyy年M月d日（E）", { locale: ja })}
+                        <span className="flex items-center gap-0.5">
+                          <Calendar className="w-2.5 h-2.5" />
+                          {format(new Date(event.date), "M月d日（E）", { locale: ja })}
                         </span>
                       )}
                       {event.venue && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
+                        <span className="flex items-center gap-0.5">
+                          <MapPin className="w-2.5 h-2.5" />
                           {event.venue}
                         </span>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-0.5 shrink-0">
                     <button
                       onClick={(e) => handleEdit(e, event)}
                       disabled={!isAdmin}
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                     >
-                      <Pencil className="w-3.5 h-3.5" />
+                      <Pencil className="w-3 h-3" />
                     </button>
                     <button
                       onClick={(e) => handleDelete(e, event.id)}
                       disabled={!isAdmin}
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3 h-3" />
                     </button>
                     <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>

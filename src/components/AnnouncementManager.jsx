@@ -352,9 +352,9 @@ export default function AnnouncementManager({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold flex items-center gap-2">
-          <Megaphone className="w-5 h-5 text-primary" />連絡事項
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-sm font-bold flex items-center gap-1.5">
+          <Megaphone className="w-4 h-4 text-primary" />連絡事項
           {urgentCount > 0 && (
             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
               {urgentCount}件未読あり

@@ -28,10 +28,10 @@ export default function PositionCard({
       onDrop={onDrop}
     >
       {/* ポジションヘッダー */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-muted/20">
+      <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-border/60 bg-muted/20">
         <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: pos.color || "#6366f1" }} />
         <span className="text-xs font-medium text-foreground">{pos.name || pos.role}</span>
-        {pos.notes && <span className="text-xs text-muted-foreground truncate flex-1">{pos.notes}</span>}
+        {pos.notes && <span className="text-[10px] text-muted-foreground truncate flex-1">{pos.notes}</span>}
         {/* 編集・削除ボタン（配置表のみ） */}
         {(onEdit || onDelete) && (
           <div className="flex gap-1 ml-auto flex-shrink-0">
@@ -70,7 +70,7 @@ export default function PositionCard({
                   : undefined
               }
               className={[
-                "flex items-center justify-between gap-2 px-3 py-1.5",
+                "flex items-center justify-between gap-2 px-2 py-1",
                 draggable && isAdmin ? "cursor-move hover:bg-muted/50" : "",
                 draggable && draggedStaff === name ? "opacity-50" : "",
               ].join(" ")}
@@ -87,7 +87,7 @@ export default function PositionCard({
             </div>
           ))
         ) : (
-          <div className="px-3 py-2 text-xs text-muted-foreground">{emptyLabel}</div>
+          <div className="px-2 py-1 text-[11px] text-muted-foreground">{emptyLabel}</div>
         )}
       </div>
     </div>

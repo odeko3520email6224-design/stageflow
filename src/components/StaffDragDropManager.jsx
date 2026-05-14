@@ -137,36 +137,36 @@ export default function StaffDragDropManager({ eventId }) {
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold flex items-center gap-2"><ClipboardList className="w-5 h-5 text-primary" />ドラッグ配置表</h2>
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-sm font-bold flex items-center gap-1.5"><ClipboardList className="w-4 h-4 text-primary" />ドラッグ配置表</h2>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {TIME_SLOTS.map((slot) => {
           const style = TIME_SLOT_STYLES[slot];
           return (
             <div key={slot} className={`border rounded-xl overflow-hidden ${style.header.split(" ").slice(0, 2).join(" ")}`}>
               {/* Section header */}
-              <div className={`flex items-center justify-between px-4 py-2 border-b ${style.header}`}>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm">{slot}</span>
-                  <span className="text-xs opacity-70">{grouped[slot].length}件</span>
+              <div className={`flex items-center justify-between px-3 py-1.5 border-b ${style.header}`}>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-xs">{slot}</span>
+                  <span className="text-[10px] opacity-70">{grouped[slot].length}件</span>
                 </div>
                 <button
                   onClick={() => openAdd(slot)}
                   disabled={!isAdmin}
-                  className="text-xs flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white/60 hover:bg-white/90 transition-colors font-medium disabled:opacity-30 disabled:pointer-events-none"
+                  className="text-[11px] flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-white/60 hover:bg-white/90 transition-colors font-medium disabled:opacity-30 disabled:pointer-events-none"
                 >
-                  <Plus className="w-3 h-3" />追加
+                  <Plus className="w-2.5 h-2.5" />追加
                 </button>
               </div>
 
               {/* Positions */}
-              <div className="bg-card p-3">
+              <div className="bg-card p-2">
                 {grouped[slot].length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-3">このタイムスロットにポジションがありません</p>
+                  <p className="text-[11px] text-muted-foreground text-center py-2">ポジションがありません</p>
                 ) : (
-                  <div className="grid gap-1.5">
+                  <div className="grid gap-1">
                     {grouped[slot].map((pos) => (
                       <PositionCard
                         key={pos.id}
@@ -198,14 +198,14 @@ export default function StaffDragDropManager({ eventId }) {
       {(() => {
         if (unassigned.length === 0) return null;
         return (
-          <div className="mt-3 border border-amber-200 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200 text-amber-800">
-              <AlertCircle className="w-3.5 h-3.5" />
-              <span className="font-bold text-sm">未配置スタッフ</span>
-              <span className="text-xs opacity-70">{unassigned.length}名</span>
+          <div className="mt-2 border border-amber-200 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border-b border-amber-200 text-amber-800">
+              <AlertCircle className="w-3 h-3" />
+              <span className="font-bold text-xs">未配置スタッフ</span>
+              <span className="text-[10px] opacity-70">{unassigned.length}名</span>
             </div>
             <div
-              className="bg-card p-3 grid gap-1.5 min-h-[40px]"
+              className="bg-card p-2 grid gap-1 min-h-[36px]"
               onDragOver={handleDragOver}
               onDrop={handleDropUnassigned}
             >
@@ -214,15 +214,15 @@ export default function StaffDragDropManager({ eventId }) {
                   key={s.id}
                   draggable={isAdmin}
                   onDragStart={(e) => isAdmin && handleDragStart(e, s.name)}
-                  className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-amber-50/50 border border-amber-100 ${
+                  className={`flex items-center gap-2 px-2 py-1 rounded-lg bg-amber-50/50 border border-amber-100 ${
                     isAdmin ? "cursor-move hover:bg-amber-50" : ""
                   } ${draggedStaff === s.name ? "opacity-50" : ""}`}
                 >
-                  <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-xs shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-[10px] shrink-0">
                     {s.name.charAt(0)}
                   </div>
-                  <span className="text-sm font-medium">{s.name}</span>
-                  {s.note && <span className="text-xs text-muted-foreground">{s.note}</span>}
+                  <span className="text-xs font-medium">{s.name}</span>
+                  {s.note && <span className="text-[10px] text-muted-foreground">{s.note}</span>}
                 </div>
               ))}
             </div>
