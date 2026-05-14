@@ -61,5 +61,53 @@
     "name",
     "role",
     "time_slot"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "data.event_id": {
+        "$exists": true
+      },
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {},
+    "update": {
+      "data.event_id": {
+        "$exists": true
+      },
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "data.event_id": {
+        "$exists": true
+      },
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }
