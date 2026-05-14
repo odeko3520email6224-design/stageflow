@@ -22,44 +22,37 @@ const TIME_SLOT_STYLES = {
 
 function PositionCard({ pos, onEdit, onDelete }) {
   const staffNames = pos.staff_names || [];
+  const posLabel = pos.name || pos.role;
   return (
-    <div className="flex items-start gap-3 bg-card border border-border rounded-xl px-4 py-3 hover:border-primary/30 transition-colors">
-      <div
-        className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
-        style={{ backgroundColor: pos.color || "#6366f1" }}
-      />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-sm text-foreground">{pos.name || pos.role}</span>
-          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${ROLE_COLORS[pos.role]}`}>{pos.role}</span>
+    <div className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-colors">
+      {/* Position header row */}
+      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border/60 bg-muted/20">
+        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: pos.color || "#6366f1" }} />
+        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${ROLE_COLORS[pos.role]}`}>{pos.role}</span>
+        {pos.notes && <span className="text-xs text-muted-foreground truncate flex-1">{pos.notes}</span>}
+        <div className="flex gap-1 ml-auto flex-shrink-0">
+          <button onClick={() => onEdit(pos)} className="p-1.5 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors">
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={() => onDelete(pos.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
         </div>
-        {staffNames.length > 0 ? (
-          <div className="flex flex-wrap gap-1 mt-1.5">
-            {staffNames.map((name, i) => (
-              <span key={i} className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-md">{name}</span>
-            ))}
-          </div>
-        ) : (
-          <div className="text-xs text-muted-foreground mt-1">スタッフ未登録</div>
-        )}
-        {pos.notes && (
-          <div className="text-xs text-muted-foreground mt-1 truncate">{pos.notes}</div>
-        )}
       </div>
-      <div className="flex gap-1 flex-shrink-0">
-        <button
-          onClick={() => onEdit(pos)}
-          className="p-1.5 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors"
-        >
-          <Pencil className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={() => onDelete(pos.id)}
-          className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-      </div>
+      {/* Staff rows: "ポジション　スタッフ名" per line */}
+      {staffNames.length > 0 ? (
+        <div className="divide-y divide-border/40">
+          {staffNames.map((name, i) => (
+            <div key={i} className="flex items-center gap-2 px-4 py-2">
+              <span className="text-sm font-medium text-foreground w-24 shrink-0">{posLabel}</span>
+              <span className="text-muted-foreground text-xs">　</span>
+              <span className="text-sm text-foreground">{name}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="px-4 py-3 text-xs text-muted-foreground">スタッフ未登録</div>
+      )}
     </div>
   );
 }

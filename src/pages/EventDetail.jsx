@@ -30,9 +30,9 @@ export default function EventDetail() {
   if (!event) return <div className="p-8 text-muted-foreground">イベントが見つかりません</div>;
 
   const TABS = [
+    { id: "staff", label: "スタッフ管理", icon: Users },
     { id: "list", label: "配置表", icon: List },
     { id: "map", label: "会場マップ", icon: Map },
-    { id: "staff", label: "スタッフ管理", icon: Users },
   ];
 
   return (

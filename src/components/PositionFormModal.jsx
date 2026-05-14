@@ -97,13 +97,13 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
             </div>
           </div>
 
-          {/* Staff selection from list */}
+          {/* Staff selection - dropdown checklist */}
           <div>
             <Label>担当スタッフ</Label>
             {staffList.length === 0 ? (
               <p className="text-xs text-muted-foreground mt-2">スタッフ管理タブでスタッフを登録してください</p>
             ) : (
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-2 border border-border rounded-xl overflow-hidden max-h-48 overflow-y-auto">
                 {staffList.map((staff) => {
                   const selected = form.staff_names.includes(staff.name);
                   return (
@@ -111,33 +111,24 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
                       key={staff.id}
                       type="button"
                       onClick={() => toggleStaff(staff.name)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all ${
-                        selected
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-muted/50 text-foreground border-border hover:border-primary/50"
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left border-b border-border/50 last:border-b-0 transition-colors ${
+                        selected ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/50"
                       }`}
                     >
-                      {selected && <Check className="w-3 h-3" />}
+                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${
+                        selected ? "bg-primary border-primary" : "border-border"
+                      }`}>
+                        {selected && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                      </div>
                       {staff.name}
+                      {staff.note && <span className="text-xs text-muted-foreground ml-auto">{staff.note}</span>}
                     </button>
                   );
                 })}
               </div>
             )}
-            {/* Selected display */}
             {form.staff_names.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {form.staff_names
-                  .filter((n) => !staffList.some((s) => s.name === n))
-                  .map((name, idx) => (
-                    <div key={idx} className="flex items-center gap-1 bg-muted/50 rounded-lg px-2.5 py-1 text-xs">
-                      <span>{name}</span>
-                      <button onClick={() => removeStaff(name)} className="text-muted-foreground hover:text-destructive">
-                        <UserMinus className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-              </div>
+              <p className="text-xs text-muted-foreground mt-1.5">{form.staff_names.length}名選択中</p>
             )}
           </div>
 
