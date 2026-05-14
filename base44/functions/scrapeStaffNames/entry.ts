@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
         .replace(/&#039;/g, "'")
         .replace(/&nbsp;/g, ' ')
         .trim();
-      if (rawName) names.push(rawName);
+      if (rawName && rawName !== '(氏名なし)') names.push(rawName);
     }
 
     if (names.length === 0) {
