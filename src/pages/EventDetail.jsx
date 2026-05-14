@@ -39,7 +39,7 @@ export default function EventDetail() {
     { id: "map", label: "会場マップ", icon: Map },
     { id: "timeline", label: "タイムライン", icon: Clock },
     { id: "notice", label: "連絡", icon: Megaphone },
-    { id: "admin", label: "管理", icon: Settings },
+    { id: "admin", label: "設定", icon: Settings },
   ];
 
   return (

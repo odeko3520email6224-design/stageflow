@@ -259,42 +259,51 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
       {/* Confirm read panel */}
       {showConfirm && (
         <div className="px-3 pb-3 border-t border-border/60 pt-2.5 bg-green-50/50">
-          <p className="text-xs font-semibold text-green-800 mb-2">確認者の名前を入力してください</p>
-          <div className="flex gap-2">
-            {staffList.length > 0 ? (
-              <select
-                className="flex-1 border border-input rounded-lg px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                value={confirmName}
-                onChange={(e) => setConfirmName(e.target.value)}
-              >
-                <option value="">-- 名前を選択 --</option>
-                {staffList.map((s) => (
-                  <option key={s.id} value={s.name}
-                    disabled={(ann.read_by || []).includes(s.name)}
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-green-800">自分の名前をタップして確認</p>
+            <button onClick={() => setShowConfirm(false)} className="p-1 rounded hover:bg-muted text-muted-foreground">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          {staffList.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {staffList.map((s) => {
+                const alreadyRead = (ann.read_by || []).includes(s.name);
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => !alreadyRead && readMutation.mutate(s.name)}
+                    disabled={alreadyRead || readMutation.isPending}
+                    className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-all ${
+                      alreadyRead
+                        ? "bg-green-100 text-green-700 border-green-200 cursor-default"
+                        : "bg-card border-border text-foreground hover:bg-green-50 hover:border-green-300 hover:text-green-700"
+                    }`}
                   >
-                    {s.name}{(ann.read_by || []).includes(s.name) ? "（確認済）" : ""}
-                  </option>
-                ))}
-              </select>
-            ) : (
+                    {alreadyRead && <CheckCircle2 className="w-3 h-3" />}
+                    {s.name}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex gap-2">
               <input
                 className="flex-1 border border-input rounded-lg px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="名前を入力"
                 value={confirmName}
                 onChange={(e) => setConfirmName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
               />
-            )}
-            <button
-              onClick={handleConfirm}
-              disabled={!confirmName.trim() || readMutation.isPending}
-              className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
-            >
-              {readMutation.isPending ? "..." : "既読にする"}
-            </button>
-            <button onClick={() => { setShowConfirm(false); setConfirmName(""); }} className="p-1.5 rounded hover:bg-muted text-muted-foreground">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
+              <button
+                onClick={handleConfirm}
+                disabled={!confirmName.trim() || readMutation.isPending}
+                className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
+              >
+                {readMutation.isPending ? "..." : "確認"}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
