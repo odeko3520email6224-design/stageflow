@@ -346,10 +346,10 @@ export default function VenueMap({ eventId }) {
                     >
                       {(pos.name || pos.role)?.[0] || "?"}
                     </div>
-                    <div className="bg-white/90 backdrop-blur text-foreground text-[9px] font-medium px-1 py-0.5 rounded shadow mt-0.5 max-w-[64px] text-center leading-tight select-none pointer-events-none">
+                    <div className="bg-white/90 backdrop-blur text-foreground text-[9px] font-medium px-1 py-0.5 rounded shadow mt-0.5 max-w-[80px] text-center leading-tight select-none pointer-events-none">
                       <div className="font-semibold truncate">{pos.name || pos.role}</div>
                       {(pos.staff_names || []).length > 0 && (
-                        <div className="text-muted-foreground truncate">{pos.staff_names.join("・")}</div>
+                        <div className="text-muted-foreground break-all">{pos.staff_names.join("・")}</div>
                       )}
                     </div>
                   </button>
