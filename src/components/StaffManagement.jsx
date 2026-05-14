@@ -22,6 +22,7 @@ function EditModal({ staff, onClose, onSaved }) {
     mutationFn: (data) => base44.entities.Staff.update(staff.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", staff.event_id] });
+      queryClient.invalidateQueries({ queryKey: ["positions", staff.event_id] });
       onSaved();
     },
   });
@@ -90,7 +91,10 @@ export default function StaffManagement({ eventId }) {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Staff.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["staff", eventId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+    },
   });
 
   const handleAdd = () => {

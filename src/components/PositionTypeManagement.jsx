@@ -44,7 +44,10 @@ export default function PositionTypeManagement({ eventId }) {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.PositionType.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positionTypes"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["positionTypes"] });
+      queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+    },
   });
 
   const handleAdd = () => {

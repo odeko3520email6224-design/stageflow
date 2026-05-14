@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,12 +36,18 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
     queryFn: () => base44.entities.PositionType.list(),
   });
 
+  const queryClient = useQueryClient();
+
   const mutation = useMutation({
     mutationFn: (data) =>
       position
         ? base44.entities.Position.update(position.id, data)
         : base44.entities.Position.create(data),
-    onSuccess: onSaved,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
+      onSaved();
+    },
   });
 
   const toggleStaff = (staffName) => {
