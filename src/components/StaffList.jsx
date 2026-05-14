@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Users, AlertCircle, ClipboardList, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, AlertCircle, ClipboardList, Download, BookOpen } from "lucide-react";
 import PositionFormModal from "@/components/PositionFormModal";
 import { useUserRole } from "@/hooks/useUserRole";
 
@@ -72,6 +72,19 @@ export default function StaffList({ eventId }) {
   const { data: positions = [], isLoading } = useQuery({
     queryKey: ["positions", eventId],
     queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
+  });
+
+  const { data: event } = useQuery({
+    queryKey: ["event", eventId],
+    queryFn: () => base44.entities.Event.filter({ id: eventId }),
+    select: (d) => d[0],
+  });
+
+  const { data: activePreset } = useQuery({
+    queryKey: ["positionPreset", event?.active_preset_id],
+    queryFn: () => base44.entities.PositionPreset.filter({ id: event.active_preset_id }),
+    enabled: !!event?.active_preset_id,
+    select: (d) => d[0],
   });
 
   const deleteMutation = useMutation({
@@ -168,6 +181,13 @@ export default function StaffList({ eventId }) {
 
   return (
     <div>
+      {activePreset && (
+        <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl bg-primary/5 border border-primary/20 text-primary text-xs font-medium">
+          <BookOpen className="w-3.5 h-3.5 shrink-0" />
+          <span>適用中プリセット：{activePreset.name}</span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-bold flex items-center gap-2"><ClipboardList className="w-5 h-5 text-primary" />配置表</h2>
         <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={handleExportPDF} disabled={exportingPDF || isLoading || positions.length === 0}>

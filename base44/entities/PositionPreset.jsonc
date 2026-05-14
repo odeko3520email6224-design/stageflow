@@ -10,9 +10,14 @@
       "type": "string",
       "description": "\u8aac\u660e"
     },
+    "slot_positions": {
+      "type": "object",
+      "description": "\u30bf\u30a4\u30e0\u30b9\u30ed\u30c3\u30c8\u5225PositionTypeID\u30de\u30c3\u30d7 {\u958b\u5834\u524d: [id,...], \u958b\u6f14\u4e2d: [...], \u7d42\u6f14\u5f8c: [...]}",
+      "default": {}
+    },
     "positions": {
       "type": "array",
-      "description": "\u30dd\u30b8\u30b7\u30e7\u30f3\u5b9a\u7fa9\u30ea\u30b9\u30c8\uff08{name, role, color, time_slot}\uff09",
+      "description": "\u65e7\u5f62\u5f0f\u4e92\u63db\u7528",
       "items": {
         "type": "object"
       },
