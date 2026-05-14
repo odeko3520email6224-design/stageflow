@@ -78,7 +78,7 @@ export default function StaffList({ eventId }) {
       container.style.position = 'fixed';
       container.style.left = '-9999px';
       container.style.top = '-9999px';
-      container.style.width = '210mm';
+      container.style.width = '297mm';
       container.style.backgroundColor = 'white';
       container.innerHTML = html;
       document.body.appendChild(container);
@@ -99,7 +99,10 @@ export default function StaffList({ eventId }) {
               }
               
               const imgData = canvas.toDataURL('image/jpeg', 0.95);
-              const imgWidth = 210;
+              // A4横向き: 297mm x 210mm
+              const pageW = 297;
+              const pageH = 210;
+              const imgWidth = pageW;
               const imgHeight = (canvas.height * imgWidth) / canvas.width;
               
               if (!isFinite(imgHeight) || imgHeight <= 0) {
@@ -107,16 +110,14 @@ export default function StaffList({ eventId }) {
               }
               
               const doc = new jsPDF('l', 'mm', 'a4');
-              const pageHeight = 297;
-              let yPos = 0;
+              let remainingHeight = imgHeight;
+              let srcY = 0;
               
-              doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-              yPos += imgHeight;
-              
-              while (yPos < imgHeight) {
-                doc.addPage();
-                doc.addImage(imgData, 'JPEG', 0, yPos - imgHeight, imgWidth, imgHeight);
-                yPos += pageHeight;
+              while (remainingHeight > 0) {
+                if (srcY > 0) doc.addPage();
+                doc.addImage(imgData, 'JPEG', 0, -srcY, imgWidth, imgHeight);
+                srcY += pageH;
+                remainingHeight -= pageH;
               }
               
               doc.save(`配置表_${new Date().toISOString().split('T')[0]}.pdf`);

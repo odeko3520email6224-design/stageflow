@@ -14,8 +14,8 @@ function generateHTML(event, positions, staff, type) {
       .title-block { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
       .event-title { font-size: 14px; font-weight: bold; }
       .event-info { font-size: 8px; color: #555; }
-      table { width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 4px; }
-      td, th { border: 1px solid #999; padding: 2px 4px; vertical-align: middle; white-space: nowrap; }
+      table { width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 4px; table-layout: fixed; }
+      td, th { border: 1px solid #999; padding: 2px 3px; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; word-break: break-all; }
       
       /* 時間帯セクションヘッダー（サーモン色） */
       tr.slot-header td { 
@@ -42,15 +42,14 @@ function generateHTML(event, positions, staff, type) {
         background: #f5f0e8; 
         font-weight: bold; 
         text-align: left;
-        min-width: 60px;
-        max-width: 90px;
+        width: 80px;
       }
       
       /* 人数列 */
       td.count { 
         background: #f5f0e8; 
         text-align: center; 
-        width: 28px;
+        width: 24px;
         font-weight: bold;
       }
       
@@ -58,21 +57,20 @@ function generateHTML(event, positions, staff, type) {
       td.staff-cell { 
         background: #fffde7; 
         text-align: center;
-        min-width: 40px;
-        max-width: 60px;
+        width: 48px;
       }
       
       /* 空セル */
       td.empty { 
         background: #ffffff; 
-        min-width: 40px;
+        width: 48px;
       }
       
       /* 備考列 */
       td.notes { 
         background: #ffffff; 
         text-align: left;
-        min-width: 80px;
+        width: 90px;
       }
       
       /* 空白区切り行 */
@@ -109,9 +107,9 @@ function generateHTML(event, positions, staff, type) {
   `;
 
   const timeSlots = ['開場前', '開演中', '終演後'];
-  // 最大スタッフ数（列数決定用）
+  // 最大スタッフ数（列数決定用）、最大10列に制限
   const maxStaff = Math.max(...positions.map(p => (p.staff_names || []).length), 0);
-  const staffCols = Math.max(maxStaff, 5); // 最低5列
+  const staffCols = Math.min(Math.max(maxStaff, 5), 10);
 
   if (type === 'staff') {
     content += `<table>`;
