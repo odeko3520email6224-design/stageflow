@@ -97,11 +97,6 @@ export default function StaffList({ eventId }) {
         <div className="flex justify-center py-10">
           <div className="w-6 h-6 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
-      ) : positions.length === 0 ? (
-        <div className="text-center py-14 text-muted-foreground">
-          <Users className="w-10 h-10 mx-auto mb-2 opacity-20" />
-          <p className="text-sm font-medium">ポジションが登録されていません</p>
-        </div>
       ) : (
         <div className="space-y-3">
           {TIME_SLOTS.map((slot) => {
