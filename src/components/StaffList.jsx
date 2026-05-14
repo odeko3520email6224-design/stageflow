@@ -24,34 +24,32 @@ function PositionCard({ pos, onEdit, onDelete }) {
   const staffNames = pos.staff_names || [];
   const posLabel = pos.name || pos.role;
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-colors">
+    <div className="bg-card border border-border rounded-lg overflow-hidden hover:border-primary/30 transition-colors">
       {/* Position header row */}
-      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border/60 bg-muted/20">
-        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: pos.color || "#6366f1" }} />
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-muted/20">
+        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: pos.color || "#6366f1" }} />
         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${ROLE_COLORS[pos.role]}`}>{pos.role}</span>
         {pos.notes && <span className="text-xs text-muted-foreground truncate flex-1">{pos.notes}</span>}
         <div className="flex gap-1 ml-auto flex-shrink-0">
-          <button onClick={() => onEdit(pos)} className="p-1.5 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors">
-            <Pencil className="w-3.5 h-3.5" />
+          <button onClick={() => onEdit(pos)} className="p-1 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors">
+            <Pencil className="w-3 h-3" />
           </button>
-          <button onClick={() => onDelete(pos.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors">
-            <Trash2 className="w-3.5 h-3.5" />
+          <button onClick={() => onDelete(pos.id)} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors">
+            <Trash2 className="w-3 h-3" />
           </button>
         </div>
       </div>
-      {/* Staff rows: "ポジション　スタッフ名" per line */}
       {staffNames.length > 0 ? (
         <div className="divide-y divide-border/40">
           {staffNames.map((name, i) => (
-            <div key={i} className="flex items-center gap-2 px-4 py-2">
-              <span className="text-sm font-medium text-foreground w-24 shrink-0">{posLabel}</span>
-              <span className="text-muted-foreground text-xs">　</span>
-              <span className="text-sm text-foreground">{name}</span>
+            <div key={i} className="flex items-center gap-2 px-3 py-1.5">
+              <span className="text-xs font-medium text-foreground w-20 shrink-0">{posLabel}</span>
+              <span className="text-xs text-foreground">{name}</span>
             </div>
           ))}
         </div>
       ) : (
-        <div className="px-4 py-3 text-xs text-muted-foreground">スタッフ未登録</div>
+        <div className="px-3 py-2 text-xs text-muted-foreground">スタッフ未登録</div>
       )}
     </div>
   );
@@ -91,46 +89,45 @@ export default function StaffList({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">配置表</h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-bold">配置表</h2>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-7 h-7 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+        <div className="flex justify-center py-10">
+          <div className="w-6 h-6 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
       ) : positions.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
-          <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
-          <p className="font-medium">ポジションが登録されていません</p>
-          <p className="text-sm mt-1">「ポジション追加」からスタッフを配置してください</p>
+        <div className="text-center py-14 text-muted-foreground">
+          <Users className="w-10 h-10 mx-auto mb-2 opacity-20" />
+          <p className="text-sm font-medium">ポジションが登録されていません</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-3">
           {TIME_SLOTS.map((slot) => {
             const style = TIME_SLOT_STYLES[slot];
             return (
-              <div key={slot} className={`border rounded-2xl overflow-hidden ${style.header.split(" ").slice(0, 2).join(" ")}`}>
+              <div key={slot} className={`border rounded-xl overflow-hidden ${style.header.split(" ").slice(0, 2).join(" ")}`}>
                 {/* Section header */}
-                <div className={`flex items-center justify-between px-5 py-3 border-b ${style.header}`}>
+                <div className={`flex items-center justify-between px-4 py-2 border-b ${style.header}`}>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-base">{slot}</span>
+                    <span className="font-bold text-sm">{slot}</span>
                     <span className="text-xs opacity-70">{grouped[slot].length}件</span>
                   </div>
                   <button
                     onClick={() => openAdd(slot)}
-                    className="text-xs flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/60 hover:bg-white/90 transition-colors font-medium"
+                    className="text-xs flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white/60 hover:bg-white/90 transition-colors font-medium"
                   >
                     <Plus className="w-3 h-3" />追加
                   </button>
                 </div>
 
                 {/* Positions */}
-                <div className="bg-card p-4">
+                <div className="bg-card p-3">
                   {grouped[slot].length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">このタイムスロットにポジションがありません</p>
+                    <p className="text-xs text-muted-foreground text-center py-3">このタイムスロットにポジションがありません</p>
                   ) : (
-                    <div className="grid gap-2">
+                    <div className="grid gap-1.5">
                       {grouped[slot].map((pos) => (
                         <PositionCard
                           key={pos.id}
@@ -154,20 +151,20 @@ export default function StaffList({ eventId }) {
         const unassigned = staffList.filter((s) => !assignedNames.has(s.name));
         if (unassigned.length === 0) return null;
         return (
-          <div className="mt-6 border border-amber-200 rounded-2xl overflow-hidden">
-            <div className="flex items-center gap-2 px-5 py-3 bg-amber-50 border-b border-amber-200 text-amber-800">
-              <AlertCircle className="w-4 h-4" />
-              <span className="font-bold text-base">未配置スタッフ</span>
+          <div className="mt-3 border border-amber-200 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200 text-amber-800">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span className="font-bold text-sm">未配置スタッフ</span>
               <span className="text-xs opacity-70">{unassigned.length}名</span>
             </div>
-            <div className="bg-card p-4 grid gap-2">
+            <div className="bg-card p-3 grid gap-1.5">
               {unassigned.map((s) => (
-                <div key={s.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-amber-50/50 border border-amber-100">
-                  <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-xs shrink-0">
+                <div key={s.id} className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-amber-50/50 border border-amber-100">
+                  <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-xs shrink-0">
                     {s.name.charAt(0)}
                   </div>
                   <span className="text-sm font-medium">{s.name}</span>
-                  {s.note && <span className="text-xs text-muted-foreground ml-1">{s.note}</span>}
+                  {s.note && <span className="text-xs text-muted-foreground">{s.note}</span>}
                 </div>
               ))}
             </div>

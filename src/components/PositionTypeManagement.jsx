@@ -3,8 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Settings } from "lucide-react";
 
 const PRESET_COLORS = [
@@ -56,50 +54,36 @@ export default function PositionTypeManagement({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">ポジション管理</h2>
-        <span className="text-sm text-muted-foreground">{positionTypes.length}件登録中</span>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-bold">ポジション管理</h2>
+        <span className="text-xs text-muted-foreground">{positionTypes.length}件登録中</span>
       </div>
 
       {/* Add form */}
-      <div className="bg-card border border-border rounded-2xl p-4 mb-6">
-        <p className="text-sm font-medium mb-3">ポジションを追加</p>
-        <div className="space-y-3">
-          <div className="flex gap-2">
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="ポジション名（例：メイン受付A）"
-              className="flex-1"
-            />
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger className="w-28 shrink-0"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="受付">受付</SelectItem>
-                <SelectItem value="誘導">誘導</SelectItem>
-                <SelectItem value="警備">警備</SelectItem>
-                <SelectItem value="その他">その他</SelectItem>
-              </SelectContent>
-            </Select>
+      <div className="bg-card border border-border rounded-xl p-3 mb-4">
+        <p className="text-xs font-medium mb-2 text-muted-foreground">ポジションを追加</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="ポジション名（例：メイン受付A）"
+            className="flex-1 min-w-[140px] h-8 text-sm"
+          />
+          <div className="flex gap-1.5">
+            {PRESET_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColor(c)}
+                className={`w-5 h-5 rounded-full border-2 transition-transform ${color === c ? "border-foreground scale-110" : "border-transparent"}`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
           </div>
-          <div className="flex items-center gap-3">
-            <Label className="text-xs text-muted-foreground shrink-0">色：</Label>
-            <div className="flex gap-1.5 flex-wrap flex-1">
-              {PRESET_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  className={`w-6 h-6 rounded-full border-2 transition-transform ${color === c ? "border-foreground scale-110" : "border-transparent"}`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
-            <Button onClick={handleAdd} disabled={!name.trim() || createMutation.isPending} size="sm" className="gap-1.5 shrink-0">
-              <Plus className="w-4 h-4" />追加
-            </Button>
-          </div>
+          <Button onClick={handleAdd} disabled={!name.trim() || createMutation.isPending} size="sm" className="gap-1 h-8 shrink-0">
+            <Plus className="w-3.5 h-3.5" />追加
+          </Button>
         </div>
       </div>
 
