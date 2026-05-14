@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Clock, CalendarClock } from "lucide-react";
+import { Clock, CalendarClock, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 const TIME_SLOTS = ["開場前", "開演中", "終演後"];
 
@@ -11,6 +13,24 @@ const TIME_SLOT_STYLES = {
 };
 
 export default function StaffTimeline({ eventId }) {
+  const [exportingPDF, setExportingPDF] = useState(false);
+
+  const handleExportPDF = async () => {
+    setExportingPDF(true);
+    try {
+      const response = await base44.functions.invoke('exportPositionPDF', { eventId, type: 'timeline' });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `タイムライン_${new Date().toISOString().split('T')[0]}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
   const { data: positions = [], isLoading: loadingPos } = useQuery({
     queryKey: ["positions", eventId],
     queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
@@ -62,7 +82,13 @@ export default function StaffTimeline({ eventId }) {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold flex items-center gap-2"><CalendarClock className="w-5 h-5 text-primary" />担当者別タイムライン</h2>
-        <span className="text-sm text-muted-foreground">{allNames.length}名</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">{allNames.length}名</span>
+          <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={handleExportPDF} disabled={exportingPDF || allNames.length === 0}>
+            <Download className="w-3 h-3" />
+            {exportingPDF ? 'エクスポート中...' : 'PDF出力'}
+          </Button>
+        </div>
       </div>
 
       {/* Mobile: card per staff / Desktop: grid */}

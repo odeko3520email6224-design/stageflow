@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Users, AlertCircle, ClipboardList } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, AlertCircle, ClipboardList, Download } from "lucide-react";
 import PositionFormModal from "@/components/PositionFormModal";
 import { useUserRole } from "@/hooks/useUserRole";
 
@@ -60,6 +60,7 @@ export default function StaffList({ eventId }) {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [defaultSlot, setDefaultSlot] = useState("開場前");
+  const [exportingPDF, setExportingPDF] = useState(false);
   const queryClient = useQueryClient();
   const { canEdit: isAdmin } = useUserRole();
 
@@ -89,10 +90,30 @@ export default function StaffList({ eventId }) {
     setShowModal(true);
   };
 
+  const handleExportPDF = async () => {
+    setExportingPDF(true);
+    try {
+      const response = await base44.functions.invoke('exportPositionPDF', { eventId, type: 'staff' });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `配置表_${new Date().toISOString().split('T')[0]}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-bold flex items-center gap-2"><ClipboardList className="w-5 h-5 text-primary" />配置表</h2>
+        <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={handleExportPDF} disabled={exportingPDF || isLoading || positions.length === 0}>
+          <Download className="w-3 h-3" />
+          {exportingPDF ? 'エクスポート中...' : 'PDF出力'}
+        </Button>
       </div>
 
       {isLoading ? (
