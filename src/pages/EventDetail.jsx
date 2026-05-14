@@ -39,7 +39,7 @@ export default function EventDetail() {
 
   const TABS = [
     { id: "staff", label: "スタッフ管理", icon: Users },
-    { id: "dragdrop", label: "ドラッグ配置", icon: List },
+    { id: "dragdrop", label: "ドラッグ配置表", icon: List },
     { id: "list", label: "配置表", icon: List },
     { id: "map", label: "会場マップ", icon: Map },
     { id: "timeline", label: "タイムライン", icon: Clock },
@@ -89,7 +89,7 @@ export default function EventDetail() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-2 py-2">
+      <div className="max-w-6xl mx-auto px-2 py-2 pb-12">
         {tab === "staff" && <StaffManagement eventId={eventId} />}
         {tab === "dragdrop" && <StaffDragDropManager eventId={eventId} />}
         {tab === "admin" && <PositionTypeManagement eventId={eventId} />}
