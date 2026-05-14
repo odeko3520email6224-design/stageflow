@@ -115,7 +115,7 @@ export default function StaffList({ eventId }) {
             }).then((canvas) => {
               const imgData = canvas.toDataURL('image/jpeg', 0.95);
               const imgWidth = 210;
-              const imgHeight = Math.max(1, (canvas.height * imgWidth) / canvas.width);
+              const imgHeight = (canvas.height * imgWidth) / canvas.width;
               
               const doc = new jsPDF({
                 orientation: 'p',
@@ -123,17 +123,16 @@ export default function StaffList({ eventId }) {
                 format: 'a4'
               });
               
-              const pageHeight = doc.internal.pageSize.getHeight();
-              let position = 0;
+              const pageHeight = 297;
+              let yOffset = 0;
               
               doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
               
-              let heightLeft = imgHeight - pageHeight;
-              while (heightLeft > 0) {
-                position = heightLeft - imgHeight;
+              yOffset = pageHeight;
+              while (yOffset < imgHeight) {
                 doc.addPage();
-                doc.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
+                doc.addImage(imgData, 'JPEG', 0, -yOffset, imgWidth, imgHeight);
+                yOffset += pageHeight;
               }
               
               doc.save(`配置表_${new Date().toISOString().split('T')[0]}.pdf`);
