@@ -90,7 +90,20 @@ export default function StaffManagement({ eventId }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Staff.delete(id),
+    mutationFn: async (id) => {
+      const staffToDelete = staffList.find((s) => s.id === id);
+      await base44.entities.Staff.delete(id);
+      if (staffToDelete) {
+        const affected = positions.filter((p) => (p.staff_names || []).includes(staffToDelete.name));
+        await Promise.all(
+          affected.map((p) =>
+            base44.entities.Position.update(p.id, {
+              staff_names: p.staff_names.filter((n) => n !== staffToDelete.name),
+            })
+          )
+        );
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
