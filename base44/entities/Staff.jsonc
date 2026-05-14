@@ -1,0 +1,22 @@
+{
+  "name": "Staff",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "\u30a4\u30d9\u30f3\u30c8ID"
+    },
+    "name": {
+      "type": "string",
+      "description": "\u30b9\u30bf\u30c3\u30d5\u540d"
+    },
+    "note": {
+      "type": "string",
+      "description": "\u5099\u8003"
+    }
+  },
+  "required": [
+    "event_id",
+    "name"
+  ]
+}

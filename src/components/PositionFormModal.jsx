@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus, UserMinus } from "lucide-react";
+import { X, UserMinus, Check } from "lucide-react";
 
 const PRESET_COLORS = [
   "#6366f1", "#3b82f6", "#10b981", "#f59e0b",
@@ -24,7 +24,12 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
     map_y: position?.map_y ?? null,
     event_id: eventId,
   });
-  const [newStaff, setNewStaff] = useState("");
+
+  // スタッフリスト取得
+  const { data: staffList = [] } = useQuery({
+    queryKey: ["staff", eventId],
+    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+  });
 
   const mutation = useMutation({
     mutationFn: (data) =>
@@ -34,19 +39,25 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
     onSuccess: onSaved,
   });
 
-  const addStaff = () => {
-    const name = newStaff.trim();
-    if (!name) return;
-    setForm((f) => ({ ...f, staff_names: [...f.staff_names, name] }));
-    setNewStaff("");
+  const toggleStaff = (staffName) => {
+    setForm((f) => {
+      const exists = f.staff_names.includes(staffName);
+      return {
+        ...f,
+        staff_names: exists
+          ? f.staff_names.filter((n) => n !== staffName)
+          : [...f.staff_names, staffName],
+      };
+    });
   };
 
-  const removeStaff = (idx) => {
-    setForm((f) => ({ ...f, staff_names: f.staff_names.filter((_, i) => i !== idx) }));
+  const removeStaff = (name) => {
+    setForm((f) => ({ ...f, staff_names: f.staff_names.filter((n) => n !== name) }));
   };
 
-  const handleStaffKeyDown = (e) => {
-    if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); addStaff(); }
+  // ポジション名をroleから自動設定（role変更時）
+  const handleRoleChange = (v) => {
+    setForm((f) => ({ ...f, role: v, name: f.name || v }));
   };
 
   return (
@@ -60,11 +71,6 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
         </div>
 
         <div className="space-y-4">
-          <div>
-            <Label>ポジション名 *</Label>
-            <Input className="mt-1" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="例：メイン受付A" />
-          </div>
-
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>時間帯</Label>
@@ -78,8 +84,8 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
               </Select>
             </div>
             <div>
-              <Label>役割</Label>
-              <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
+              <Label>ポジション</Label>
+              <Select value={form.role} onValueChange={handleRoleChange}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="受付">受付</SelectItem>
@@ -91,31 +97,48 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
             </div>
           </div>
 
-          {/* Staff names */}
+          {/* Staff selection from list */}
           <div>
             <Label>担当スタッフ</Label>
-            <div className="mt-2 space-y-1.5">
-              {form.staff_names.map((name, idx) => (
-                <div key={idx} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5">
-                  <span className="flex-1 text-sm">{name}</span>
-                  <button onClick={() => removeStaff(idx)} className="text-muted-foreground hover:text-destructive transition-colors">
-                    <UserMinus className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-              <div className="flex gap-2">
-                <Input
-                  value={newStaff}
-                  onChange={(e) => setNewStaff(e.target.value)}
-                  onKeyDown={handleStaffKeyDown}
-                  placeholder="名前を入力してEnter"
-                  className="text-sm"
-                />
-                <Button type="button" size="sm" variant="outline" onClick={addStaff} disabled={!newStaff.trim()}>
-                  <Plus className="w-4 h-4" />
-                </Button>
+            {staffList.length === 0 ? (
+              <p className="text-xs text-muted-foreground mt-2">スタッフ管理タブでスタッフを登録してください</p>
+            ) : (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {staffList.map((staff) => {
+                  const selected = form.staff_names.includes(staff.name);
+                  return (
+                    <button
+                      key={staff.id}
+                      type="button"
+                      onClick={() => toggleStaff(staff.name)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all ${
+                        selected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-muted/50 text-foreground border-border hover:border-primary/50"
+                      }`}
+                    >
+                      {selected && <Check className="w-3 h-3" />}
+                      {staff.name}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
+            )}
+            {/* Selected display */}
+            {form.staff_names.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {form.staff_names
+                  .filter((n) => !staffList.some((s) => s.name === n))
+                  .map((name, idx) => (
+                    <div key={idx} className="flex items-center gap-1 bg-muted/50 rounded-lg px-2.5 py-1 text-xs">
+                      <span>{name}</span>
+                      <button onClick={() => removeStaff(name)} className="text-muted-foreground hover:text-destructive">
+                        <UserMinus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
 
           <div>
@@ -124,6 +147,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
               {PRESET_COLORS.map((c) => (
                 <button
                   key={c}
+                  type="button"
                   onClick={() => setForm({ ...form, color: c })}
                   className={`w-7 h-7 rounded-full border-2 transition-transform ${form.color === c ? "border-foreground scale-110" : "border-transparent"}`}
                   style={{ backgroundColor: c }}
@@ -142,14 +166,8 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
           <Button variant="outline" className="flex-1" onClick={onClose}>キャンセル</Button>
           <Button
             className="flex-1"
-            disabled={!form.name || mutation.isPending}
-            onClick={() => {
-              // 入力中のスタッフ名も忘れずに含める
-              const finalForm = newStaff.trim()
-                ? { ...form, staff_names: [...form.staff_names, newStaff.trim()] }
-                : form;
-              mutation.mutate(finalForm);
-            }}
+            disabled={!form.role || mutation.isPending}
+            onClick={() => mutation.mutate({ ...form, name: form.name || form.role })}
           >
             {mutation.isPending ? "保存中..." : "保存"}
           </Button>

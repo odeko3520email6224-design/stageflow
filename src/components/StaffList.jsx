@@ -30,7 +30,7 @@ function PositionCard({ pos, onEdit, onDelete }) {
       />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-sm text-foreground">{pos.name}</span>
+          <span className="font-medium text-sm text-foreground">{pos.name || pos.role}</span>
           <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${ROLE_COLORS[pos.role]}`}>{pos.role}</span>
         </div>
         {staffNames.length > 0 ? (
