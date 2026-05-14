@@ -166,7 +166,7 @@ export default function StaffDragDropManager({ eventId }) {
                         </div>
 
                         {/* Staff items */}
-                        <div className="divide-y divide-border/40 min-h-[40px]">
+                        <div className="divide-y divide-border/40">
                           {(pos.staff_names || []).length > 0 ? (
                             pos.staff_names.map((name) => (
                               <div
@@ -175,7 +175,6 @@ export default function StaffDragDropManager({ eventId }) {
                                 onDragStart={(e) => {
                                   if (isAdmin) {
                                     handleDragStart(e, name);
-                                    // Remove from this position when dragging out
                                     removeStaffFromPosition(pos.id, name);
                                   }
                                 }}
