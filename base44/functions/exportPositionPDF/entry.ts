@@ -17,17 +17,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'eventId required' }, { status: 400 });
     }
 
-    // Fetch event data
-    const events = await base44.entities.Event.filter({ id: eventId });
+    // Fetch event data using service role
+    const events = await base44.asServiceRole.entities.Event.filter({ id: eventId });
     const event = events[0];
 
     if (!event) {
       return Response.json({ error: 'Event not found' }, { status: 404 });
     }
 
-    // Fetch positions and staff
-    const positions = await base44.entities.Position.filter({ event_id: eventId });
-    const staff = await base44.entities.Staff.filter({ event_id: eventId });
+    // Fetch positions and staff using service role
+    const positions = await base44.asServiceRole.entities.Position.filter({ event_id: eventId });
+    const staff = await base44.asServiceRole.entities.Staff.filter({ event_id: eventId });
 
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
