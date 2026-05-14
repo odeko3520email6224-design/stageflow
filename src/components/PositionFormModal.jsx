@@ -89,7 +89,6 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: pt.color || "#6366f1" }} />
                         {pt.name}
-                        <span className="text-xs text-muted-foreground">({pt.role})</span>
                       </div>
                     </SelectItem>
                   ))}

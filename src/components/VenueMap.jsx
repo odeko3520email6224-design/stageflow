@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Pencil, X, Move, Info, Map, MapPin, ImagePlus, Loader2 } from "lucide-react";
 import MapAreaFormModal from "@/components/MapAreaFormModal";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const ROLE_COLORS = {
   "受付": "#3b82f6",
@@ -87,6 +88,7 @@ export default function VenueMap({ eventId }) {
   const [slotFilter, setSlotFilter] = useState("開場前");
   const [uploadingImage, setUploadingImage] = useState(false);
   const longPressTimer = useRef(null);
+  const isAdmin = useIsAdmin();
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
@@ -200,6 +202,7 @@ export default function VenueMap({ eventId }) {
             size="sm"
             variant={mode === "move-pin" ? "default" : "outline"}
             onClick={() => setMode(mode === "move-pin" ? "view" : "move-pin")}
+            disabled={!isAdmin}
             className="gap-1 h-7 text-xs"
           >
             <Move className="w-3 h-3" />
@@ -209,6 +212,7 @@ export default function VenueMap({ eventId }) {
             size="sm"
             variant="outline"
             onClick={() => { setEditingArea(null); setShowAreaModal(true); }}
+            disabled={!isAdmin}
             className="gap-1 h-7 text-xs"
           >
             <Plus className="w-3 h-3" />エリア追加
@@ -217,7 +221,7 @@ export default function VenueMap({ eventId }) {
             size="sm"
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploadingImage}
+            disabled={!isAdmin || uploadingImage}
             className="gap-1 h-7 text-xs"
           >
             {uploadingImage ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImagePlus className="w-3 h-3" />}
@@ -281,7 +285,8 @@ export default function VenueMap({ eventId }) {
                 />
                 <button
                   onClick={(e) => { e.stopPropagation(); handleImageRemove(); }}
-                  className="absolute top-2 left-2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition-colors"
+                  disabled={!isAdmin}
+                  className="absolute top-2 left-2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                   title="背景画像を削除"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -305,12 +310,16 @@ export default function VenueMap({ eventId }) {
               }}>
                 <span className="text-xs font-semibold text-slate-600 select-none px-1 text-center leading-tight">{area.name}</span>
                 <div className="absolute top-1 right-1 flex gap-1 z-10">
-                  <button onClick={(e) => { e.stopPropagation(); setEditingArea(area); setShowAreaModal(true); }} className="bg-white rounded p-0.5 shadow text-slate-500 hover:text-primary">
-                    <Pencil className="w-3 h-3" />
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); if (confirm("削除しますか？")) deleteArea.mutate(area.id); }} className="bg-white rounded p-0.5 shadow text-slate-500 hover:text-destructive">
-                    <Trash2 className="w-3 h-3" />
-                  </button>
+                  {isAdmin && (
+                    <>
+                      <button onClick={(e) => { e.stopPropagation(); setEditingArea(area); setShowAreaModal(true); }} className="bg-white rounded p-0.5 shadow text-slate-500 hover:text-primary">
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); if (confirm("削除しますか？")) deleteArea.mutate(area.id); }} className="bg-white rounded p-0.5 shadow text-slate-500 hover:text-destructive">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
@@ -329,15 +338,15 @@ export default function VenueMap({ eventId }) {
                     onTouchStart={(e) => handlePinTouchStart(e, pos)}
                     onTouchEnd={handlePinTouchEnd}
                     onTouchMove={handlePinTouchEnd}
-                    className="flex flex-col items-center group"
+                    className="flex flex-col items-center group select-none"
                   >
                     <div
-                      className="w-7 h-7 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold transition-transform group-hover:scale-110"
+                      className="w-5 h-5 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-[9px] font-bold transition-transform group-hover:scale-110 select-none"
                       style={{ backgroundColor: pos.color || ROLE_COLORS[pos.role] || "#6366f1" }}
                     >
                       {(pos.name || pos.role)?.[0] || "?"}
                     </div>
-                    <div className="bg-white/90 backdrop-blur text-foreground text-[10px] font-medium px-1.5 py-0.5 rounded shadow mt-0.5 max-w-[80px] text-center leading-tight">
+                    <div className="bg-white/90 backdrop-blur text-foreground text-[9px] font-medium px-1 py-0.5 rounded shadow mt-0.5 max-w-[64px] text-center leading-tight select-none pointer-events-none">
                       <div className="font-semibold truncate">{pos.name || pos.role}</div>
                       {(pos.staff_names || []).length > 0 && (
                         <div className="text-muted-foreground truncate">{pos.staff_names.join("・")}</div>
@@ -348,7 +357,7 @@ export default function VenueMap({ eventId }) {
                   {/* Tooltip - positioned to avoid overflow */}
                   {isActive && (
                     <div
-                      className="absolute z-40 bg-card border border-border rounded-xl shadow-xl p-2.5 w-40"
+                      className="absolute z-40 bg-card border border-border rounded-xl shadow-xl p-2.5 w-40 select-none"
                       style={{
                         left: pos.map_x > 60 ? "auto" : "50%",
                         right: pos.map_x > 60 ? "110%" : "auto",
@@ -356,6 +365,8 @@ export default function VenueMap({ eventId }) {
                         top: pos.map_y > 70 ? "auto" : "100%",
                         bottom: pos.map_y > 70 ? "110%" : "auto",
                         marginTop: pos.map_y <= 70 ? "4px" : "0",
+                        userSelect: "none",
+                        WebkitUserSelect: "none",
                       }}
                     >
                       <button onClick={() => setTooltip(null)} className="absolute top-1.5 right-1.5 text-muted-foreground hover:text-foreground">
@@ -368,18 +379,20 @@ export default function VenueMap({ eventId }) {
                           : <span>担当者未設定</span>
                         }
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm("このピンをマップから外しますか？")) {
-                            updatePosition.mutate({ id: pos.id, data: { map_x: null, map_y: null } });
-                            setTooltip(null);
-                          }
-                        }}
-                        className="mt-2 text-xs text-destructive hover:underline"
-                      >
-                        マップから外す
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm("このピンをマップから外しますか？")) {
+                              updatePosition.mutate({ id: pos.id, data: { map_x: null, map_y: null } });
+                              setTooltip(null);
+                            }
+                          }}
+                          className="mt-2 text-xs text-destructive hover:underline"
+                        >
+                          マップから外す
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
