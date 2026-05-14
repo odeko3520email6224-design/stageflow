@@ -88,7 +88,7 @@ export default function VenueMap({ eventId }) {
   const [slotFilter, setSlotFilter] = useState("開場前");
   const [uploadingImage, setUploadingImage] = useState(false);
   const longPressTimer = useRef(null);
-  const { canEdit: isAdmin } = useUserRole();
+
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
@@ -202,7 +202,7 @@ export default function VenueMap({ eventId }) {
             size="sm"
             variant={mode === "move-pin" ? "default" : "outline"}
             onClick={() => setMode(mode === "move-pin" ? "view" : "move-pin")}
-            disabled={!isAdmin}
+
             className="gap-1 h-7 text-xs"
           >
             <Move className="w-3 h-3" />
@@ -212,7 +212,7 @@ export default function VenueMap({ eventId }) {
             size="sm"
             variant="outline"
             onClick={() => { setEditingArea(null); setShowAreaModal(true); }}
-            disabled={!isAdmin}
+
             className="gap-1 h-7 text-xs"
           >
             <Plus className="w-3 h-3" />エリア追加
@@ -221,7 +221,7 @@ export default function VenueMap({ eventId }) {
             size="sm"
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            disabled={!isAdmin || uploadingImage}
+            disabled={uploadingImage}
             className="gap-1 h-7 text-xs"
           >
             {uploadingImage ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImagePlus className="w-3 h-3" />}
@@ -285,7 +285,6 @@ export default function VenueMap({ eventId }) {
                 />
                 <button
                   onClick={(e) => { e.stopPropagation(); handleImageRemove(); }}
-                  disabled={!isAdmin}
                   className="absolute top-2 left-2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                   title="背景画像を削除"
                 >
@@ -310,16 +309,12 @@ export default function VenueMap({ eventId }) {
               }}>
                 <span className="text-xs font-semibold text-slate-600 select-none px-1 text-center leading-tight">{area.name}</span>
                 <div className="absolute top-1 right-1 flex gap-1 z-10">
-                  {isAdmin && (
-                    <>
-                      <button onClick={(e) => { e.stopPropagation(); setEditingArea(area); setShowAreaModal(true); }} className="bg-white rounded p-0.5 shadow text-slate-500 hover:text-primary">
-                        <Pencil className="w-3 h-3" />
-                      </button>
-                      <button onClick={(e) => { e.stopPropagation(); if (confirm("削除しますか？")) deleteArea.mutate(area.id); }} className="bg-white rounded p-0.5 shadow text-slate-500 hover:text-destructive">
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </>
-                  )}
+                  <button onClick={(e) => { e.stopPropagation(); setEditingArea(area); setShowAreaModal(true); }} className="bg-white rounded p-0.5 shadow text-slate-500 hover:text-primary">
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); if (confirm("削除しますか？")) deleteArea.mutate(area.id); }} className="bg-white rounded p-0.5 shadow text-slate-500 hover:text-destructive">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -379,20 +374,18 @@ export default function VenueMap({ eventId }) {
                           : <span>担当者未設定</span>
                         }
                       </div>
-                      {isAdmin && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm("このピンをマップから外しますか？")) {
-                              updatePosition.mutate({ id: pos.id, data: { map_x: null, map_y: null } });
-                              setTooltip(null);
-                            }
-                          }}
-                          className="mt-2 text-xs text-destructive hover:underline"
-                        >
-                          マップから外す
-                        </button>
-                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm("このピンをマップから外しますか？")) {
+                            updatePosition.mutate({ id: pos.id, data: { map_x: null, map_y: null } });
+                            setTooltip(null);
+                          }
+                        }}
+                        className="mt-2 text-xs text-destructive hover:underline"
+                      >
+                        マップから外す
+                      </button>
                     </div>
                   )}
                 </div>
