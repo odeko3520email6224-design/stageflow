@@ -215,9 +215,7 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${style.badge}`}>{ann.priority}</span>
-            {ann.is_alert && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">バナー</span>
-            )}
+
             <span className="text-xs font-semibold truncate">{ann.title}</span>
           </div>
           {ann.body && (
@@ -260,7 +258,7 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
       {showConfirm && (
         <div className="px-3 pb-3 border-t border-border/60 pt-2.5 bg-green-50/50">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold text-green-800">自分の名前をタップして確認</p>
+            <p className="text-xs font-semibold text-green-800">自分の名前をタップして確認済みにする</p>
             <button onClick={() => setShowConfirm(false)} className="p-1 rounded hover:bg-muted text-muted-foreground">
               <X className="w-3.5 h-3.5" />
             </button>
