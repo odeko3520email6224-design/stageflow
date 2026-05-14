@@ -19,32 +19,27 @@ const TIME_SLOT_STYLES = {
   "終演後": "bg-slate-50 text-slate-700 border-slate-300",
 };
 
-function SidePanel({ positions, staffList, draggingPin, setDraggingPin, setMode, updatePosition, slotFilter }) {
-  // "未配置スタッフ" = staff with no position assignment at all
-  const assignedStaffNames = new Set(positions.flatMap((p) => p.staff_names || []));
-  const unassignedStaff = staffList.filter((s) => !assignedStaffNames.has(s.name));
-
-  // Positions on map for the current slot filter
-  const filtered = slotFilter === "all" ? positions : positions.filter((p) => (p.time_slot || "開場前") === slotFilter);
+function SidePanel({ positions, draggingPin, setDraggingPin, setMode, slotFilter }) {
+  const filtered = positions.filter((p) => (p.time_slot || "開場前") === slotFilter);
   const onMap = filtered.filter((p) => p.map_x != null && p.map_y != null);
   const notOnMap = filtered.filter((p) => p.map_x == null || p.map_y == null);
 
   return (
-    <div className="w-full lg:w-56 flex-shrink-0 space-y-4">
+    <div className="w-full lg:w-48 flex-shrink-0 space-y-3">
       {/* Unplaced positions */}
       <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">未配置ポジション</p>
+        <p className="text-xs font-semibold text-muted-foreground mb-1.5">未配置ポジション</p>
         {notOnMap.length === 0 ? (
-          <div className="text-xs text-muted-foreground bg-muted rounded-lg p-2.5 text-center">全て配置済みです</div>
+          <div className="text-xs text-muted-foreground bg-muted rounded-lg p-2 text-center">全て配置済みです</div>
         ) : (
           <div className="space-y-1">
             {notOnMap.map((pos) => (
               <button
                 key={pos.id}
                 onClick={() => { setDraggingPin(pos); setMode("move-pin"); }}
-                className={`w-full flex items-center gap-2 bg-card border rounded-lg px-2.5 py-2 text-left transition-all hover:border-primary/50 ${draggingPin?.id === pos.id ? "border-primary bg-primary/5" : "border-border"}`}
+                className={`w-full flex items-center gap-2 bg-card border rounded-lg px-2 py-1.5 text-left transition-all hover:border-primary/50 ${draggingPin?.id === pos.id ? "border-primary bg-primary/5" : "border-border"}`}
               >
-                <div className="w-5 h-5 rounded-full border-2 border-white shadow flex-shrink-0" style={{ backgroundColor: pos.color || ROLE_COLORS[pos.role] || "#6366f1" }} />
+                <div className="w-4 h-4 rounded-full border-2 border-white shadow flex-shrink-0" style={{ backgroundColor: pos.color || ROLE_COLORS[pos.role] || "#6366f1" }} />
                 <div className="min-w-0">
                   <div className="text-xs font-medium truncate">{pos.name}</div>
                   {(pos.staff_names || []).length > 0 && (
@@ -60,36 +55,16 @@ function SidePanel({ positions, staffList, draggingPin, setDraggingPin, setMode,
       {/* Placed positions */}
       {onMap.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">配置済み</p>
+          <p className="text-xs font-semibold text-muted-foreground mb-1.5">配置済み</p>
           <div className="space-y-1">
             {onMap.map((pos) => (
-              <div key={pos.id} className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-muted/40 border border-border">
+              <div key={pos.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-muted/40 border border-border">
                 <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: pos.color || ROLE_COLORS[pos.role] || "#6366f1" }} />
                 <div className="min-w-0">
                   <div className="text-xs font-medium truncate">{pos.name}</div>
                   {(pos.staff_names || []).length > 0 && (
                     <div className="text-[10px] text-muted-foreground truncate">{pos.staff_names.join("・")}</div>
                   )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Unassigned staff (no position at all) */}
-      {unassignedStaff.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1.5">未配置スタッフ</p>
-          <div className="space-y-1">
-            {unassignedStaff.map((s) => (
-              <div key={s.id} className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-amber-50 border border-amber-200">
-                <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-[10px] shrink-0">
-                  {s.name.charAt(0)}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-medium truncate">{s.name}</div>
-                  {s.note && <div className="text-[10px] text-muted-foreground truncate">{s.note}</div>}
                 </div>
               </div>
             ))}
@@ -113,11 +88,6 @@ export default function VenueMap({ eventId }) {
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
     queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
-  });
-
-  const { data: staffList = [] } = useQuery({
-    queryKey: ["staff", eventId],
-    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
   });
 
   const { data: areas = [] } = useQuery({
@@ -279,7 +249,7 @@ export default function VenueMap({ eventId }) {
                   {/* Tooltip - positioned to avoid overflow */}
                   {isActive && (
                     <div
-                      className="absolute z-40 bg-card border border-border rounded-xl shadow-xl p-3 w-48"
+                      className="absolute z-40 bg-card border border-border rounded-xl shadow-xl p-2.5 w-40"
                       style={{
                         left: pos.map_x > 60 ? "auto" : "50%",
                         right: pos.map_x > 60 ? "110%" : "auto",
@@ -289,17 +259,15 @@ export default function VenueMap({ eventId }) {
                         marginTop: pos.map_y <= 70 ? "4px" : "0",
                       }}
                     >
-                      <button onClick={() => setTooltip(null)} className="absolute top-2 right-2 text-muted-foreground hover:text-foreground">
+                      <button onClick={() => setTooltip(null)} className="absolute top-1.5 right-1.5 text-muted-foreground hover:text-foreground">
                         <X className="w-3 h-3" />
                       </button>
-                      <div className="font-semibold text-sm mb-1 pr-4">{pos.name || pos.role}</div>
-                      <div className="text-xs text-muted-foreground space-y-0.5">
-                        <div>役割: {pos.role}</div>
-                        <div>時間帯: {pos.time_slot}</div>
-                        {(pos.staff_names || []).length > 0 && (
-                          <div>担当: {pos.staff_names.join("、")}</div>
-                        )}
-                        {pos.notes && <div>備考: {pos.notes}</div>}
+                      <div className="font-semibold text-xs mb-1 pr-4">{pos.name || pos.role}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {(pos.staff_names || []).length > 0
+                          ? <span>担当: {pos.staff_names.join("、")}</span>
+                          : <span>担当者未設定</span>
+                        }
                       </div>
                       <button
                         onClick={(e) => {
@@ -330,11 +298,9 @@ export default function VenueMap({ eventId }) {
         {/* Side panel */}
         <SidePanel
           positions={positions}
-          staffList={staffList}
           draggingPin={draggingPin}
           setDraggingPin={setDraggingPin}
           setMode={setMode}
-          updatePosition={updatePosition}
           slotFilter={slotFilter}
         />
       </div>

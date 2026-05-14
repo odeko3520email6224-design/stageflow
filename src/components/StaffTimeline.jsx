@@ -65,48 +65,75 @@ export default function StaffTimeline({ eventId }) {
         <span className="text-sm text-muted-foreground">{allNames.length}名</span>
       </div>
 
-      {/* Header */}
-      <div className="grid grid-cols-4 gap-2 mb-2 px-1">
-        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">スタッフ</div>
-        {TIME_SLOTS.map((slot) => (
-          <div key={slot} className={`text-xs font-semibold px-2 py-1 rounded-lg border text-center ${TIME_SLOT_STYLES[slot].bg}`}>
-            {slot}
-          </div>
-        ))}
-      </div>
-
-      {/* Rows */}
-      <div className="space-y-2">
+      {/* Mobile: card per staff / Desktop: grid */}
+      <div className="block md:hidden space-y-2">
         {allNames.map((name) => {
           const timeline = staffTimeline[name];
           const hasAnyAssignment = TIME_SLOTS.some((s) => timeline[s].length > 0);
           return (
-            <div key={name} className={`grid grid-cols-4 gap-2 bg-card border rounded-xl px-3 py-2.5 items-start ${!hasAnyAssignment ? "border-amber-200 bg-amber-50/30" : "border-border"}`}>
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+            <div key={name} className={`bg-card border rounded-xl px-3 py-2.5 ${!hasAnyAssignment ? "border-amber-200 bg-amber-50/30" : "border-border"}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
                   {name.charAt(0)}
                 </div>
-                <span className="text-sm font-medium truncate">{name}</span>
+                <span className="text-sm font-semibold">{name}</span>
               </div>
-              {TIME_SLOTS.map((slot) => (
-                <div key={slot} className="min-h-[2rem]">
-                  {timeline[slot].length === 0 ? (
-                    <span className="text-xs text-muted-foreground">-</span>
-                  ) : (
-                    <div className="space-y-1">
-                      {timeline[slot].map((posName, i) => (
-                        <div key={i} className="flex items-center gap-1">
-                          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${TIME_SLOT_STYLES[slot].dot}`} />
-                          <span className="text-xs truncate">{posName}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+              <div className="space-y-1 pl-8">
+                {TIME_SLOTS.map((slot) => timeline[slot].length > 0 && (
+                  <div key={slot} className="flex items-start gap-2">
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border shrink-0 ${TIME_SLOT_STYLES[slot].bg}`}>{slot}</span>
+                    <span className="text-xs">{timeline[slot].join("、")}</span>
+                  </div>
+                ))}
+                {!hasAnyAssignment && <span className="text-xs text-muted-foreground">未配置</span>}
+              </div>
             </div>
           );
         })}
+      </div>
+
+      {/* Desktop: grid table */}
+      <div className="hidden md:block">
+        <div className="grid grid-cols-4 gap-2 mb-2 px-1">
+          <div className="text-xs font-semibold text-muted-foreground">スタッフ</div>
+          {TIME_SLOTS.map((slot) => (
+            <div key={slot} className={`text-xs font-semibold px-2 py-1 rounded-lg border text-center ${TIME_SLOT_STYLES[slot].bg}`}>
+              {slot}
+            </div>
+          ))}
+        </div>
+        <div className="space-y-1.5">
+          {allNames.map((name) => {
+            const timeline = staffTimeline[name];
+            const hasAnyAssignment = TIME_SLOTS.some((s) => timeline[s].length > 0);
+            return (
+              <div key={name} className={`grid grid-cols-4 gap-2 bg-card border rounded-xl px-3 py-2 items-start ${!hasAnyAssignment ? "border-amber-200 bg-amber-50/30" : "border-border"}`}>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                    {name.charAt(0)}
+                  </div>
+                  <span className="text-xs font-medium truncate">{name}</span>
+                </div>
+                {TIME_SLOTS.map((slot) => (
+                  <div key={slot} className="min-h-[1.5rem]">
+                    {timeline[slot].length === 0 ? (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    ) : (
+                      <div className="space-y-0.5">
+                        {timeline[slot].map((posName, i) => (
+                          <div key={i} className="flex items-center gap-1">
+                            <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${TIME_SLOT_STYLES[slot].dot}`} />
+                            <span className="text-xs truncate">{posName}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

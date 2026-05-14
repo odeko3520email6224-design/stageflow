@@ -57,19 +57,19 @@ export default function EventDetail() {
           </div>
         </div>
         {/* Row 2: tabs */}
-        <div className="max-w-6xl mx-auto px-4 pb-0">
-          <div className="flex gap-0 border-b border-border -mb-px">
+        <div className="max-w-6xl mx-auto px-2 pb-0 overflow-x-auto">
+          <div className="flex gap-0 border-b border-border -mb-px min-w-max">
             {TABS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setTab(id)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${
+                className={`flex items-center gap-1 px-3 py-2 text-xs font-medium border-b-2 transition-all whitespace-nowrap ${
                   tab === id
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Icon className="w-4 h-4" />{label}
+                <Icon className="w-3.5 h-3.5" />{label}
               </button>
             ))}
           </div>
