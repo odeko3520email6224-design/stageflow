@@ -19,13 +19,10 @@ export default function StaffTimeline({ eventId }) {
     setExportingPDF(true);
     try {
       const response = await base44.functions.invoke('exportPositionPDF', { eventId, type: 'timeline' });
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = url;
+      link.href = response.data.pdf;
       link.download = `タイムライン_${new Date().toISOString().split('T')[0]}.pdf`;
       link.click();
-      window.URL.revokeObjectURL(url);
     } finally {
       setExportingPDF(false);
     }

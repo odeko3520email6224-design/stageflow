@@ -1,5 +1,4 @@
 import { jsPDF } from 'npm:jspdf@4.2.1';
-import 'npm:jspdf-autotable';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 Deno.serve(async (req) => {
@@ -24,8 +23,6 @@ Deno.serve(async (req) => {
     const staff = await base44.asServiceRole.entities.Staff.filter({ event_id: eventId });
 
     const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
     let yPos = 15;
 
     // Title
@@ -55,25 +52,38 @@ Deno.serve(async (req) => {
       doc.text('スタッフ一覧', 15, yPos);
       yPos += 8;
 
-      // Staff table
+      // Simple text-based staff list
       doc.setFontSize(9);
-      const tableData = staff.map((s) => {
+      staff.forEach((s) => {
         const assigned = positions
           .filter((p) => (p.staff_names || []).includes(s.name))
           .map((p) => `${p.time_slot || '開場前'}：${p.name || p.role}`)
           .join(', ');
 
-        return [s.name, s.note || '-', assigned || '未配置'];
-      });
+        const text = `${s.name}`;
+        doc.text(text, 15, yPos);
+        yPos += 4;
 
-      doc.autoTable({
-        startY: yPos,
-        head: [['スタッフ名', '備考', '配置']],
-        body: tableData,
-        margin: 15,
-        headerStyles: { fillColor: [66, 165, 245], textColor: 255, fontSize: 9 },
-        bodyStyles: { fontSize: 8 },
-        columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 40 }, 2: { cellWidth: 80 } },
+        if (s.note) {
+          doc.setFontSize(8);
+          doc.text(`  備考: ${s.note}`, 15, yPos);
+          yPos += 3;
+        }
+
+        if (assigned) {
+          doc.setFontSize(8);
+          doc.text(`  配置: ${assigned}`, 15, yPos);
+          yPos += 3;
+        }
+
+        doc.setFontSize(9);
+        yPos += 2;
+
+        // New page if needed
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = 15;
+        }
       });
     } else if (type === 'timeline') {
       doc.setFontSize(12);
@@ -90,40 +100,36 @@ Deno.serve(async (req) => {
           doc.text(slot, 15, yPos);
           yPos += 5;
 
-          const tableData = slotPositions.map((p) => [
-            p.name || p.role,
-            p.staff_names ? p.staff_names.join('、') : '未設定',
-            p.notes || '-',
-          ]);
+          doc.setFontSize(8);
+          slotPositions.forEach((p) => {
+            const staffList = p.staff_names ? p.staff_names.join('、') : '未設定';
+            const text = `${p.name || p.role} - ${staffList}`;
+            doc.text(text, 20, yPos);
+            yPos += 4;
 
-          doc.autoTable({
-            startY: yPos,
-            head: [['ポジション', '担当スタッフ', '備考']],
-            body: tableData,
-            margin: 15,
-            headerStyles: { fillColor: [66, 165, 245], textColor: 255, fontSize: 8 },
-            bodyStyles: { fontSize: 7 },
-            columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 60 }, 2: { cellWidth: 40 } },
-            didDrawPage: (data) => {
-              yPos = data.lastAutoTable.finalY + 5;
-            },
+            if (p.notes) {
+              doc.text(`  (${p.notes})`, 20, yPos);
+              yPos += 3;
+            }
+
+            if (yPos > 270) {
+              doc.addPage();
+              yPos = 15;
+            }
           });
 
-          yPos += 8;
+          yPos += 3;
         }
       });
     }
 
-    const pdfBytes = doc.output('arraybuffer');
+    const pdfBase64 = doc.output('dataurlstring');
 
-    return new Response(pdfBytes, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${event.name}_${type}.pdf"`,
-      },
+    return Response.json({
+      pdf: pdfBase64
     });
   } catch (error) {
+    console.error('PDF Export Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
