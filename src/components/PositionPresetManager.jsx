@@ -103,32 +103,38 @@ function PresetCard({ preset, eventId, event, onDelete, isAdmin, positionTypes }
     mutationFn: async () => {
       // 既存ポジションを削除してプリセットから再生成
       const existingPositions = await base44.entities.Position.filter({ event_id: eventId });
-      await Promise.all(existingPositions.map((p) => base44.entities.Position.delete(p.id)));
+      if (existingPositions.length > 0) {
+        await Promise.all(existingPositions.map((p) => base44.entities.Position.delete(p.id)));
+      }
 
-      // プリセットのポジションを生成
+      // プリセットのポジションを生成（全スロット分を並列作成）
       const slotMap = preset.slot_positions || {};
+      const creates = [];
       for (const slot of TIME_SLOTS) {
         const ids = slotMap[slot] || [];
         for (const ptId of ids) {
           const pt = positionTypes.find((p) => p.id === ptId);
           if (pt) {
-            await base44.entities.Position.create({
+            creates.push(base44.entities.Position.create({
               event_id: eventId,
               name: pt.name,
               role: pt.role || "受付",
               color: pt.color || "#6366f1",
               time_slot: slot,
               staff_names: [],
-            });
+            }));
           }
         }
       }
+      await Promise.all(creates);
+
       // イベントにactive_preset_idを設定
       await base44.entities.Event.update(eventId, { active_preset_id: preset.id });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["positionPreset", preset.id] });
     },
   });
 
