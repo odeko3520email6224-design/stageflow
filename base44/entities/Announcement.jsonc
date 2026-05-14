@@ -1,0 +1,54 @@
+{
+  "name": "Announcement",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "\u30a4\u30d9\u30f3\u30c8ID"
+    },
+    "title": {
+      "type": "string",
+      "description": "\u4ef6\u540d"
+    },
+    "body": {
+      "type": "string",
+      "description": "\u672c\u6587"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "\u901a\u5e38",
+        "\u91cd\u8981",
+        "\u7dca\u6025"
+      ],
+      "default": "\u901a\u5e38",
+      "description": "\u512a\u5148\u5ea6"
+    },
+    "target_staff": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "\u9001\u4fe1\u5bfe\u8c61\u30b9\u30bf\u30c3\u30d5\u540d\u30ea\u30b9\u30c8\uff08\u7a7a=\u5168\u54e1\uff09"
+    },
+    "read_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "\u65e2\u8aad\u30b9\u30bf\u30c3\u30d5\u540d\u30ea\u30b9\u30c8"
+    },
+    "is_alert": {
+      "type": "boolean",
+      "default": false,
+      "description": "\u30a2\u30e9\u30fc\u30c8\u30d0\u30ca\u30fc\u3068\u3057\u3066\u8868\u793a\u3059\u308b\u304b"
+    }
+  },
+  "required": [
+    "event_id",
+    "title",
+    "body"
+  ]
+}

@@ -2,12 +2,14 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ChevronLeft, List, Map, Users, Settings, Clock } from "lucide-react";
+import { ChevronLeft, List, Map, Users, Settings, Clock, Megaphone } from "lucide-react";
 import StaffList from "@/components/StaffList";
 import VenueMap from "@/components/VenueMap";
 import StaffManagement from "@/components/StaffManagement";
 import PositionTypeManagement from "@/components/PositionTypeManagement";
 import StaffTimeline from "@/components/StaffTimeline";
+import AnnouncementManager from "@/components/AnnouncementManager";
+import AnnouncementAlert from "@/components/AnnouncementAlert";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 
@@ -36,11 +38,15 @@ export default function EventDetail() {
     { id: "list", label: "配置表", icon: List },
     { id: "map", label: "会場マップ", icon: Map },
     { id: "timeline", label: "タイムライン", icon: Clock },
+    { id: "notice", label: "連絡", icon: Megaphone },
     { id: "admin", label: "管理", icon: Settings },
   ];
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Alert Banner */}
+      <AnnouncementAlert eventId={eventId} />
+
       {/* Top bar - 2 rows */}
       <div className="bg-card border-b border-border sticky top-0 z-30">
         {/* Row 1: back + event name */}
@@ -82,6 +88,7 @@ export default function EventDetail() {
         {tab === "list" && <StaffList eventId={eventId} />}
         {tab === "map" && <VenueMap eventId={eventId} />}
         {tab === "timeline" && <StaffTimeline eventId={eventId} />}
+        {tab === "notice" && <AnnouncementManager eventId={eventId} />}
       </div>
     </div>
   );
