@@ -26,28 +26,22 @@ Deno.serve(async (req) => {
 
     const html = await response.text();
 
-    // Extract names from <span class="onamae"><span class="search">...</span></span>
+    // Extract names from <span class="onamae"><span class="search">NAME</span></span>
     const names = [];
-    // Match <span class="onamae">...<span class="search">NAME</span>...</span>
-    const outerRegex = /<span[^>]*class="[^"]*onamae[^"]*"[^>]*>([\s\S]*?)<\/span>/gi;
-    let outerMatch;
-    while ((outerMatch = outerRegex.exec(html)) !== null) {
-      const innerContent = outerMatch[1];
-      const innerRegex = /<span[^>]*class="[^"]*search[^"]*"[^>]*>([\s\S]*?)<\/span>/i;
-      const innerMatch = innerContent.match(innerRegex);
-      if (innerMatch) {
-        // Strip any remaining HTML tags and decode entities
-        const rawName = innerMatch[1]
-          .replace(/<[^>]+>/g, '')
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&#039;/g, "'")
-          .replace(/&nbsp;/g, ' ')
-          .trim();
-        if (rawName) names.push(rawName);
-      }
+    // Directly match the nested pattern: onamae > search
+    const regex = /<span[^>]*class="[^"]*onamae[^"]*"[^>]*>\s*<span[^>]*class="[^"]*search[^"]*"[^>]*>([\s\S]*?)<\/span>/gi;
+    let match;
+    while ((match = regex.exec(html)) !== null) {
+      const rawName = match[1]
+        .replace(/<[^>]+>/g, '')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#039;/g, "'")
+        .replace(/&nbsp;/g, ' ')
+        .trim();
+      if (rawName) names.push(rawName);
     }
 
     if (names.length === 0) {
