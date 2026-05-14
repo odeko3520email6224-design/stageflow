@@ -94,10 +94,48 @@ export default function StaffList({ eventId }) {
     setExportingPDF(true);
     try {
       const response = await base44.functions.invoke('exportPositionPDF', { eventId, type: 'staff' });
-      const link = document.createElement('a');
-      link.href = response.data.pdf;
-      link.download = `配置表_${new Date().toISOString().split('T')[0]}.pdf`;
-      link.click();
+      const html = response.data.html;
+      
+      // Create iframe to render HTML
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+      iframe.contentDocument.write(html);
+      iframe.contentDocument.close();
+      
+      // Wait for fonts to load, then generate PDF
+      setTimeout(() => {
+        import('html2canvas').then(({ default: html2canvas }) => {
+          import('jspdf').then(({ jsPDF }) => {
+            html2canvas(iframe.contentDocument.body, {
+              scale: 2,
+              useCORS: true,
+              logging: false,
+              backgroundColor: '#ffffff'
+            }).then((canvas) => {
+              const doc = new jsPDF('p', 'mm', 'a4');
+              const imgData = canvas.toDataURL('image/png');
+              const imgWidth = 210;
+              const imgHeight = (canvas.height * imgWidth) / canvas.width;
+              let heightLeft = imgHeight;
+              let position = 0;
+              
+              doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+              heightLeft -= 297;
+              
+              while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                doc.addPage();
+                doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= 297;
+              }
+              
+              doc.save(`配置表_${new Date().toISOString().split('T')[0]}.pdf`);
+              document.body.removeChild(iframe);
+            });
+          });
+        });
+      }, 2000);
     } finally {
       setExportingPDF(false);
     }

@@ -1,5 +1,98 @@
-import { jsPDF } from 'npm:jspdf@4.2.1';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+function generateHTML(event, positions, staff, type) {
+  const styles = `
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { 
+        font-family: 'Noto Sans JP', 'Arial Unicode MS', sans-serif; 
+        padding: 30px; 
+        background: white;
+        color: #333;
+        line-height: 1.6;
+      }
+      h1 { font-size: 28px; margin-bottom: 15px; font-weight: bold; }
+      h2 { font-size: 16px; margin-top: 25px; margin-bottom: 12px; border-bottom: 3px solid #333; padding-bottom: 8px; font-weight: bold; }
+      .info { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.8; }
+      .item { padding: 10px; border-bottom: 1px solid #ddd; margin-bottom: 5px; }
+      .item-name { font-weight: bold; font-size: 14px; }
+      .item-detail { font-size: 12px; color: #666; margin-top: 4px; }
+      .section { margin-bottom: 15px; }
+      .section-title { background: #f0f0f0; padding: 8px 12px; font-weight: bold; font-size: 13px; margin-bottom: 8px; }
+      .unassigned { background: #fff3cd; padding: 8px 12px; margin-bottom: 6px; border-left: 4px solid #ffc107; font-size: 13px; }
+    </style>
+  `;
+
+  let content = `
+    <h1>${event.name}</h1>
+    <div class="info">
+      ${event.date ? `開催日: ${event.date}<br>` : ''}
+      ${event.venue ? `会場: ${event.venue}<br>` : ''}
+      出力日時: ${new Date().toLocaleString('ja-JP')}
+    </div>
+  `;
+
+  if (type === 'staff') {
+    content += `<h2>スタッフ一覧</h2>`;
+    const assignedNames = new Set(positions.flatMap(p => p.staff_names || []));
+    
+    staff.forEach((s) => {
+      const assigned = positions
+        .filter((p) => (p.staff_names || []).includes(s.name))
+        .map((p) => `${p.time_slot || '開場前'}：${p.name || p.role}`)
+        .join(', ');
+
+      content += `
+        <div class="item">
+          <div class="item-name">${s.name}</div>
+          ${s.note ? `<div class="item-detail">備考: ${s.note}</div>` : ''}
+          ${assigned ? `<div class="item-detail">配置: ${assigned}</div>` : ''}
+        </div>
+      `;
+    });
+
+    const unassigned = staff.filter((s) => !assignedNames.has(s.name));
+    if (unassigned.length > 0) {
+      content += `<h2>未配置スタッフ</h2>`;
+      unassigned.forEach((s) => {
+        content += `<div class="unassigned">${s.name}${s.note ? ` (${s.note})` : ''}</div>`;
+      });
+    }
+  } else if (type === 'timeline') {
+    content += `<h2>配置タイムライン</h2>`;
+    const timeSlots = ['開場前', '開演中', '終演後'];
+
+    timeSlots.forEach((slot) => {
+      const slotPositions = positions.filter((p) => (p.time_slot || '開場前') === slot);
+      if (slotPositions.length > 0) {
+        content += `<div class="section"><div class="section-title">${slot}</div>`;
+        slotPositions.forEach((p) => {
+          const staffList = p.staff_names ? p.staff_names.join('、') : '未設定';
+          content += `
+            <div class="item">
+              <div class="item-name">${p.name || p.role}</div>
+              <div class="item-detail">スタッフ: ${staffList}</div>
+              ${p.notes ? `<div class="item-detail">備考: ${p.notes}</div>` : ''}
+            </div>
+          `;
+        });
+        content += `</div>`;
+      }
+    });
+  }
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+      ${styles}
+    </head>
+    <body>${content}</body>
+    </html>
+  `;
+}
 
 Deno.serve(async (req) => {
   try {
@@ -10,7 +103,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'eventId required' }, { status: 400 });
     }
 
-    // Fetch event data using service role
     let event;
     try {
       event = await base44.asServiceRole.entities.Event.get(eventId);
@@ -18,154 +110,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Event not found' }, { status: 404 });
     }
 
-    // Fetch positions and staff using service role
     const positions = await base44.asServiceRole.entities.Position.filter({ event_id: eventId });
     const staff = await base44.asServiceRole.entities.Staff.filter({ event_id: eventId });
 
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-
-    let yPos = 20;
-    const pageHeight = doc.internal.pageSize.height;
-    const margin = 15;
-    const maxWidth = doc.internal.pageSize.width - 2 * margin;
-
-    // Set font with Japanese support - using built-in font
-    doc.setFont('helvetica');
-    
-    // Title (use basic ASCII for title or minimal Japanese)
-    doc.setFontSize(18);
-    doc.text(event.name.substring(0, 30), margin, yPos);
-    yPos += 10;
-
-    // Event info
-    doc.setFontSize(10);
-    if (event.date) {
-      doc.text(`Date: ${event.date}`, margin, yPos);
-      yPos += 6;
-    }
-    if (event.venue) {
-      doc.text(`Venue: ${event.venue}`, margin, yPos);
-      yPos += 6;
-    }
-
-    // Timestamp
-    doc.setFontSize(8);
-    doc.text(`Output: ${new Date().toLocaleString('ja-JP')}`, margin, yPos);
-    yPos += 8;
-
-    // Content by type
-    if (type === 'staff') {
-      doc.setFontSize(12);
-      doc.text('Staff List', margin, yPos);
-      yPos += 8;
-
-      doc.setFontSize(9);
-      staff.forEach((s) => {
-        const assigned = positions
-          .filter((p) => (p.staff_names || []).includes(s.name))
-          .map((p) => `${p.time_slot || 'Pre'}:${p.name || p.role}`)
-          .join(', ');
-
-        if (yPos > pageHeight - 20) {
-          doc.addPage();
-          yPos = 20;
-        }
-
-        doc.text(`${s.name}`, margin, yPos);
-        yPos += 4;
-
-        if (s.note) {
-          doc.setFontSize(8);
-          doc.text(`Note: ${s.note}`, margin + 3, yPos);
-          yPos += 3;
-        }
-
-        if (assigned) {
-          doc.setFontSize(8);
-          doc.text(`Position: ${assigned}`, margin + 3, yPos);
-          yPos += 3;
-        }
-
-        doc.setFontSize(9);
-        yPos += 2;
-      });
-
-      const assignedNames = new Set(positions.flatMap((p) => p.staff_names || []));
-      const unassigned = staff.filter((s) => !assignedNames.has(s.name));
-
-      if (unassigned.length > 0) {
-        if (yPos > pageHeight - 30) {
-          doc.addPage();
-          yPos = 20;
-        }
-
-        yPos += 4;
-        doc.setFontSize(10);
-        doc.text('Unassigned Staff', margin, yPos);
-        yPos += 6;
-
-        doc.setFontSize(9);
-        unassigned.forEach((s) => {
-          if (yPos > pageHeight - 15) {
-            doc.addPage();
-            yPos = 20;
-          }
-          doc.text(`- ${s.name}${s.note ? ` (${s.note})` : ''}`, margin + 3, yPos);
-          yPos += 4;
-        });
-      }
-    } else if (type === 'timeline') {
-      doc.setFontSize(12);
-      doc.text('Position Timeline', margin, yPos);
-      yPos += 8;
-
-      const timeSlots = ['Pre', 'During', 'Post'];
-      const timeSlotMap = { 'Pre': '開場前', 'During': '開演中', 'Post': '終演後' };
-
-      timeSlots.forEach((slotKey) => {
-        const slot = timeSlotMap[slotKey];
-        const slotPositions = positions.filter((p) => (p.time_slot || '開場前') === slot);
-
-        if (slotPositions.length > 0) {
-          if (yPos > pageHeight - 30) {
-            doc.addPage();
-            yPos = 20;
-          }
-
-          doc.setFontSize(10);
-          doc.text(slotKey, margin, yPos);
-          yPos += 5;
-
-          doc.setFontSize(8);
-          slotPositions.forEach((p) => {
-            if (yPos > pageHeight - 15) {
-              doc.addPage();
-              yPos = 20;
-            }
-
-            const staffList = p.staff_names ? p.staff_names.join(', ') : 'Unset';
-            doc.text(`${p.name || p.role} - ${staffList}`, margin + 3, yPos);
-            yPos += 4;
-
-            if (p.notes) {
-              doc.text(`(${p.notes})`, margin + 5, yPos);
-              yPos += 3;
-            }
-          });
-
-          yPos += 3;
-        }
-      });
-    }
-
-    const pdfBase64 = doc.output('dataurlstring');
+    const html = generateHTML(event, positions, staff, type);
 
     return Response.json({
-      pdf: pdfBase64
+      html: html
     });
   } catch (error) {
     console.error('PDF Export Error:', error);
