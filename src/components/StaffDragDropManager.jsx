@@ -1,9 +1,7 @@
-import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { Button } from "@/components/ui/button";
-import { Trash2, Users } from "lucide-react";
+import { Trash2, AlertCircle, ClipboardList } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 
 const ROLE_COLORS = {
@@ -15,10 +13,10 @@ const ROLE_COLORS = {
 
 const TIME_SLOTS = ["開場前", "開演中", "終演後"];
 
-const TIME_SLOT_COLORS = {
-  "開場前": "bg-amber-50 border-amber-200",
-  "開演中": "bg-blue-50 border-blue-200",
-  "終演後": "bg-slate-50 border-slate-200",
+const TIME_SLOT_STYLES = {
+  "開場前": { header: "bg-amber-50 border-amber-200 text-amber-800", badge: "bg-amber-100 text-amber-700 border-amber-300" },
+  "開演中": { header: "bg-blue-50 border-blue-200 text-blue-800", badge: "bg-blue-100 text-blue-700 border-blue-300" },
+  "終演後": { header: "bg-slate-50 border-slate-200 text-slate-700", badge: "bg-slate-100 text-slate-600 border-slate-300" },
 };
 
 export default function StaffDragDropManager({ eventId }) {
@@ -87,40 +85,134 @@ export default function StaffDragDropManager({ eventId }) {
     });
   };
 
-  const assignedStaff = new Set(
-    positions.flatMap((p) => p.staff_names || [])
-  );
-  const unassignedStaff = staffList.filter((s) => !assignedStaff.has(s.name));
+  const grouped = TIME_SLOTS.reduce((acc, slot) => {
+    acc[slot] = positions.filter((p) => (p.time_slot || "開場前") === slot);
+    return acc;
+  }, {});
+
+  const assignedNames = new Set(positions.flatMap((p) => p.staff_names || []));
+  const unassigned = staffList.filter((s) => !assignedNames.has(s.name));
 
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="space-y-4">
-        {/* Unassigned Staff Column */}
-        <div className="bg-card border border-amber-200 rounded-xl overflow-hidden">
-          <div className="bg-amber-100 text-amber-800 px-4 py-2 font-bold flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            未配置スタッフ ({unassignedStaff.length})
-          </div>
-          <Droppable droppableId="unassigned" isDropDisabled={false}>
-            {(provided, snapshot) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className={`p-3 min-h-[200px] ${
-                  snapshot.isDraggingOver ? "bg-amber-50" : "bg-white"
-                }`}
-              >
-                {unassignedStaff.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-8">
-                    すべてのスタッフが配置されました
-                  </p>
-                ) : (
-                  <div className="grid gap-2">
-                    {unassignedStaff.map((staff, index) => (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-bold flex items-center gap-2"><ClipboardList className="w-5 h-5 text-primary" />ドラッグで配置</h2>
+      </div>
+
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="space-y-3">
+          {TIME_SLOTS.map((slot) => {
+            const style = TIME_SLOT_STYLES[slot];
+            return (
+              <div key={slot} className={`border rounded-xl overflow-hidden ${style.header.split(" ").slice(0, 2).join(" ")}`}>
+                {/* Section header */}
+                <div className={`flex items-center justify-between px-4 py-2 border-b ${style.header}`}>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm">{slot}</span>
+                    <span className="text-xs opacity-70">{grouped[slot].length}件</span>
+                  </div>
+                </div>
+
+                {/* Positions and drag zones */}
+                <div className="bg-card p-3">
+                  {grouped[slot].length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-3">このタイムスロットにポジションがありません</p>
+                  ) : (
+                    <div className="grid gap-1.5">
+                      {grouped[slot].map((pos) => (
+                        <Droppable key={pos.id} droppableId={pos.id} type="STAFF">
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.droppableProps}
+                              className={`bg-card border border-border rounded-lg overflow-hidden hover:border-primary/30 transition-colors ${
+                                snapshot.isDraggingOver ? "bg-blue-50 border-blue-300" : ""
+                              }`}
+                            >
+                              {/* Position header row */}
+                              <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-muted/20">
+                                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: pos.color || "#6366f1" }} />
+                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${ROLE_COLORS[pos.role]}`}>{pos.role}</span>
+                                {pos.notes && <span className="text-xs text-muted-foreground truncate flex-1">{pos.notes}</span>}
+                              </div>
+
+                              {/* Staff items */}
+                              <div className="divide-y divide-border/40 min-h-[40px]">
+                                {(pos.staff_names || []).length > 0 ? (
+                                  pos.staff_names.map((name, i) => (
+                                    <Draggable
+                                      key={`${pos.id}-${name}`}
+                                      draggableId={`${name}-${pos.id}`}
+                                      index={i}
+                                      isDragDisabled={!isAdmin}
+                                    >
+                                      {(provided, snapshot) => (
+                                        <div
+                                          ref={provided.innerRef}
+                                          {...provided.draggableProps}
+                                          {...provided.dragHandleProps}
+                                          className={`flex items-center justify-between gap-2 px-3 py-1.5 cursor-move ${
+                                            snapshot.isDragging ? "opacity-50 shadow-lg" : ""
+                                          }`}
+                                        >
+                                          <span className="text-xs font-medium text-foreground flex-1">{pos.name || pos.role}</span>
+                                          <span className="text-xs text-foreground">{name}</span>
+                                          {isAdmin && (
+                                            <button
+                                              onClick={() => removeStaffFromPosition(pos.id, name)}
+                                              className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
+                                            >
+                                              <Trash2 className="w-3 h-3" />
+                                            </button>
+                                          )}
+                                        </div>
+                                      )}
+                                    </Draggable>
+                                  ))
+                                ) : (
+                                  <div className="px-3 py-2 text-xs text-muted-foreground">スタッフをドラッグして配置</div>
+                                )}
+                              </div>
+
+                              {provided.placeholder}
+                            </div>
+                          )}
+                        </Droppable>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </DragDropContext>
+
+      {/* Unassigned staff */}
+      {(() => {
+        if (unassigned.length === 0) return null;
+        return (
+          <div className="mt-3 border border-amber-200 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200 text-amber-800">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span className="font-bold text-sm">未配置スタッフ</span>
+              <span className="text-xs opacity-70">{unassigned.length}名</span>
+            </div>
+            <div className="bg-card p-3 grid gap-1.5">
+              <Droppable droppableId="unassigned" type="STAFF">
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`grid gap-1.5 min-h-[40px] ${
+                      snapshot.isDraggingOver ? "bg-amber-50" : ""
+                    }`}
+                  >
+                    {unassigned.map((s, idx) => (
                       <Draggable
-                        key={staff.id}
-                        draggableId={staff.name}
-                        index={index}
+                        key={s.id}
+                        draggableId={s.name}
+                        index={idx}
                         isDragDisabled={!isAdmin}
                       >
                         {(provided, snapshot) => (
@@ -128,147 +220,27 @@ export default function StaffDragDropManager({ eventId }) {
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`p-2 rounded-lg border bg-white cursor-move transition-all ${
-                              snapshot.isDragging
-                                ? "shadow-lg opacity-50"
-                                : "hover:border-primary/50"
+                            className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-amber-50/50 border border-amber-100 cursor-move ${
+                              snapshot.isDragging ? "opacity-50 shadow-lg" : ""
                             }`}
                           >
-                            <div className="text-xs font-medium text-foreground">
-                              {staff.name}
+                            <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-xs shrink-0">
+                              {s.name.charAt(0)}
                             </div>
-                            {staff.note && (
-                              <div className="text-[10px] text-muted-foreground">
-                                {staff.note}
-                              </div>
-                            )}
+                            <span className="text-sm font-medium">{s.name}</span>
+                            {s.note && <span className="text-xs text-muted-foreground">{s.note}</span>}
                           </div>
                         )}
                       </Draggable>
                     ))}
+                    {provided.placeholder}
                   </div>
                 )}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </div>
-
-        {/* Time Slot Sections */}
-        <div className="space-y-3">
-          {TIME_SLOTS.map((slot) => {
-            const slotPositions = positions.filter(
-              (p) => (p.time_slot || "開場前") === slot
-            );
-
-            return (
-              <div
-                key={slot}
-                className={`border rounded-xl overflow-hidden ${
-                  TIME_SLOT_COLORS[slot]
-                }`}
-              >
-                <div className="px-4 py-2 bg-opacity-70 font-bold text-sm">
-                  {slot} ({slotPositions.length}件)
-                </div>
-
-                <div className="p-3 space-y-2 bg-white">
-                  {slotPositions.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-3">
-                      このタイムスロットにポジションがありません
-                    </p>
-                  ) : (
-                    slotPositions.map((position) => (
-                      <Droppable
-                        key={position.id}
-                        droppableId={position.id}
-                        type="STAFF"
-                      >
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
-                            className={`border rounded-lg p-2 min-h-[60px] transition-all ${
-                              snapshot.isDraggingOver
-                                ? "bg-blue-50 border-blue-300"
-                                : "bg-slate-50 border-border"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 mb-2">
-                              <div
-                                className="w-2 h-2 rounded-full flex-shrink-0"
-                                style={{
-                                  backgroundColor:
-                                    position.color || "#6366f1",
-                                }}
-                              />
-                              <span
-                                className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${
-                                  ROLE_COLORS[position.role]
-                                }`}
-                              >
-                                {position.role}
-                              </span>
-                              <span className="text-xs font-medium text-foreground flex-1">
-                                {position.name}
-                              </span>
-                            </div>
-
-                            {(position.staff_names || []).length > 0 && (
-                              <div className="space-y-1">
-                                {position.staff_names.map((staffName, idx) => (
-                                  <Draggable
-                                    key={`${position.id}-${staffName}`}
-                                    draggableId={`${staffName}-${position.id}`}
-                                    index={idx}
-                                    isDragDisabled={!isAdmin}
-                                  >
-                                    {(provided, snapshot) => (
-                                      <div
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        className={`flex items-center justify-between gap-1 px-2 py-1 rounded bg-yellow-100 border border-yellow-300 text-xs transition-all ${
-                                          snapshot.isDragging
-                                            ? "shadow-lg opacity-50"
-                                            : ""
-                                        }`}
-                                      >
-                                        <span className="font-medium text-foreground flex-1">
-                                          {staffName}
-                                        </span>
-                                        {isAdmin && (
-                                          <button
-                                            onClick={() =>
-                                              removeStaffFromPosition(
-                                                position.id,
-                                                staffName
-                                              )
-                                            }
-                                            className="p-0.5 hover:bg-red-200 rounded transition-colors"
-                                          >
-                                            <Trash2 className="w-3 h-3 text-red-600" />
-                                          </button>
-                                        )}
-                                      </div>
-                                    )}
-                                  </Draggable>
-                                ))}
-                              </div>
-                            )}
-
-                            {provided.placeholder}
-                          </div>
-                        )}
-                      </Droppable>
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </DragDropContext>
+              </Droppable>
+            </div>
+          </div>
+        );
+      })()}
+    </div>
   );
 }
