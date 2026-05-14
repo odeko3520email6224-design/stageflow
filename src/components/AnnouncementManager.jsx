@@ -173,11 +173,38 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
 
 function AnnouncementCard({ ann, staffList, onDelete }) {
   const [expanded, setExpanded] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmName, setConfirmName] = useState("");
+  const queryClient = useQueryClient();
+
   const style = PRIORITY_STYLES[ann.priority] || PRIORITY_STYLES["通常"];
   const Icon = style.icon;
   const totalTargets = ann.target_staff?.length > 0 ? ann.target_staff.length : staffList.length;
   const readCount = (ann.read_by || []).length;
   const unreadCount = Math.max(0, totalTargets - readCount);
+
+  const readMutation = useMutation({
+    mutationFn: (name) => base44.entities.Announcement.update(ann.id, {
+      read_by: [...new Set([...(ann.read_by || []), name])],
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["announcements", ann.event_id] });
+      queryClient.invalidateQueries({ queryKey: ["announcements-alert", ann.event_id] });
+      setShowConfirm(false);
+      setConfirmName("");
+    },
+  });
+
+  const handleConfirm = () => {
+    const name = confirmName.trim();
+    if (!name) return;
+    if ((ann.read_by || []).includes(name)) {
+      setShowConfirm(false);
+      setConfirmName("");
+      return;
+    }
+    readMutation.mutate(name);
+  };
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -212,6 +239,12 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
           </div>
         </div>
         <div className="flex gap-1 shrink-0">
+          <button
+            onClick={() => setShowConfirm(!showConfirm)}
+            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200 hover:bg-green-200 transition-colors"
+          >
+            <CheckCircle2 className="w-3 h-3" />確認
+          </button>
           {ann.body && (
             <button onClick={() => setExpanded(!expanded)} className="p-1 rounded hover:bg-muted text-muted-foreground">
               {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -222,6 +255,48 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
           </button>
         </div>
       </div>
+
+      {/* Confirm read panel */}
+      {showConfirm && (
+        <div className="px-3 pb-3 border-t border-border/60 pt-2.5 bg-green-50/50">
+          <p className="text-xs font-semibold text-green-800 mb-2">確認者の名前を入力してください</p>
+          <div className="flex gap-2">
+            {staffList.length > 0 ? (
+              <select
+                className="flex-1 border border-input rounded-lg px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                value={confirmName}
+                onChange={(e) => setConfirmName(e.target.value)}
+              >
+                <option value="">-- 名前を選択 --</option>
+                {staffList.map((s) => (
+                  <option key={s.id} value={s.name}
+                    disabled={(ann.read_by || []).includes(s.name)}
+                  >
+                    {s.name}{(ann.read_by || []).includes(s.name) ? "（確認済）" : ""}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className="flex-1 border border-input rounded-lg px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="名前を入力"
+                value={confirmName}
+                onChange={(e) => setConfirmName(e.target.value)}
+              />
+            )}
+            <button
+              onClick={handleConfirm}
+              disabled={!confirmName.trim() || readMutation.isPending}
+              className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+              {readMutation.isPending ? "..." : "既読にする"}
+            </button>
+            <button onClick={() => { setShowConfirm(false); setConfirmName(""); }} className="p-1.5 rounded hover:bg-muted text-muted-foreground">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Read by detail */}
       {expanded && (ann.read_by || []).length > 0 && (

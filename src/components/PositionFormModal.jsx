@@ -30,10 +30,10 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
     queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
   });
 
-  // PositionType list for name selection
+  // PositionType list for name selection (global, not event-specific)
   const { data: positionTypes = [] } = useQuery({
-    queryKey: ["positionTypes", eventId],
-    queryFn: () => base44.entities.PositionType.filter({ event_id: eventId }),
+    queryKey: ["positionTypes"],
+    queryFn: () => base44.entities.PositionType.list(),
   });
 
   const mutation = useMutation({

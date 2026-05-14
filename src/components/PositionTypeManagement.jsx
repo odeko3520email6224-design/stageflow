@@ -19,21 +19,21 @@ const ROLE_COLORS = {
 };
 
 export default function PositionTypeManagement({ eventId }) {
-
+  // eventId is kept for context but PositionTypes are now global (shared across events)
   const [name, setName] = useState("");
   const [role, setRole] = useState("受付");
   const [color, setColor] = useState(PRESET_COLORS[0]);
   const queryClient = useQueryClient();
 
   const { data: positionTypes = [], isLoading } = useQuery({
-    queryKey: ["positionTypes", eventId],
-    queryFn: () => base44.entities.PositionType.filter({ event_id: eventId }),
+    queryKey: ["positionTypes"],
+    queryFn: () => base44.entities.PositionType.list(),
   });
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.PositionType.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["positionTypes", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["positionTypes"] });
       setName("");
       setRole("受付");
       setColor(PRESET_COLORS[0]);
@@ -42,12 +42,12 @@ export default function PositionTypeManagement({ eventId }) {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.PositionType.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positionTypes", eventId] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positionTypes"] }),
   });
 
   const handleAdd = () => {
     if (!name.trim()) return;
-    createMutation.mutate({ event_id: eventId, name: name.trim(), role, color });
+    createMutation.mutate({ name: name.trim(), role, color });
   };
 
   const handleKeyDown = (e) => {
