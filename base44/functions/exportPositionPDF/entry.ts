@@ -12,10 +12,10 @@ Deno.serve(async (req) => {
     }
 
     // Fetch event data using service role
-    const events = await base44.asServiceRole.entities.Event.filter({ id: eventId });
-    const event = events[0];
-
-    if (!event) {
+    let event;
+    try {
+      event = await base44.asServiceRole.entities.Event.get(eventId);
+    } catch {
       return Response.json({ error: 'Event not found' }, { status: 404 });
     }
 
