@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { AlertCircle, ClipboardList, BookOpen } from "lucide-react";
+import { AlertCircle, ClipboardList, BookOpen, Plus } from "lucide-react";
 import PositionCard from "@/components/PositionCard";
+import PositionFormModal from "@/components/PositionFormModal";
 import { useUserRole } from "@/hooks/useUserRole";
 
 const TIME_SLOTS = ["開場前", "開演中", "終演後"];
@@ -49,6 +50,20 @@ export default function StaffDragDropManager({ eventId }) {
   });
 
   const [draggedStaff, setDraggedStaff] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [defaultSlot, setDefaultSlot] = useState("開場前");
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Position.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positions", eventId] }),
+  });
+
+  const openAdd = (slot) => {
+    setDefaultSlot(slot);
+    setEditing(null);
+    setShowModal(true);
+  };
 
   const handleDragStart = (e, staffName) => {
     if (!isAdmin) {
@@ -137,6 +152,13 @@ export default function StaffDragDropManager({ eventId }) {
                   <span className="font-bold text-sm">{slot}</span>
                   <span className="text-xs opacity-70">{grouped[slot].length}件</span>
                 </div>
+                <button
+                  onClick={() => openAdd(slot)}
+                  disabled={!isAdmin}
+                  className="text-xs flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white/60 hover:bg-white/90 transition-colors font-medium disabled:opacity-30 disabled:pointer-events-none"
+                >
+                  <Plus className="w-3 h-3" />追加
+                </button>
               </div>
 
               {/* Positions */}
@@ -159,6 +181,8 @@ export default function StaffDragDropManager({ eventId }) {
                           removeStaffFromPosition(posId, name);
                         }}
                         onStaffRemove={removeStaffFromPosition}
+                        onEdit={(p) => { setEditing(p); setShowModal(true); }}
+                        onDelete={(id) => { if (confirm("削除しますか？")) deleteMutation.mutate(id); }}
                         emptyLabel="スタッフをドラッグして配置"
                       />
                     ))}
@@ -205,6 +229,18 @@ export default function StaffDragDropManager({ eventId }) {
           </div>
         );
       })()}
+      {showModal && (
+        <PositionFormModal
+          position={editing}
+          eventId={eventId}
+          defaultTimeSlot={defaultSlot}
+          onClose={() => setShowModal(false)}
+          onSaved={() => {
+            queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+            setShowModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }
