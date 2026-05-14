@@ -103,15 +103,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'eventId required' }, { status: 400 });
     }
 
-    let event;
-    try {
-      event = await base44.asServiceRole.entities.Event.get(eventId);
-    } catch {
-      return Response.json({ error: 'Event not found' }, { status: 404 });
-    }
-
-    const positions = await base44.asServiceRole.entities.Position.filter({ event_id: eventId });
-    const staff = await base44.asServiceRole.entities.Staff.filter({ event_id: eventId });
+    const event = await base44.entities.Event.get(eventId);
+    const positions = await base44.entities.Position.filter({ event_id: eventId });
+    const staff = await base44.entities.Staff.filter({ event_id: eventId });
 
     const html = generateHTML(event, positions, staff, type);
 
