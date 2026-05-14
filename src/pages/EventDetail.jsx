@@ -10,6 +10,7 @@ import PositionTypeManagement from "@/components/PositionTypeManagement";
 import StaffTimeline from "@/components/StaffTimeline";
 import AnnouncementManager from "@/components/AnnouncementManager";
 import AnnouncementAlert from "@/components/AnnouncementAlert";
+import StaffDragDropManager from "@/components/StaffDragDropManager";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -38,6 +39,7 @@ export default function EventDetail() {
 
   const TABS = [
     { id: "staff", label: "スタッフ管理", icon: Users },
+    { id: "dragdrop", label: "ドラッグ配置", icon: List },
     { id: "list", label: "配置表", icon: List },
     { id: "map", label: "会場マップ", icon: Map },
     { id: "timeline", label: "タイムライン", icon: Clock },
@@ -87,6 +89,7 @@ export default function EventDetail() {
 
       <div className="max-w-6xl mx-auto px-4 py-4">
         {tab === "staff" && <StaffManagement eventId={eventId} />}
+        {tab === "dragdrop" && <StaffDragDropManager eventId={eventId} />}
         {tab === "admin" && <PositionTypeManagement eventId={eventId} />}
         {tab === "list" && <StaffList eventId={eventId} />}
         {tab === "map" && <VenueMap eventId={eventId} />}
