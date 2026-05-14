@@ -87,7 +87,9 @@ export default function VenueMap({ eventId }) {
   const [tooltip, setTooltip] = useState(null);
   const [slotFilter, setSlotFilter] = useState("開場前");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [scale, setScale] = useState(1);
   const longPressTimer = useRef(null);
+  const lastDistanceRef = useRef(null);
 
 
   const { data: positions = [] } = useQuery({
@@ -186,6 +188,33 @@ export default function VenueMap({ eventId }) {
     setMode("view");
   };
 
+  // Pinch zoom
+  const handleTouchMove = (e) => {
+    if (e.touches.length !== 2) {
+      lastDistanceRef.current = null;
+      return;
+    }
+    const touch1 = e.touches[0];
+    const touch2 = e.touches[1];
+    const currentDistance = Math.hypot(
+      touch2.clientX - touch1.clientX,
+      touch2.clientY - touch1.clientY
+    );
+
+    if (lastDistanceRef.current !== null) {
+      const delta = currentDistance - lastDistanceRef.current;
+      const newScale = Math.max(1, Math.min(3, scale + delta * 0.01));
+      setScale(newScale);
+    }
+    lastDistanceRef.current = currentDistance;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (e.touches.length < 2) {
+      lastDistanceRef.current = null;
+    }
+  };
+
   // Filter pins by slot tab
   const filteredPositions = slotFilter === "all"
     ? positions
@@ -265,14 +294,16 @@ export default function VenueMap({ eventId }) {
       {/* Mobile: horizontal scroll wrapper / Desktop: flex row */}
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Map Canvas */}
-        <div className="flex-1 -mx-4 lg:mx-0 overflow-x-auto lg:overflow-visible">
-          <div className="px-4 lg:px-0" style={{ minWidth: 320 }}>
-          <div
-            ref={mapRef}
-            onClick={handleMapClick}
-            onTouchEnd={handleMapTouchEnd}
-            className={`relative border-2 ${mode === "move-pin" ? "border-primary cursor-crosshair" : "border-border cursor-default"} rounded-xl overflow-hidden ${event?.map_image_url ? "bg-black" : "bg-slate-100"}`}
-            style={{ aspectRatio: "16/9", minHeight: 200 }}
+          <div className="flex-1 -mx-4 lg:mx-0 overflow-x-auto lg:overflow-visible">
+            <div className="px-4 lg:px-0" style={{ minWidth: 320 }}>
+            <div
+              ref={mapRef}
+              onClick={handleMapClick}
+              onTouchEnd={handleMapTouchEnd}
+              onTouchMove={handleTouchMove}
+              onTouchCancel={handleTouchEnd}
+              className={`relative border-2 ${mode === "move-pin" ? "border-primary cursor-crosshair" : "border-border cursor-default"} rounded-xl overflow-hidden ${event?.map_image_url ? "bg-black" : "bg-slate-100"}`}
+              style={{ aspectRatio: "16/9", minHeight: 200, touchAction: "pinch-zoom" }}
           >
             {/* Background image */}
             {event?.map_image_url && (
@@ -280,7 +311,8 @@ export default function VenueMap({ eventId }) {
                 <img
                   src={event.map_image_url}
                   alt="会場マップ"
-                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                  className="absolute inset-0 w-full h-full object-contain pointer-events-none transition-transform"
+                  style={{ transform: `scale(${scale})` }}
                   draggable={false}
                 />
                 <button
