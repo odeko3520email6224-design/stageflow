@@ -1,0 +1,25 @@
+{
+  "name": "MapTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "\u30c6\u30f3\u30d7\u30ec\u30fc\u30c8\u540d\uff08\u4f8b\uff1a\u30db\u30fc\u30ebA\u3001\u91ce\u5916\u30b9\u30c6\u30fc\u30b8\uff09"
+    },
+    "areas": {
+      "type": "array",
+      "description": "\u30a8\u30ea\u30a2\u30c7\u30fc\u30bf\u306eJSON\u914d\u5217",
+      "items": {
+        "type": "object"
+      },
+      "default": []
+    },
+    "description": {
+      "type": "string",
+      "description": "\u5099\u8003"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

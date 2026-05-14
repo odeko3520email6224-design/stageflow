@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Settings } from "lucide-react";
+import MapTemplateManagement from "@/components/MapTemplateManagement";
 
 const PRESET_COLORS = [
   "#6366f1", "#3b82f6", "#10b981", "#f59e0b",
@@ -18,6 +19,7 @@ const ROLE_COLORS = {
 };
 
 export default function PositionTypeManagement({ eventId }) {
+
   const [name, setName] = useState("");
   const [role, setRole] = useState("受付");
   const [color, setColor] = useState(PRESET_COLORS[0]);
@@ -117,6 +119,8 @@ export default function PositionTypeManagement({ eventId }) {
           ))}
         </div>
       )}
+
+      <MapTemplateManagement eventId={eventId} />
     </div>
   );
 }
