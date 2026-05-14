@@ -117,21 +117,21 @@ export default function StaffManagement({ eventId }) {
       {/* Add form */}
       <div className="bg-card border border-border rounded-xl p-3 mb-4">
         <p className="text-xs font-medium mb-2 text-muted-foreground">スタッフを追加</p>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="スタッフ名"
-            className="flex-1 h-8 text-sm"
+            className="flex-1 h-9 text-sm"
           />
           <Input
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="備考（任意）"
-            className="flex-1 h-8 text-sm"
+            className="flex-1 h-9 text-sm"
           />
-          <Button onClick={handleAdd} disabled={!name.trim() || createMutation.isPending} size="sm" className="gap-1 h-8 shrink-0">
+          <Button onClick={handleAdd} disabled={!name.trim() || createMutation.isPending} size="sm" className="gap-1 h-9 shrink-0">
             <Plus className="w-3.5 h-3.5" />追加
           </Button>
         </div>

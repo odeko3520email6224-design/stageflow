@@ -220,13 +220,13 @@ export default function VenueMap({ eventId }) {
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Map Canvas */}
         <div className="flex-1 -mx-4 lg:mx-0 overflow-x-auto lg:overflow-visible">
-          <div className="px-4 lg:px-0" style={{ minWidth: 560 }}>
+          <div className="px-4 lg:px-0" style={{ minWidth: 320 }}>
           <div
             ref={mapRef}
             onClick={handleMapClick}
             onTouchEnd={handleMapTouchEnd}
             className={`relative bg-slate-100 border-2 ${mode === "move-pin" ? "border-primary cursor-crosshair" : "border-border cursor-default"} rounded-xl overflow-hidden`}
-            style={{ aspectRatio: "16/9", minHeight: 280 }}
+            style={{ aspectRatio: "16/9", minHeight: 200 }}
           >
             {/* Areas */}
             {areas.map((area) => (
@@ -244,7 +244,7 @@ export default function VenueMap({ eventId }) {
                 zIndex: 1,
               }}>
                 <span className="text-xs font-semibold text-slate-600 select-none px-1 text-center leading-tight">{area.name}</span>
-                <div className="absolute top-1 right-1 hidden group-hover:flex gap-1 z-10">
+                <div className="absolute top-1 right-1 flex gap-1 z-10">
                   <button onClick={(e) => { e.stopPropagation(); setEditingArea(area); setShowAreaModal(true); }} className="bg-white rounded p-0.5 shadow text-slate-500 hover:text-primary">
                     <Pencil className="w-3 h-3" />
                   </button>
