@@ -114,19 +114,19 @@ export default function StaffList({ eventId }) {
               backgroundColor: '#ffffff'
             }).then((canvas) => {
               const doc = new jsPDF('p', 'mm', 'a4');
-              const imgData = canvas.toDataURL('image/png');
+              const imgData = canvas.toDataURL('image/jpeg', 0.95);
               const imgWidth = 210;
               const imgHeight = (canvas.height * imgWidth) / canvas.width;
               let heightLeft = imgHeight;
               let position = 0;
               
-              doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+              doc.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
               heightLeft -= 297;
               
               while (heightLeft >= 0) {
                 position = heightLeft - imgHeight;
                 doc.addPage();
-                doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                doc.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
                 heightLeft -= 297;
               }
               
