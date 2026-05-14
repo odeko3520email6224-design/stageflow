@@ -5,14 +5,7 @@ import { AlertCircle, ClipboardList, BookOpen, Plus } from "lucide-react";
 import PositionCard from "@/components/PositionCard";
 import PositionFormModal from "@/components/PositionFormModal";
 import { useUserRole } from "@/hooks/useUserRole";
-
-const TIME_SLOTS = ["開場前", "開演中", "終演後"];
-
-const TIME_SLOT_STYLES = {
-  "開場前": { header: "bg-amber-50 border-amber-200 text-amber-800" },
-  "開演中": { header: "bg-blue-50 border-blue-200 text-blue-800" },
-  "終演後": { header: "bg-slate-50 border-slate-200 text-slate-700" },
-};
+import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 
 export default function StaffDragDropManager({ eventId }) {
   const queryClient = useQueryClient();

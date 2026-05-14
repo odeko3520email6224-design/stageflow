@@ -3,16 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, ChevronDown, ChevronUp, Zap, X, Check, BookOpen, Pencil } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Zap, X, BookOpen, Pencil } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
-
-const TIME_SLOTS = ["開場前", "開演中", "終演後"];
-
-const TIME_SLOT_STYLES = {
-  "開場前": { badge: "bg-amber-50 border-amber-200 text-amber-800", header: "bg-amber-50 border-amber-200 text-amber-800" },
-  "開演中": { badge: "bg-blue-50 border-blue-200 text-blue-800", header: "bg-blue-50 border-blue-200 text-blue-800" },
-  "終演後": { badge: "bg-slate-50 border-slate-200 text-slate-700", header: "bg-slate-50 border-slate-200 text-slate-700" },
-};
+import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 
 // PositionType selector per time slot
 function SlotPositionSelector({ slot, selectedIds, positionTypes, onChange }) {

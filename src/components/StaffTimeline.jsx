@@ -2,94 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Clock, CalendarClock, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-
-const TIME_SLOTS = ["開場前", "開演中", "終演後"];
-
-const TIME_SLOT_STYLES = {
-  "開場前": { bg: "bg-amber-100 text-amber-800 border-amber-300", dot: "bg-amber-400" },
-  "開演中": { bg: "bg-blue-100 text-blue-800 border-blue-300", dot: "bg-blue-400" },
-  "終演後": { bg: "bg-slate-100 text-slate-700 border-slate-300", dot: "bg-slate-400" },
-};
+import { usePDFExport } from "@/hooks/usePDFExport";
+import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 
 export default function StaffTimeline({ eventId }) {
-  const [exportingPDF, setExportingPDF] = useState(false);
-
-  const handleExportPDF = async () => {
-    setExportingPDF(true);
-    try {
-      const response = await base44.functions.invoke('exportPositionPDF', { eventId, type: 'timeline' });
-      if (response.data.error) {
-        alert('エラー: ' + response.data.error);
-        setExportingPDF(false);
-        return;
-      }
-      const html = response.data.html;
-      
-      // Create temporary container
-      const container = document.createElement('div');
-      container.style.position = 'fixed';
-      container.style.left = '-9999px';
-      container.style.top = '-9999px';
-      container.style.width = '210mm';
-      container.style.backgroundColor = 'white';
-      container.innerHTML = html;
-      document.body.appendChild(container);
-      
-      // Wait for fonts to load
-      setTimeout(() => {
-        import('html2canvas').then(({ default: html2canvas }) => {
-          import('jspdf').then(({ jsPDF }) => {
-            html2canvas(container, {
-              scale: 2,
-              useCORS: true,
-              logging: false,
-              backgroundColor: '#ffffff',
-              allowTaint: true
-            }).then((canvas) => {
-              if (!canvas || canvas.width <= 0 || canvas.height <= 0) {
-                throw new Error('Canvas render failed');
-              }
-              
-              const imgData = canvas.toDataURL('image/jpeg', 0.95);
-              const imgWidth = 210;
-              const imgHeight = (canvas.height * imgWidth) / canvas.width;
-              
-              if (!isFinite(imgHeight) || imgHeight <= 0) {
-                throw new Error('Invalid dimensions');
-              }
-              
-              const doc = new jsPDF('l', 'mm', 'a4');
-              const pageHeight = 297;
-              let yPos = 0;
-              
-              doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-              yPos += imgHeight;
-              
-              while (yPos < imgHeight) {
-                doc.addPage();
-                doc.addImage(imgData, 'JPEG', 0, yPos - imgHeight, imgWidth, imgHeight);
-                yPos += pageHeight;
-              }
-              
-              doc.save(`タイムライン_${new Date().toISOString().split('T')[0]}.pdf`);
-              document.body.removeChild(container);
-              setExportingPDF(false);
-            }).catch((error) => {
-              console.error('Rendering error:', error);
-              alert('PDF作成に失敗しました');
-              document.body.removeChild(container);
-              setExportingPDF(false);
-            });
-          });
-        });
-      }, 1500);
-    } catch (error) {
-      console.error('Export error:', error);
-      alert('エラーが発生しました: ' + error.message);
-      setExportingPDF(false);
-    }
-  };
+  const { exporting: exportingPDF, exportPDF: handleExportPDF } = usePDFExport(eventId, "timeline", "タイムライン");
 
   const { data: positions = [], isLoading: loadingPos } = useQuery({
     queryKey: ["positions", eventId],

@@ -6,22 +6,16 @@ import { Plus, AlertCircle, ClipboardList, Download, BookOpen } from "lucide-rea
 import PositionFormModal from "@/components/PositionFormModal";
 import PositionCard from "@/components/PositionCard";
 import { useUserRole } from "@/hooks/useUserRole";
-
-const TIME_SLOTS = ["開場前", "開演中", "終演後"];
-
-const TIME_SLOT_STYLES = {
-  "開場前": { header: "bg-amber-50 border-amber-200 text-amber-800" },
-  "開演中": { header: "bg-blue-50 border-blue-200 text-blue-800" },
-  "終演後": { header: "bg-slate-50 border-slate-200 text-slate-700" },
-};
+import { usePDFExport } from "@/hooks/usePDFExport";
+import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 
 export default function StaffList({ eventId }) {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [defaultSlot, setDefaultSlot] = useState("開場前");
-  const [exportingPDF, setExportingPDF] = useState(false);
   const queryClient = useQueryClient();
   const { canEdit: isAdmin } = useUserRole();
+  const { exporting: exportingPDF, exportPDF: handleExportPDF } = usePDFExport(eventId, "staff", "配置表");
 
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
@@ -60,83 +54,6 @@ export default function StaffList({ eventId }) {
     setDefaultSlot(slot);
     setEditing(null);
     setShowModal(true);
-  };
-
-  const handleExportPDF = async () => {
-    setExportingPDF(true);
-    try {
-      const response = await base44.functions.invoke('exportPositionPDF', { eventId, type: 'staff' });
-      if (response.data.error) {
-        alert('エラー: ' + response.data.error);
-        setExportingPDF(false);
-        return;
-      }
-      const html = response.data.html;
-      
-      // Create temporary container
-      const container = document.createElement('div');
-      container.style.position = 'fixed';
-      container.style.left = '-9999px';
-      container.style.top = '-9999px';
-      container.style.width = '297mm';
-      container.style.backgroundColor = 'white';
-      container.innerHTML = html;
-      document.body.appendChild(container);
-      
-      // Wait for fonts to load
-      setTimeout(() => {
-        import('html2canvas').then(({ default: html2canvas }) => {
-          import('jspdf').then(({ jsPDF }) => {
-            html2canvas(container, {
-              scale: 2,
-              useCORS: true,
-              logging: false,
-              backgroundColor: '#ffffff',
-              allowTaint: true
-            }).then((canvas) => {
-              if (!canvas || canvas.width <= 0 || canvas.height <= 0) {
-                throw new Error('Canvas render failed');
-              }
-              
-              const imgData = canvas.toDataURL('image/jpeg', 0.95);
-              // A4横向き: 297mm x 210mm
-              const pageW = 297;
-              const pageH = 210;
-              const imgWidth = pageW;
-              const imgHeight = (canvas.height * imgWidth) / canvas.width;
-              
-              if (!isFinite(imgHeight) || imgHeight <= 0) {
-                throw new Error('Invalid dimensions');
-              }
-              
-              const doc = new jsPDF('l', 'mm', 'a4');
-              let remainingHeight = imgHeight;
-              let srcY = 0;
-              
-              while (remainingHeight > 0) {
-                if (srcY > 0) doc.addPage();
-                doc.addImage(imgData, 'JPEG', 0, -srcY, imgWidth, imgHeight);
-                srcY += pageH;
-                remainingHeight -= pageH;
-              }
-              
-              doc.save(`配置表_${new Date().toISOString().split('T')[0]}.pdf`);
-              document.body.removeChild(container);
-              setExportingPDF(false);
-            }).catch((error) => {
-              console.error('Rendering error:', error);
-              alert('PDF作成に失敗しました');
-              document.body.removeChild(container);
-              setExportingPDF(false);
-            });
-          });
-        });
-      }, 1500);
-    } catch (error) {
-      console.error('Export error:', error);
-      alert('エラーが発生しました: ' + error.message);
-      setExportingPDF(false);
-    }
   };
 
   return (
