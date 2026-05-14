@@ -6,79 +6,84 @@ function generateHTML(event, positions, staff, type) {
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { 
         font-family: 'Noto Sans JP', 'Arial Unicode MS', sans-serif; 
-        padding: 30px; 
+        padding: 15px; 
         background: white;
         color: #333;
-        line-height: 1.6;
+        font-size: 12px;
       }
-      h1 { font-size: 28px; margin-bottom: 15px; font-weight: bold; }
-      h2 { font-size: 16px; margin-top: 25px; margin-bottom: 12px; border-bottom: 3px solid #333; padding-bottom: 8px; font-weight: bold; }
-      .info { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.8; }
-      .item { padding: 10px; border-bottom: 1px solid #ddd; margin-bottom: 5px; }
-      .item-name { font-weight: bold; font-size: 14px; }
-      .item-detail { font-size: 12px; color: #666; margin-top: 4px; }
-      .section { margin-bottom: 15px; }
-      .section-title { background: #f0f0f0; padding: 8px 12px; font-weight: bold; font-size: 13px; margin-bottom: 8px; }
-      .unassigned { background: #fff3cd; padding: 8px 12px; margin-bottom: 6px; border-left: 4px solid #ffc107; font-size: 13px; }
+      h1 { font-size: 20px; margin-bottom: 10px; font-weight: bold; }
+      .info { font-size: 11px; color: #666; margin-bottom: 15px; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+      th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 11px; }
+      th { background: #e8d4c0; font-weight: bold; }
+      tr.section-header { background: #e8d4c0; }
+      tr.header-row td { background: #f5f5f5; font-weight: bold; }
+      td.position-name { font-weight: bold; width: 80px; }
+      td.count { width: 40px; text-align: center; }
+      td.staff { background: #ffffcc; }
+      td.highlight { background: #ffcccc; }
     </style>
   `;
 
   let content = `
     <h1>${event.name}</h1>
     <div class="info">
-      ${event.date ? `開催日: ${event.date}<br>` : ''}
-      ${event.venue ? `会場: ${event.venue}<br>` : ''}
-      出力日時: ${new Date().toLocaleString('ja-JP')}
+      ${event.date ? `開催日: ${event.date}` : ''}
+      ${event.venue ? ` / 会場: ${event.venue}` : ''}
     </div>
   `;
 
   if (type === 'staff') {
-    content += `<h2>スタッフ一覧</h2>`;
-    const assignedNames = new Set(positions.flatMap(p => p.staff_names || []));
+    content += `<table>`;
+    content += `<tr class="header-row"><td colspan="100">配置表</td></tr>`;
     
-    staff.forEach((s) => {
-      const assigned = positions
-        .filter((p) => (p.staff_names || []).includes(s.name))
-        .map((p) => `${p.time_slot || '開場前'}：${p.name || p.role}`)
-        .join(', ');
-
-      content += `
-        <div class="item">
-          <div class="item-name">${s.name}</div>
-          ${s.note ? `<div class="item-detail">備考: ${s.note}</div>` : ''}
-          ${assigned ? `<div class="item-detail">配置: ${assigned}</div>` : ''}
-        </div>
-      `;
-    });
-
-    const unassigned = staff.filter((s) => !assignedNames.has(s.name));
-    if (unassigned.length > 0) {
-      content += `<h2>未配置スタッフ</h2>`;
-      unassigned.forEach((s) => {
-        content += `<div class="unassigned">${s.name}${s.note ? ` (${s.note})` : ''}</div>`;
-      });
-    }
-  } else if (type === 'timeline') {
-    content += `<h2>配置タイムライン</h2>`;
     const timeSlots = ['開場前', '開演中', '終演後'];
-
     timeSlots.forEach((slot) => {
       const slotPositions = positions.filter((p) => (p.time_slot || '開場前') === slot);
       if (slotPositions.length > 0) {
-        content += `<div class="section"><div class="section-title">${slot}</div>`;
-        slotPositions.forEach((p) => {
-          const staffList = p.staff_names ? p.staff_names.join('、') : '未設定';
-          content += `
-            <div class="item">
-              <div class="item-name">${p.name || p.role}</div>
-              <div class="item-detail">スタッフ: ${staffList}</div>
-              ${p.notes ? `<div class="item-detail">備考: ${p.notes}</div>` : ''}
-            </div>
-          `;
+        content += `<tr class="section-header"><td colspan="100">${slot}</td></tr>`;
+        slotPositions.forEach((pos) => {
+          const staffCount = (pos.staff_names || []).length;
+          const staffNames = (pos.staff_names || []).join(' ');
+          content += `<tr>
+            <td class="position-name">${pos.name || pos.role}</td>
+            <td class="count">${staffCount}</td>
+            <td class="staff">${staffNames}</td>
+          </tr>`;
         });
-        content += `</div>`;
       }
     });
+
+    const assignedNames = new Set(positions.flatMap(p => p.staff_names || []));
+    const unassigned = staff.filter((s) => !assignedNames.has(s.name));
+    if (unassigned.length > 0) {
+      content += `<tr class="section-header"><td colspan="100">未配置スタッフ</td></tr>`;
+      unassigned.forEach((s) => {
+        content += `<tr><td colspan="100">${s.name}${s.note ? ` (${s.note})` : ''}</td></tr>`;
+      });
+    }
+    content += `</table>`;
+  } else if (type === 'timeline') {
+    content += `<table>`;
+    content += `<tr class="header-row"><td>スタッフ</td>`;
+    const timeSlots = ['開場前', '開演中', '終演後'];
+    timeSlots.forEach((slot) => {
+      content += `<td>${slot}</td>`;
+    });
+    content += `</tr>`;
+
+    staff.forEach((s) => {
+      content += `<tr><td class="position-name">${s.name}</td>`;
+      timeSlots.forEach((slot) => {
+        const slotPositions = positions.filter(
+          (p) => (p.time_slot || '開場前') === slot && (p.staff_names || []).includes(s.name)
+        );
+        const posNames = slotPositions.map((p) => p.name || p.role).join(' ');
+        content += `<td class="staff">${posNames}</td>`;
+      });
+      content += `</tr>`;
+    });
+    content += `</table>`;
   }
 
   return `
