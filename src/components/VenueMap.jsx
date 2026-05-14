@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Pencil, X, Move, Info, Map, MapPin, ImagePlus, Loader2 } from "lucide-react";
 import MapAreaFormModal from "@/components/MapAreaFormModal";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const ROLE_COLORS = {
   "受付": "#3b82f6",
@@ -88,7 +88,7 @@ export default function VenueMap({ eventId }) {
   const [slotFilter, setSlotFilter] = useState("開場前");
   const [uploadingImage, setUploadingImage] = useState(false);
   const longPressTimer = useRef(null);
-  const isAdmin = useIsAdmin();
+  const { canEdit: isAdmin } = useUserRole();
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],

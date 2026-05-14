@@ -12,10 +12,13 @@ import AnnouncementManager from "@/components/AnnouncementManager";
 import AnnouncementAlert from "@/components/AnnouncementAlert";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export default function EventDetail() {
   const { eventId } = useParams();
   const [tab, setTab] = useState("list");
+
+  const { isAdmin } = useUserRole();
 
   const { data: event, isLoading } = useQuery({
     queryKey: ["event", eventId],
@@ -39,7 +42,7 @@ export default function EventDetail() {
     { id: "map", label: "会場マップ", icon: Map },
     { id: "timeline", label: "タイムライン", icon: Clock },
     { id: "notice", label: "連絡", icon: Megaphone },
-    { id: "admin", label: "設定", icon: Settings },
+    ...(isAdmin ? [{ id: "admin", label: "設定", icon: Settings }] : []),
   ];
 
   return (

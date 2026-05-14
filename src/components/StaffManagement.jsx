@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Users, AlertCircle, Pencil, X, Check, UserCog, Download } from "lucide-react";
 import StaffScrapeModal from "@/components/StaffScrapeModal";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const TIME_SLOT_COLORS = {
   "開場前": "bg-amber-100 text-amber-700 border-amber-200",
@@ -68,7 +68,7 @@ export default function StaffManagement({ eventId }) {
   const [editingStaff, setEditingStaff] = useState(null);
   const [showScrapeModal, setShowScrapeModal] = useState(false);
   const queryClient = useQueryClient();
-  const isAdmin = useIsAdmin();
+  const { canEdit: isAdmin } = useUserRole();
 
   const { data: staffList = [], isLoading } = useQuery({
     queryKey: ["staff", eventId],

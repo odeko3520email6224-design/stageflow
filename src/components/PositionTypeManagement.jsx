@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Settings } from "lucide-react";
 import MapTemplateManagement from "@/components/MapTemplateManagement";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const PRESET_COLORS = [
   "#6366f1", "#3b82f6", "#10b981", "#f59e0b",
@@ -25,7 +25,7 @@ export default function PositionTypeManagement({ eventId }) {
   const [role, setRole] = useState("受付");
   const [color, setColor] = useState(PRESET_COLORS[0]);
   const queryClient = useQueryClient();
-  const isAdmin = useIsAdmin();
+  const { canEdit: isAdmin } = useUserRole();
 
   const { data: positionTypes = [], isLoading } = useQuery({
     queryKey: ["positionTypes"],

@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, Users, AlertCircle, ClipboardList } from "lucide-react";
 import PositionFormModal from "@/components/PositionFormModal";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const ROLE_COLORS = {
   "受付": "bg-blue-100 text-blue-700 border-blue-200",
@@ -61,7 +61,7 @@ export default function StaffList({ eventId }) {
   const [editing, setEditing] = useState(null);
   const [defaultSlot, setDefaultSlot] = useState("開場前");
   const queryClient = useQueryClient();
-  const isAdmin = useIsAdmin();
+  const { canEdit: isAdmin } = useUserRole();
 
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
