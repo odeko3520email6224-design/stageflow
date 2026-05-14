@@ -6,22 +6,22 @@ function generateHTML(event, positions, staff, type) {
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { 
         font-family: 'Noto Sans JP', 'Arial Unicode MS', sans-serif; 
-        padding: 15px; 
+        padding: 10px 15px; 
         background: white;
-        color: #333;
-        font-size: 12px;
+        color: #000;
+        font-size: 11px;
       }
-      h1 { font-size: 20px; margin-bottom: 10px; font-weight: bold; }
-      .info { font-size: 11px; color: #666; margin-bottom: 15px; }
-      table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-      th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 11px; }
-      th { background: #e8d4c0; font-weight: bold; }
-      tr.section-header { background: #e8d4c0; }
-      tr.header-row td { background: #f5f5f5; font-weight: bold; }
-      td.position-name { font-weight: bold; width: 80px; }
-      td.count { width: 40px; text-align: center; }
-      td.staff { background: #ffffcc; }
-      td.highlight { background: #ffcccc; }
+      h1 { font-size: 16px; margin-bottom: 8px; font-weight: bold; }
+      .info { font-size: 10px; color: #555; margin-bottom: 12px; }
+      table { width: 100%; border-collapse: collapse; font-size: 10px; }
+      td { border: 1px solid #000; padding: 4px 6px; text-align: center; vertical-align: middle; }
+      tr.section-header td { background: #deb887; font-weight: bold; text-align: center; height: 20px; }
+      tr.header-row td { background: #d3d3d3; font-weight: bold; }
+      td.position-name { font-weight: bold; text-align: left; background: #f0e6d2; }
+      td.count { width: 30px; text-align: center; background: #f0e6d2; }
+      td.staff { background: #fffacd; }
+      td.empty { background: #ffffff; }
+      .title-cell { font-weight: bold; text-align: left; background: #d4a574; color: white; }
     </style>
   `;
 

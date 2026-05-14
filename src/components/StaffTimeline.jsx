@@ -59,7 +59,7 @@ export default function StaffTimeline({ eventId }) {
                 throw new Error('Invalid dimensions');
               }
               
-              const doc = new jsPDF('p', 'mm', 'a4');
+              const doc = new jsPDF('l', 'mm', 'a4');
               const pageHeight = 297;
               let yPos = 0;
               
