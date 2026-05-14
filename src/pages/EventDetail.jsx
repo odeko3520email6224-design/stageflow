@@ -53,7 +53,7 @@ export default function EventDetail() {
       <AnnouncementAlert eventId={eventId} />
 
       {/* Top bar - 2 rows */}
-      <div className="bg-card border-b border-border sticky top-0 z-30">
+      <div className="bg-card border-b border-border sticky top-0 z-50">
         {/* Row 1: back + event name */}
         <div className="max-w-6xl mx-auto px-3 pt-2 pb-1 flex items-center gap-2">
           <Link to="/" className="p-1 rounded-lg hover:bg-muted transition-colors shrink-0">
