@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Users, AlertCircle, Pencil, X, Check, UserCog, Download } from "lucide-react";
 import StaffScrapeModal from "@/components/StaffScrapeModal";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const TIME_SLOT_COLORS = {
   "開場前": "bg-amber-100 text-amber-700 border-amber-200",
@@ -66,6 +67,7 @@ export default function StaffManagement({ eventId }) {
   const [editingStaff, setEditingStaff] = useState(null);
   const [showScrapeModal, setShowScrapeModal] = useState(false);
   const queryClient = useQueryClient();
+  const isAdmin = useIsAdmin();
 
   const { data: staffList = [], isLoading } = useQuery({
     queryKey: ["staff", eventId],
@@ -115,7 +117,7 @@ export default function StaffManagement({ eventId }) {
         <h2 className="text-lg font-bold flex items-center gap-2"><UserCog className="w-5 h-5 text-primary" />スタッフ管理</h2>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">{staffList.length}名登録中</span>
-          <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setShowScrapeModal(true)}>
+          <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setShowScrapeModal(true)} disabled={!isAdmin}>
             <Download className="w-3 h-3" />サイトから取得
           </Button>
         </div>
@@ -138,7 +140,7 @@ export default function StaffManagement({ eventId }) {
             placeholder="備考（任意）"
             className="flex-1 h-9 text-sm"
           />
-          <Button onClick={handleAdd} disabled={!name.trim() || createMutation.isPending} size="sm" className="gap-1 h-9 shrink-0">
+          <Button onClick={handleAdd} disabled={!isAdmin || !name.trim() || createMutation.isPending} size="sm" className="gap-1 h-9 shrink-0">
             <Plus className="w-3.5 h-3.5" />追加
           </Button>
         </div>
@@ -178,13 +180,15 @@ export default function StaffManagement({ eventId }) {
                   </div>
                   <button
                     onClick={() => setEditingStaff(staff)}
-                    className="p-1.5 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors"
+                    disabled={!isAdmin}
+                    className="p-1.5 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => { if (confirm(`「${staff.name}」を削除しますか？`)) deleteMutation.mutate(staff.id); }}
-                    className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
+                    disabled={!isAdmin}
+                    className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

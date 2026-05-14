@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, Users, AlertCircle, ClipboardList } from "lucide-react";
 import PositionFormModal from "@/components/PositionFormModal";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const ROLE_COLORS = {
   "受付": "bg-blue-100 text-blue-700 border-blue-200",
@@ -20,7 +21,7 @@ const TIME_SLOT_STYLES = {
   "終演後": { header: "bg-slate-50 border-slate-200 text-slate-700", badge: "bg-slate-100 text-slate-600 border-slate-300" },
 };
 
-function PositionCard({ pos, onEdit, onDelete }) {
+function PositionCard({ pos, onEdit, onDelete, isAdmin }) {
   const staffNames = pos.staff_names || [];
   const posLabel = pos.name || pos.role;
   return (
@@ -31,10 +32,10 @@ function PositionCard({ pos, onEdit, onDelete }) {
         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${ROLE_COLORS[pos.role]}`}>{pos.role}</span>
         {pos.notes && <span className="text-xs text-muted-foreground truncate flex-1">{pos.notes}</span>}
         <div className="flex gap-1 ml-auto flex-shrink-0">
-          <button onClick={() => onEdit(pos)} className="p-1 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors">
+          <button onClick={() => onEdit(pos)} disabled={!isAdmin} className="p-1 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none">
             <Pencil className="w-3 h-3" />
           </button>
-          <button onClick={() => onDelete(pos.id)} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors">
+          <button onClick={() => onDelete(pos.id)} disabled={!isAdmin} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none">
             <Trash2 className="w-3 h-3" />
           </button>
         </div>
@@ -60,6 +61,7 @@ export default function StaffList({ eventId }) {
   const [editing, setEditing] = useState(null);
   const [defaultSlot, setDefaultSlot] = useState("開場前");
   const queryClient = useQueryClient();
+  const isAdmin = useIsAdmin();
 
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
@@ -111,7 +113,8 @@ export default function StaffList({ eventId }) {
                   </div>
                   <button
                     onClick={() => openAdd(slot)}
-                    className="text-xs flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white/60 hover:bg-white/90 transition-colors font-medium"
+                    disabled={!isAdmin}
+                    className="text-xs flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white/60 hover:bg-white/90 transition-colors font-medium disabled:opacity-30 disabled:pointer-events-none"
                   >
                     <Plus className="w-3 h-3" />追加
                   </button>
@@ -129,6 +132,7 @@ export default function StaffList({ eventId }) {
                           pos={pos}
                           onEdit={(p) => { setEditing(p); setShowModal(true); }}
                           onDelete={(id) => { if (confirm("削除しますか？")) deleteMutation.mutate(id); }}
+                          isAdmin={isAdmin}
                         />
                       ))}
                     </div>

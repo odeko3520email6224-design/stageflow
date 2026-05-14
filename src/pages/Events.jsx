@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Calendar, MapPin, ChevronRight, Trash2, Pencil } from "lucide-react";
@@ -19,6 +20,7 @@ export default function Events() {
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const queryClient = useQueryClient();
+  const isAdmin = useIsAdmin();
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["events"],
@@ -50,7 +52,7 @@ export default function Events() {
           <h1 className="text-2xl font-bold text-foreground tracking-tight">イベント一覧</h1>
           <p className="text-muted-foreground mt-0.5 text-xs">コンサート・イベントを選択して配置管理を行います</p>
         </div>
-        <Button onClick={() => { setEditingEvent(null); setShowModal(true); }} className="gap-1.5" size="sm">
+        <Button onClick={() => { setEditingEvent(null); setShowModal(true); }} className="gap-1.5" size="sm" disabled={!isAdmin}>
           <Plus className="w-4 h-4" />
           新規イベント
         </Button>
@@ -100,13 +102,15 @@ export default function Events() {
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={(e) => handleEdit(e, event)}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                      disabled={!isAdmin}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={(e) => handleDelete(e, event.id)}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      disabled={!isAdmin}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

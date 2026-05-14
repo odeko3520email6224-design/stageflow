@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Settings } from "lucide-react";
 import MapTemplateManagement from "@/components/MapTemplateManagement";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const PRESET_COLORS = [
   "#6366f1", "#3b82f6", "#10b981", "#f59e0b",
@@ -24,6 +25,7 @@ export default function PositionTypeManagement({ eventId }) {
   const [role, setRole] = useState("受付");
   const [color, setColor] = useState(PRESET_COLORS[0]);
   const queryClient = useQueryClient();
+  const isAdmin = useIsAdmin();
 
   const { data: positionTypes = [], isLoading } = useQuery({
     queryKey: ["positionTypes"],
@@ -83,7 +85,7 @@ export default function PositionTypeManagement({ eventId }) {
               />
             ))}
           </div>
-          <Button onClick={handleAdd} disabled={!name.trim() || createMutation.isPending} size="sm" className="gap-1 h-8 shrink-0">
+          <Button onClick={handleAdd} disabled={!isAdmin || !name.trim() || createMutation.isPending} size="sm" className="gap-1 h-8 shrink-0">
             <Plus className="w-3.5 h-3.5" />追加
           </Button>
         </div>
@@ -111,7 +113,8 @@ export default function PositionTypeManagement({ eventId }) {
               <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${ROLE_COLORS[pt.role] || ROLE_COLORS["その他"]}`}>{pt.role}</span>
               <button
                 onClick={() => { if (confirm(`「${pt.name}」を削除しますか？`)) deleteMutation.mutate(pt.id); }}
-                className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
+                disabled={!isAdmin}
+                className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
