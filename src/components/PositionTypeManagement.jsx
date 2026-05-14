@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Settings } from "lucide-react";
 import MapTemplateManagement from "@/components/MapTemplateManagement";
+import PositionPresetManager from "@/components/PositionPresetManager";
 import { useUserRole } from "@/hooks/useUserRole";
 
 const PRESET_COLORS = [
@@ -126,6 +127,7 @@ export default function PositionTypeManagement({ eventId }) {
         </div>
       )}
 
+      <PositionPresetManager eventId={eventId} />
       <MapTemplateManagement eventId={eventId} />
     </div>
   );

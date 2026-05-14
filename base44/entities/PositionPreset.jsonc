@@ -1,0 +1,25 @@
+{
+  "name": "PositionPreset",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "\u30d7\u30ea\u30bb\u30c3\u30c8\u540d\uff08\u4f8b\uff1a\u6a19\u6e96\u914d\u7f6e\u3001\u5927\u578b\u30a4\u30d9\u30f3\u30c8\uff09"
+    },
+    "description": {
+      "type": "string",
+      "description": "\u8aac\u660e"
+    },
+    "positions": {
+      "type": "array",
+      "description": "\u30dd\u30b8\u30b7\u30e7\u30f3\u5b9a\u7fa9\u30ea\u30b9\u30c8\uff08{name, role, color, time_slot}\uff09",
+      "items": {
+        "type": "object"
+      },
+      "default": []
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
