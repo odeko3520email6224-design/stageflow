@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Clock } from "lucide-react";
+import { Clock, CalendarClock } from "lucide-react";
 
 const TIME_SLOTS = ["開場前", "開演中", "終演後"];
 
@@ -61,7 +61,7 @@ export default function StaffTimeline({ eventId }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">担当者別タイムライン</h2>
+        <h2 className="text-xl font-bold flex items-center gap-2"><CalendarClock className="w-5 h-5 text-primary" />担当者別タイムライン</h2>
         <span className="text-sm text-muted-foreground">{allNames.length}名</span>
       </div>
 

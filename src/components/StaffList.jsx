@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Users, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, AlertCircle, ClipboardList } from "lucide-react";
 import PositionFormModal from "@/components/PositionFormModal";
 
 const ROLE_COLORS = {
@@ -90,7 +90,7 @@ export default function StaffList({ eventId }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold">配置表</h2>
+        <h2 className="text-lg font-bold flex items-center gap-2"><ClipboardList className="w-5 h-5 text-primary" />配置表</h2>
       </div>
 
       {isLoading ? (

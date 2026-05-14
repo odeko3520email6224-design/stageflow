@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Users, AlertCircle, Pencil, X, Check } from "lucide-react";
+import { Plus, Trash2, Users, AlertCircle, Pencil, X, Check, UserCog } from "lucide-react";
 
 const TIME_SLOT_COLORS = {
   "開場前": "bg-amber-100 text-amber-700 border-amber-200",
@@ -110,7 +110,7 @@ export default function StaffManagement({ eventId }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold">スタッフ管理</h2>
+        <h2 className="text-lg font-bold flex items-center gap-2"><UserCog className="w-5 h-5 text-primary" />スタッフ管理</h2>
         <span className="text-xs text-muted-foreground">{staffList.length}名登録中</span>
       </div>
 

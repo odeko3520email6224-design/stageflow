@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Pencil, X, Move, Info } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Move, Info, Map, MapPin, Clock } from "lucide-react";
 import MapAreaFormModal from "@/components/MapAreaFormModal";
 
 const ROLE_COLORS = {
@@ -28,7 +28,7 @@ function SidePanel({ positions, draggingPin, setDraggingPin, setMode, slotFilter
     <div className="w-full lg:w-48 flex-shrink-0 space-y-3">
       {/* Unplaced positions */}
       <div>
-        <p className="text-xs font-semibold text-muted-foreground mb-1.5">未配置ポジション</p>
+        <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3" />未配置ポジション</p>
         {notOnMap.length === 0 ? (
           <div className="text-xs text-muted-foreground bg-muted rounded-lg p-2 text-center">全て配置済みです</div>
         ) : (
@@ -55,7 +55,7 @@ function SidePanel({ positions, draggingPin, setDraggingPin, setMode, slotFilter
       {/* Placed positions */}
       {onMap.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-muted-foreground mb-1.5">配置済み</p>
+          <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1"><Map className="w-3 h-3" />配置済み</p>
           <div className="space-y-1">
             {onMap.map((pos) => (
               <div key={pos.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-muted/40 border border-border">
@@ -84,6 +84,7 @@ export default function VenueMap({ eventId }) {
   const [showAreaModal, setShowAreaModal] = useState(false);
   const [tooltip, setTooltip] = useState(null);
   const [slotFilter, setSlotFilter] = useState("開場前");
+  const longPressTimer = useRef(null);
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
@@ -129,6 +130,35 @@ export default function VenueMap({ eventId }) {
     }
   };
 
+  // Long-press to enter move mode on mobile
+  const handlePinTouchStart = (e, pos) => {
+    longPressTimer.current = setTimeout(() => {
+      e.preventDefault();
+      setTooltip(null);
+      setDraggingPin(pos);
+      setMode("move-pin");
+    }, 500);
+  };
+
+  const handlePinTouchEnd = () => {
+    clearTimeout(longPressTimer.current);
+  };
+
+  // Touch tap on map to place pin
+  const handleMapTouchEnd = (e) => {
+    if (mode !== "move-pin" || !draggingPin) return;
+    const touch = e.changedTouches[0];
+    const rect = mapRef.current.getBoundingClientRect();
+    const x = ((touch.clientX - rect.left) / rect.width) * 100;
+    const y = ((touch.clientY - rect.top) / rect.height) * 100;
+    updatePosition.mutate({
+      id: draggingPin.id,
+      data: { map_x: Math.max(0, Math.min(100, x)), map_y: Math.max(0, Math.min(100, y)) },
+    });
+    setDraggingPin(null);
+    setMode("view");
+  };
+
   // Filter pins by slot tab
   const filteredPositions = slotFilter === "all"
     ? positions
@@ -139,7 +169,7 @@ export default function VenueMap({ eventId }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold">会場マップ</h2>
+        <h2 className="text-lg font-bold flex items-center gap-2"><Map className="w-5 h-5 text-primary" />会場マップ</h2>
         <div className="flex gap-1.5">
           <Button
             size="sm"
@@ -179,7 +209,7 @@ export default function VenueMap({ eventId }) {
       {mode === "move-pin" && (
         <div className="mb-2 text-xs text-primary bg-primary/10 rounded-lg px-3 py-1.5 flex items-center gap-2">
           <Info className="w-3.5 h-3.5 shrink-0" />
-          {draggingPin ? `「${draggingPin.name}」をマップ上でクリックして配置` : "右の一覧からピンを選択し、マップ上でクリックして配置"}
+          {draggingPin ? `「${draggingPin.name}」をマップ上でタップ/クリックして配置` : "ピンを長押し（スマホ）またはリストから選択してマップ上に配置"}
           <button onClick={() => { setMode("view"); setDraggingPin(null); }} className="ml-auto">
             <X className="w-3.5 h-3.5" />
           </button>
@@ -194,6 +224,7 @@ export default function VenueMap({ eventId }) {
           <div
             ref={mapRef}
             onClick={handleMapClick}
+            onTouchEnd={handleMapTouchEnd}
             className={`relative bg-slate-100 border-2 ${mode === "move-pin" ? "border-primary cursor-crosshair" : "border-border cursor-default"} rounded-xl overflow-hidden`}
             style={{ aspectRatio: "16/9", minHeight: 280 }}
           >
@@ -233,7 +264,13 @@ export default function VenueMap({ eventId }) {
                   className="absolute z-20"
                   style={{ left: `${pos.map_x}%`, top: `${pos.map_y}%`, transform: "translate(-50%, -50%)" }}
                 >
-                  <button onClick={(e) => handlePinClick(e, pos)} className="flex flex-col items-center group">
+                  <button
+                    onClick={(e) => handlePinClick(e, pos)}
+                    onTouchStart={(e) => handlePinTouchStart(e, pos)}
+                    onTouchEnd={handlePinTouchEnd}
+                    onTouchMove={handlePinTouchEnd}
+                    className="flex flex-col items-center group"
+                  >
                     <div
                       className="w-7 h-7 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold transition-transform group-hover:scale-110"
                       style={{ backgroundColor: pos.color || ROLE_COLORS[pos.role] || "#6366f1" }}
