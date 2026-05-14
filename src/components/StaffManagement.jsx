@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Users, AlertCircle, Pencil, X, Check, UserCog } from "lucide-react";
+import { Plus, Trash2, Users, AlertCircle, Pencil, X, Check, UserCog, Download } from "lucide-react";
+import StaffScrapeModal from "@/components/StaffScrapeModal";
 
 const TIME_SLOT_COLORS = {
   "開場前": "bg-amber-100 text-amber-700 border-amber-200",
@@ -63,6 +64,7 @@ export default function StaffManagement({ eventId }) {
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
   const [editingStaff, setEditingStaff] = useState(null);
+  const [showScrapeModal, setShowScrapeModal] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: staffList = [], isLoading } = useQuery({
@@ -111,7 +113,12 @@ export default function StaffManagement({ eventId }) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-bold flex items-center gap-2"><UserCog className="w-5 h-5 text-primary" />スタッフ管理</h2>
-        <span className="text-xs text-muted-foreground">{staffList.length}名登録中</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">{staffList.length}名登録中</span>
+          <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setShowScrapeModal(true)}>
+            <Download className="w-3 h-3" />サイトから取得
+          </Button>
+        </div>
       </div>
 
       {/* Add form */}
@@ -195,6 +202,10 @@ export default function StaffManagement({ eventId }) {
             );
           })}
         </div>
+      )}
+
+      {showScrapeModal && (
+        <StaffScrapeModal eventId={eventId} onClose={() => setShowScrapeModal(false)} />
       )}
 
       {editingStaff && (
