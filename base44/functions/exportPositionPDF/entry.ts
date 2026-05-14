@@ -6,83 +6,216 @@ function generateHTML(event, positions, staff, type) {
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { 
         font-family: 'Noto Sans JP', 'Arial Unicode MS', sans-serif; 
-        padding: 10px 15px; 
+        padding: 8px 10px; 
         background: white;
         color: #000;
-        font-size: 11px;
+        font-size: 9px;
       }
-      h1 { font-size: 16px; margin-bottom: 8px; font-weight: bold; }
-      .info { font-size: 10px; color: #555; margin-bottom: 12px; }
-      table { width: 100%; border-collapse: collapse; font-size: 10px; }
-      td { border: 1px solid #000; padding: 4px 6px; text-align: center; vertical-align: middle; }
-      tr.section-header td { background: #deb887; font-weight: bold; text-align: center; height: 20px; }
-      tr.header-row td { background: #d3d3d3; font-weight: bold; }
-      td.position-name { font-weight: bold; text-align: left; background: #f0e6d2; }
-      td.count { width: 30px; text-align: center; background: #f0e6d2; }
-      td.staff { background: #fffacd; }
-      td.empty { background: #ffffff; }
-      .title-cell { font-weight: bold; text-align: left; background: #d4a574; color: white; }
+      .title-block { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+      .event-title { font-size: 14px; font-weight: bold; }
+      .event-info { font-size: 8px; color: #555; }
+      table { width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 4px; }
+      td, th { border: 1px solid #999; padding: 2px 4px; vertical-align: middle; white-space: nowrap; }
+      
+      /* 時間帯セクションヘッダー（サーモン色） */
+      tr.slot-header td { 
+        background: #f4a07a; 
+        font-weight: bold; 
+        text-align: left;
+        padding: 3px 6px;
+        font-size: 10px;
+      }
+      tr.slot-header td.count-cell {
+        text-align: center;
+      }
+      
+      /* カラムヘッダー行（グレー） */
+      tr.col-header td { 
+        background: #c8c8c8; 
+        font-weight: bold; 
+        text-align: center;
+        font-size: 8px;
+      }
+      
+      /* ポジション名列（薄いベージュ） */
+      td.pos-name { 
+        background: #f5f0e8; 
+        font-weight: bold; 
+        text-align: left;
+        min-width: 60px;
+        max-width: 90px;
+      }
+      
+      /* 人数列 */
+      td.count { 
+        background: #f5f0e8; 
+        text-align: center; 
+        width: 28px;
+        font-weight: bold;
+      }
+      
+      /* スタッフ名セル（薄い黄色） */
+      td.staff-cell { 
+        background: #fffde7; 
+        text-align: center;
+        min-width: 40px;
+        max-width: 60px;
+      }
+      
+      /* 空セル */
+      td.empty { 
+        background: #ffffff; 
+        min-width: 40px;
+      }
+      
+      /* 備考列 */
+      td.notes { 
+        background: #ffffff; 
+        text-align: left;
+        min-width: 80px;
+      }
+      
+      /* 空白区切り行 */
+      tr.spacer td { 
+        border: none; 
+        background: white; 
+        height: 6px; 
+        padding: 0;
+      }
+
+      /* タイムライン用 */
+      td.tl-name { background: #f5f0e8; font-weight: bold; text-align: left; min-width: 50px; }
+      td.tl-pos { background: #fffde7; text-align: center; min-width: 50px; }
+      td.tl-empty { background: #fff; min-width: 50px; }
+      tr.tl-header td { background: #c8c8c8; font-weight: bold; text-align: center; }
+      tr.tl-slot-header td { background: #f4a07a; font-weight: bold; padding: 3px 6px; }
     </style>
   `;
 
+  // イベント日付フォーマット
+  let dateStr = '';
+  if (event.date) {
+    const d = new Date(event.date);
+    dateStr = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  }
+
   let content = `
-    <h1>${event.name}</h1>
-    <div class="info">
-      ${event.date ? `開催日: ${event.date}` : ''}
-      ${event.venue ? ` / 会場: ${event.venue}` : ''}
+    <div class="title-block">
+      <div>
+        <div class="event-title">${event.name}</div>
+        <div class="event-info">${dateStr}${event.venue ? '　' + event.venue : ''}</div>
+      </div>
     </div>
   `;
 
+  const timeSlots = ['開場前', '開演中', '終演後'];
+  // 最大スタッフ数（列数決定用）
+  const maxStaff = Math.max(...positions.map(p => (p.staff_names || []).length), 0);
+  const staffCols = Math.max(maxStaff, 5); // 最低5列
+
   if (type === 'staff') {
     content += `<table>`;
-    content += `<tr class="header-row"><td colspan="100">配置表</td></tr>`;
-    
-    const timeSlots = ['開場前', '開演中', '終演後'];
+
     timeSlots.forEach((slot) => {
       const slotPositions = positions.filter((p) => (p.time_slot || '開場前') === slot);
-      if (slotPositions.length > 0) {
-        content += `<tr class="section-header"><td colspan="100">${slot}</td></tr>`;
-        slotPositions.forEach((pos) => {
-          const staffCount = (pos.staff_names || []).length;
-          const staffNames = (pos.staff_names || []).join(' ');
-          content += `<tr>
-            <td class="position-name">${pos.name || pos.role}</td>
-            <td class="count">${staffCount}</td>
-            <td class="staff">${staffNames}</td>
-          </tr>`;
-        });
-      }
+      if (slotPositions.length === 0) return;
+
+      const totalStaff = slotPositions.reduce((sum, p) => sum + (p.staff_names || []).length, 0);
+
+      // 時間帯ヘッダー行
+      content += `<tr class="slot-header">
+        <td>${slot}</td>
+        <td class="count-cell">${totalStaff}</td>
+        ${Array(staffCols).fill('<td></td>').join('')}
+        <td></td>
+      </tr>`;
+
+      // カラムヘッダー
+      content += `<tr class="col-header">
+        <td>ポジション</td>
+        <td>人数</td>
+        ${Array(staffCols).fill('').map((_, i) => `<td>氏名</td>`).join('')}
+        <td>備考欄</td>
+      </tr>`;
+
+      // 各ポジション
+      // グループ分けのための空行挿入（前のposから役割が変わったら）
+      let prevRole = null;
+      slotPositions.forEach((pos) => {
+        const names = pos.staff_names || [];
+        const count = names.length;
+
+        // 役割が変わったら空白行
+        if (prevRole !== null && prevRole !== pos.role) {
+          content += `<tr class="spacer"><td colspan="${staffCols + 3}"></td></tr>`;
+        }
+        prevRole = pos.role;
+
+        content += `<tr>
+          <td class="pos-name">${pos.name || pos.role}</td>
+          <td class="count">${count}</td>`;
+        
+        for (let i = 0; i < staffCols; i++) {
+          if (i < names.length) {
+            content += `<td class="staff-cell">${names[i]}</td>`;
+          } else {
+            content += `<td class="empty"></td>`;
+          }
+        }
+        content += `<td class="notes">${pos.notes || ''}</td></tr>`;
+      });
     });
 
+    // 未配置スタッフ
     const assignedNames = new Set(positions.flatMap(p => p.staff_names || []));
     const unassigned = staff.filter((s) => !assignedNames.has(s.name));
     if (unassigned.length > 0) {
-      content += `<tr class="section-header"><td colspan="100">未配置スタッフ</td></tr>`;
+      content += `<tr class="slot-header"><td>未配置スタッフ</td><td class="count-cell">${unassigned.length}</td>${Array(staffCols).fill('<td></td>').join('')}<td></td></tr>`;
+      content += `<tr class="col-header"><td>氏名</td><td colspan="${staffCols + 2}">備考</td></tr>`;
       unassigned.forEach((s) => {
-        content += `<tr><td colspan="100">${s.name}${s.note ? ` (${s.note})` : ''}</td></tr>`;
+        content += `<tr>
+          <td class="pos-name">${s.name}</td>
+          <td colspan="${staffCols + 2}" class="notes">${s.note || ''}</td>
+        </tr>`;
       });
     }
-    content += `</table>`;
-  } else if (type === 'timeline') {
-    content += `<table>`;
-    content += `<tr class="header-row"><td>スタッフ</td>`;
-    const timeSlots = ['開場前', '開演中', '終演後'];
-    timeSlots.forEach((slot) => {
-      content += `<td>${slot}</td>`;
-    });
-    content += `</tr>`;
 
+    content += `</table>`;
+
+  } else if (type === 'timeline') {
+    // スタッフ別タイムライン
+    const staffTimeline = {};
     staff.forEach((s) => {
-      content += `<tr><td class="position-name">${s.name}</td>`;
-      timeSlots.forEach((slot) => {
-        const slotPositions = positions.filter(
-          (p) => (p.time_slot || '開場前') === slot && (p.staff_names || []).includes(s.name)
-        );
-        const posNames = slotPositions.map((p) => p.name || p.role).join(' ');
-        content += `<td class="staff">${posNames}</td>`;
-      });
-      content += `</tr>`;
+      staffTimeline[s.name] = { '開場前': [], '開演中': [], '終演後': [] };
     });
+    positions.forEach((pos) => {
+      const slot = pos.time_slot || '開場前';
+      (pos.staff_names || []).forEach((name) => {
+        if (!staffTimeline[name]) staffTimeline[name] = { '開場前': [], '開演中': [], '終演後': [] };
+        staffTimeline[name][slot].push(pos.name || pos.role);
+      });
+    });
+
+    content += `<table>`;
+    content += `<tr class="tl-header">
+      <td>スタッフ名</td>
+      <td>開場前</td>
+      <td>開演中</td>
+      <td>終演後</td>
+    </tr>`;
+
+    Object.keys(staffTimeline).sort().forEach((name) => {
+      const tl = staffTimeline[name];
+      const hasAny = timeSlots.some(s => tl[s].length > 0);
+      content += `<tr>
+        <td class="tl-name">${name}</td>
+        ${timeSlots.map(slot => tl[slot].length > 0
+          ? `<td class="tl-pos">${tl[slot].join('・')}</td>`
+          : `<td class="tl-empty">-</td>`
+        ).join('')}
+      </tr>`;
+    });
+
     content += `</table>`;
   }
 
@@ -114,9 +247,7 @@ Deno.serve(async (req) => {
 
     const html = generateHTML(event, positions, staff, type);
 
-    return Response.json({
-      html: html
-    });
+    return Response.json({ html });
   } catch (error) {
     console.error('PDF Export Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
