@@ -29,7 +29,7 @@ function PositionCard({ pos, onEdit, onDelete, isAdmin }) {
       {/* Position header row */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-muted/20">
         <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: pos.color || "#6366f1" }} />
-        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${ROLE_COLORS[pos.role]}`}>{pos.role}</span>
+        <span className="text-xs font-medium text-foreground">{pos.name || pos.role}</span>
         {pos.notes && <span className="text-xs text-muted-foreground truncate flex-1">{pos.notes}</span>}
         <div className="flex gap-1 ml-auto flex-shrink-0">
           <button onClick={() => onEdit(pos)} disabled={!isAdmin} className="p-1 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none">
