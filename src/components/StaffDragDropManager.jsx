@@ -161,8 +161,7 @@ export default function StaffDragDropManager({ eventId }) {
                         {/* Position header row */}
                         <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-muted/20">
                           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: pos.color || "#6366f1" }} />
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${ROLE_COLORS[pos.role]}`}>{pos.role}</span>
-                          <span className="text-xs font-medium text-foreground">{pos.name || pos.role}</span>
+                          <span className="text-xs font-medium text-foreground">{pos.name}</span>
                           {pos.notes && <span className="text-xs text-muted-foreground truncate flex-1">{pos.notes}</span>}
                         </div>
 
@@ -184,7 +183,6 @@ export default function StaffDragDropManager({ eventId }) {
                                   isAdmin ? "cursor-move hover:bg-muted/50" : ""
                                 } ${draggedStaff === name ? "opacity-50" : ""}`}
                               >
-                                <span className="text-xs font-medium text-foreground flex-1">{pos.name || pos.role}</span>
                                 <span className="text-xs text-foreground">{name}</span>
                                 {isAdmin && (
                                   <button

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, ChevronDown, ChevronUp, Zap, X, Check, BookOpen } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Zap, X, Check, BookOpen, Pencil } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 
 const TIME_SLOTS = ["開場前", "開演中", "終演後"];
@@ -66,9 +66,38 @@ function SlotPositionSelector({ slot, selectedIds, positionTypes, onChange }) {
 
 function PresetCard({ preset, eventId, event, onDelete, isAdmin, positionTypes }) {
   const [expanded, setExpanded] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(preset.name);
+  const [editDesc, setEditDesc] = useState(preset.description || "");
+  const [editSlots, setEditSlots] = useState(preset.slot_positions || { "開場前": [], "開演中": [], "終演後": [] });
   const queryClient = useQueryClient();
 
   const isActive = event?.active_preset_id === preset.id;
+
+  const updateMutation = useMutation({
+    mutationFn: (data) => base44.entities.PositionPreset.update(preset.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["positionPresets"] });
+      setEditing(false);
+    },
+  });
+
+  const handleEditSave = () => {
+    if (!editName.trim()) return;
+    updateMutation.mutate({
+      name: editName.trim(),
+      description: editDesc.trim(),
+      slot_positions: editSlots,
+    });
+  };
+
+  const startEdit = () => {
+    setEditName(preset.name);
+    setEditDesc(preset.description || "");
+    setEditSlots(preset.slot_positions || { "開場前": [], "開演中": [], "終演後": [] });
+    setEditing(true);
+    setExpanded(false);
+  };
 
   const applyMutation = useMutation({
     mutationFn: async () => {
@@ -156,6 +185,14 @@ function PresetCard({ preset, eventId, event, onDelete, isAdmin, positionTypes }
           </Button>
         )}
 
+        {isAdmin && (
+          <button
+            onClick={startEdit}
+            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+        )}
         <button
           onClick={() => { if (confirm(`「${preset.name}」を削除しますか？`)) onDelete(preset.id); }}
           disabled={!isAdmin}
@@ -168,7 +205,46 @@ function PresetCard({ preset, eventId, event, onDelete, isAdmin, positionTypes }
         </button>
       </div>
 
-      {expanded && (
+      {editing && (
+        <div className="border-t border-border px-4 py-3 space-y-2">
+          <p className="text-xs font-semibold text-muted-foreground mb-2">プリセットを編集</p>
+          <Input
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            placeholder="プリセット名"
+            className="h-8 text-sm"
+          />
+          <Input
+            value={editDesc}
+            onChange={(e) => setEditDesc(e.target.value)}
+            placeholder="説明（任意）"
+            className="h-8 text-sm"
+          />
+          <p className="text-xs font-medium pt-1">タイムスロットごとのポジション</p>
+          {TIME_SLOTS.map((slot) => (
+            <SlotPositionSelector
+              key={slot}
+              slot={slot}
+              selectedIds={editSlots[slot] || []}
+              positionTypes={positionTypes}
+              onChange={(ids) => setEditSlots((prev) => ({ ...prev, [slot]: ids }))}
+            />
+          ))}
+          <div className="flex gap-2 mt-2">
+            <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => setEditing(false)}>キャンセル</Button>
+            <Button
+              size="sm"
+              className="flex-1 h-8 text-xs"
+              disabled={!editName.trim() || updateMutation.isPending}
+              onClick={handleEditSave}
+            >
+              {updateMutation.isPending ? "保存中..." : "保存"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {expanded && !editing && (
         <div className="border-t border-border px-4 py-3 space-y-2">
           {TIME_SLOTS.map((slot) => {
             const ids = slotMap[slot] || [];
