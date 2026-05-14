@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Users } from "lucide-react";
+import { Plus, Trash2, Users, AlertCircle } from "lucide-react";
 
 export default function StaffManagement({ eventId }) {
   const [name, setName] = useState("");
@@ -13,6 +13,11 @@ export default function StaffManagement({ eventId }) {
   const { data: staffList = [], isLoading } = useQuery({
     queryKey: ["staff", eventId],
     queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+  });
+
+  const { data: positions = [] } = useQuery({
+    queryKey: ["positions", eventId],
+    queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
   });
 
   const createMutation = useMutation({
@@ -36,6 +41,21 @@ export default function StaffManagement({ eventId }) {
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); handleAdd(); }
+  };
+
+  // Build map: staffName -> assigned positions
+  const assignedMap = {};
+  positions.forEach((pos) => {
+    (pos.staff_names || []).forEach((sName) => {
+      if (!assignedMap[sName]) assignedMap[sName] = [];
+      assignedMap[sName].push({ posName: pos.name || pos.role, slot: pos.time_slot || "開場前" });
+    });
+  });
+
+  const TIME_SLOT_COLORS = {
+    "開場前": "bg-amber-100 text-amber-700 border-amber-200",
+    "開演中": "bg-blue-100 text-blue-700 border-blue-200",
+    "終演後": "bg-slate-100 text-slate-600 border-slate-200",
   };
 
   return (
@@ -81,23 +101,46 @@ export default function StaffManagement({ eventId }) {
         </div>
       ) : (
         <div className="space-y-2">
-          {staffList.map((staff) => (
-            <div key={staff.id} className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                {staff.name.charAt(0)}
+          {staffList.map((staff) => {
+            const assigned = assignedMap[staff.name] || [];
+            const unassigned = assigned.length === 0;
+            return (
+              <div key={staff.id} className={`bg-card border rounded-xl px-4 py-3 ${unassigned ? "border-amber-300" : "border-border"}`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                    {staff.name.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm">{staff.name}</p>
+                      {unassigned && (
+                        <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                          <AlertCircle className="w-3 h-3" />未配置
+                        </span>
+                      )}
+                    </div>
+                    {staff.note && <p className="text-xs text-muted-foreground truncate">{staff.note}</p>}
+                  </div>
+                  <button
+                    onClick={() => { if (confirm(`「${staff.name}」を削除しますか？`)) deleteMutation.mutate(staff.id); }}
+                    className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                {/* Assigned positions */}
+                {assigned.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5 pl-11">
+                    {assigned.map((a, i) => (
+                      <span key={i} className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${TIME_SLOT_COLORS[a.slot]}`}>
+                        {a.slot}：{a.posName}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm">{staff.name}</p>
-                {staff.note && <p className="text-xs text-muted-foreground truncate">{staff.note}</p>}
-              </div>
-              <button
-                onClick={() => { if (confirm(`「${staff.name}」を削除しますか？`)) deleteMutation.mutate(staff.id); }}
-                className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

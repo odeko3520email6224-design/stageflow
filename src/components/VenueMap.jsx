@@ -163,20 +163,25 @@ export default function VenueMap({ eventId }) {
                   className="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold transition-transform group-hover:scale-110"
                   style={{ backgroundColor: pos.color || ROLE_COLORS[pos.role] || "#6366f1" }}
                 >
-                  {pos.name?.[0] || "?"}
+                  {(pos.name || pos.role)?.[0] || "?"}
                 </div>
-                <div className="bg-white/90 backdrop-blur text-foreground text-[10px] font-medium px-1.5 py-0.5 rounded shadow mt-0.5 whitespace-nowrap max-w-[80px] truncate">
-                  {pos.name}
+                <div className="bg-white/90 backdrop-blur text-foreground text-[10px] font-medium px-1.5 py-0.5 rounded shadow mt-0.5 max-w-[90px] text-center leading-tight">
+                  <div className="font-semibold truncate">{pos.name || pos.role}</div>
+                  {(pos.staff_names || []).length > 0 && (
+                    <div className="text-muted-foreground truncate">{(pos.staff_names).join("・")}</div>
+                  )}
                 </div>
               </button>
               {/* Tooltip */}
               {tooltip?.id === pos.id && (
-                <div className="absolute z-30 bg-card border border-border rounded-xl shadow-xl p-3 w-44 -translate-x-1/2 mt-1 left-1/2">
-                  <div className="font-semibold text-sm mb-1">{pos.name}</div>
+                <div className="absolute z-30 bg-card border border-border rounded-xl shadow-xl p-3 w-52 -translate-x-1/2 mt-1 left-1/2">
+                  <div className="font-semibold text-sm mb-1">{pos.name || pos.role}</div>
                   <div className="text-xs text-muted-foreground space-y-0.5">
                     <div>役割: {pos.role}</div>
-                    {pos.staff_name && <div>担当: {pos.staff_name}</div>}
-                    {pos.staff_count > 1 && <div>人数: {pos.staff_count}名</div>}
+                    <div>時間帯: {pos.time_slot}</div>
+                    {(pos.staff_names || []).length > 0 && (
+                      <div>担当: {pos.staff_names.join("、")}</div>
+                    )}
                     {pos.notes && <div className="truncate">備考: {pos.notes}</div>}
                   </div>
                   <button

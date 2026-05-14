@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ChevronLeft, List, Map, Users } from "lucide-react";
+import { ChevronLeft, List, Map, Users, Settings, Clock } from "lucide-react";
 import StaffList from "@/components/StaffList";
 import VenueMap from "@/components/VenueMap";
 import StaffManagement from "@/components/StaffManagement";
+import PositionTypeManagement from "@/components/PositionTypeManagement";
+import StaffTimeline from "@/components/StaffTimeline";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 
@@ -31,8 +33,10 @@ export default function EventDetail() {
 
   const TABS = [
     { id: "staff", label: "スタッフ管理", icon: Users },
+    { id: "admin", label: "管理", icon: Settings },
     { id: "list", label: "配置表", icon: List },
     { id: "map", label: "会場マップ", icon: Map },
+    { id: "timeline", label: "タイムライン", icon: Clock },
   ];
 
   return (
@@ -73,9 +77,11 @@ export default function EventDetail() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
+        {tab === "staff" && <StaffManagement eventId={eventId} />}
+        {tab === "admin" && <PositionTypeManagement eventId={eventId} />}
         {tab === "list" && <StaffList eventId={eventId} />}
         {tab === "map" && <VenueMap eventId={eventId} />}
-        {tab === "staff" && <StaffManagement eventId={eventId} />}
+        {tab === "timeline" && <StaffTimeline eventId={eventId} />}
       </div>
     </div>
   );

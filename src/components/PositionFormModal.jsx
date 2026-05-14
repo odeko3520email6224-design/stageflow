@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, UserMinus, Check } from "lucide-react";
+import { X, Check } from "lucide-react";
 
 const PRESET_COLORS = [
   "#6366f1", "#3b82f6", "#10b981", "#f59e0b",
@@ -25,10 +25,15 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
     event_id: eventId,
   });
 
-  // スタッフリスト取得
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
     queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+  });
+
+  // PositionType list for name selection
+  const { data: positionTypes = [] } = useQuery({
+    queryKey: ["positionTypes", eventId],
+    queryFn: () => base44.entities.PositionType.filter({ event_id: eventId }),
   });
 
   const mutation = useMutation({
@@ -51,13 +56,9 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
     });
   };
 
-  const removeStaff = (name) => {
-    setForm((f) => ({ ...f, staff_names: f.staff_names.filter((n) => n !== name) }));
-  };
-
-  // ポジション名をroleから自動設定（role変更時）
-  const handleRoleChange = (v) => {
-    setForm((f) => ({ ...f, role: v, name: f.name || v }));
+  const handlePositionTypeSelect = (ptId) => {
+    const pt = positionTypes.find((p) => p.id === ptId);
+    if (pt) setForm((f) => ({ ...f, name: pt.name, role: pt.role, color: pt.color || f.color }));
   };
 
   return (
@@ -71,33 +72,45 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
         </div>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>時間帯</Label>
-              <Select value={form.time_slot} onValueChange={(v) => setForm({ ...form, time_slot: v })}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+          {/* Position type selector */}
+          <div>
+            <Label>ポジション</Label>
+            {positionTypes.length === 0 ? (
+              <p className="text-xs text-muted-foreground mt-1">管理タブでポジションを登録してください</p>
+            ) : (
+              <Select
+                value={positionTypes.find((pt) => pt.name === form.name)?.id || ""}
+                onValueChange={handlePositionTypeSelect}
+              >
+                <SelectTrigger className="mt-1"><SelectValue placeholder="ポジションを選択" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="開場前">開場前</SelectItem>
-                  <SelectItem value="開演中">開演中</SelectItem>
-                  <SelectItem value="終演後">終演後</SelectItem>
+                  {positionTypes.map((pt) => (
+                    <SelectItem key={pt.id} value={pt.id}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: pt.color || "#6366f1" }} />
+                        {pt.name}
+                        <span className="text-xs text-muted-foreground">({pt.role})</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div>
-              <Label>ポジション</Label>
-              <Select value={form.role} onValueChange={handleRoleChange}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="受付">受付</SelectItem>
-                  <SelectItem value="誘導">誘導</SelectItem>
-                  <SelectItem value="警備">警備</SelectItem>
-                  <SelectItem value="その他">その他</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            )}
           </div>
 
-          {/* Staff selection - dropdown checklist */}
+          <div>
+            <Label>時間帯</Label>
+            <Select value={form.time_slot} onValueChange={(v) => setForm({ ...form, time_slot: v })}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="開場前">開場前</SelectItem>
+                <SelectItem value="開演中">開演中</SelectItem>
+                <SelectItem value="終演後">終演後</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Staff selection - checklist dropdown */}
           <div>
             <Label>担当スタッフ</Label>
             {staffList.length === 0 ? (
@@ -157,7 +170,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
           <Button variant="outline" className="flex-1" onClick={onClose}>キャンセル</Button>
           <Button
             className="flex-1"
-            disabled={!form.role || mutation.isPending}
+            disabled={mutation.isPending}
             onClick={() => mutation.mutate({ ...form, name: form.name || form.role })}
           >
             {mutation.isPending ? "保存中..." : "保存"}

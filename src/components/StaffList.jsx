@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, AlertCircle } from "lucide-react";
 import PositionFormModal from "@/components/PositionFormModal";
 
 const ROLE_COLORS = {
@@ -63,6 +63,11 @@ export default function StaffList({ eventId }) {
   const [defaultSlot, setDefaultSlot] = useState("開場前");
   const queryClient = useQueryClient();
 
+  const { data: staffList = [] } = useQuery({
+    queryKey: ["staff", eventId],
+    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+  });
+
   const { data: positions = [], isLoading } = useQuery({
     queryKey: ["positions", eventId],
     queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
@@ -88,10 +93,6 @@ export default function StaffList({ eventId }) {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold">配置表</h2>
-        <Button onClick={() => openAdd("開場前")} className="gap-2" size="sm">
-          <Plus className="w-4 h-4" />
-          ポジション追加
-        </Button>
       </div>
 
       {isLoading ? (
@@ -146,6 +147,33 @@ export default function StaffList({ eventId }) {
           })}
         </div>
       )}
+
+      {/* Unassigned staff */}
+      {(() => {
+        const assignedNames = new Set(positions.flatMap((p) => p.staff_names || []));
+        const unassigned = staffList.filter((s) => !assignedNames.has(s.name));
+        if (unassigned.length === 0) return null;
+        return (
+          <div className="mt-6 border border-amber-200 rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-3 bg-amber-50 border-b border-amber-200 text-amber-800">
+              <AlertCircle className="w-4 h-4" />
+              <span className="font-bold text-base">未配置スタッフ</span>
+              <span className="text-xs opacity-70">{unassigned.length}名</span>
+            </div>
+            <div className="bg-card p-4 grid gap-2">
+              {unassigned.map((s) => (
+                <div key={s.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-amber-50/50 border border-amber-100">
+                  <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-xs shrink-0">
+                    {s.name.charAt(0)}
+                  </div>
+                  <span className="text-sm font-medium">{s.name}</span>
+                  {s.note && <span className="text-xs text-muted-foreground ml-1">{s.note}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {showModal && (
         <PositionFormModal

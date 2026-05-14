@@ -1,0 +1,138 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Trash2, Settings } from "lucide-react";
+
+const PRESET_COLORS = [
+  "#6366f1", "#3b82f6", "#10b981", "#f59e0b",
+  "#ef4444", "#8b5cf6", "#06b6d4", "#f97316",
+];
+
+const ROLE_COLORS = {
+  "受付": "bg-blue-100 text-blue-700 border-blue-200",
+  "誘導": "bg-green-100 text-green-700 border-green-200",
+  "警備": "bg-red-100 text-red-700 border-red-200",
+  "その他": "bg-slate-100 text-slate-600 border-slate-200",
+};
+
+export default function PositionTypeManagement({ eventId }) {
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("受付");
+  const [color, setColor] = useState(PRESET_COLORS[0]);
+  const queryClient = useQueryClient();
+
+  const { data: positionTypes = [], isLoading } = useQuery({
+    queryKey: ["positionTypes", eventId],
+    queryFn: () => base44.entities.PositionType.filter({ event_id: eventId }),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.PositionType.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["positionTypes", eventId] });
+      setName("");
+      setRole("受付");
+      setColor(PRESET_COLORS[0]);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.PositionType.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positionTypes", eventId] }),
+  });
+
+  const handleAdd = () => {
+    if (!name.trim()) return;
+    createMutation.mutate({ event_id: eventId, name: name.trim(), role, color });
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); handleAdd(); }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold">ポジション管理</h2>
+        <span className="text-sm text-muted-foreground">{positionTypes.length}件登録中</span>
+      </div>
+
+      {/* Add form */}
+      <div className="bg-card border border-border rounded-2xl p-4 mb-6">
+        <p className="text-sm font-medium mb-3">ポジションを追加</p>
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="ポジション名（例：メイン受付A）"
+              className="flex-1"
+            />
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger className="w-28 shrink-0"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="受付">受付</SelectItem>
+                <SelectItem value="誘導">誘導</SelectItem>
+                <SelectItem value="警備">警備</SelectItem>
+                <SelectItem value="その他">その他</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-3">
+            <Label className="text-xs text-muted-foreground shrink-0">色：</Label>
+            <div className="flex gap-1.5 flex-wrap flex-1">
+              {PRESET_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className={`w-6 h-6 rounded-full border-2 transition-transform ${color === c ? "border-foreground scale-110" : "border-transparent"}`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+            <Button onClick={handleAdd} disabled={!name.trim() || createMutation.isPending} size="sm" className="gap-1.5 shrink-0">
+              <Plus className="w-4 h-4" />追加
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* List */}
+      {isLoading ? (
+        <div className="flex justify-center py-16">
+          <div className="w-7 h-7 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      ) : positionTypes.length === 0 ? (
+        <div className="text-center py-20 text-muted-foreground">
+          <Settings className="w-12 h-12 mx-auto mb-3 opacity-20" />
+          <p className="font-medium">ポジションが登録されていません</p>
+          <p className="text-sm mt-1">上のフォームからポジションを追加してください</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {positionTypes.map((pt) => (
+            <div key={pt.id} className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3">
+              <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: pt.color || "#6366f1" }} />
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm">{pt.name}</p>
+              </div>
+              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${ROLE_COLORS[pt.role] || ROLE_COLORS["その他"]}`}>{pt.role}</span>
+              <button
+                onClick={() => { if (confirm(`「${pt.name}」を削除しますか？`)) deleteMutation.mutate(pt.id); }}
+                className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
