@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Pencil, X, Move, Info, Map, MapPin, Clock } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Move, Info, Map, MapPin, ImagePlus, Loader2 } from "lucide-react";
 import MapAreaFormModal from "@/components/MapAreaFormModal";
 
 const ROLE_COLORS = {
@@ -78,12 +78,14 @@ function SidePanel({ positions, draggingPin, setDraggingPin, setMode, slotFilter
 export default function VenueMap({ eventId }) {
   const queryClient = useQueryClient();
   const mapRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [mode, setMode] = useState("view");
   const [draggingPin, setDraggingPin] = useState(null);
   const [editingArea, setEditingArea] = useState(null);
   const [showAreaModal, setShowAreaModal] = useState(false);
   const [tooltip, setTooltip] = useState(null);
   const [slotFilter, setSlotFilter] = useState("開場前");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const longPressTimer = useRef(null);
 
   const { data: positions = [] } = useQuery({
@@ -96,6 +98,12 @@ export default function VenueMap({ eventId }) {
     queryFn: () => base44.entities.MapArea.filter({ event_id: eventId }, "order"),
   });
 
+  const { data: event } = useQuery({
+    queryKey: ["event", eventId],
+    queryFn: () => base44.entities.Event.filter({ id: eventId }),
+    select: (d) => d[0],
+  });
+
   const updatePosition = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Position.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positions", eventId] }),
@@ -105,6 +113,23 @@ export default function VenueMap({ eventId }) {
     mutationFn: (id) => base44.entities.MapArea.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["mapareas", eventId] }),
   });
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    await base44.entities.Event.update(eventId, { map_image_url: file_url });
+    queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+    setUploadingImage(false);
+    e.target.value = "";
+  };
+
+  const handleImageRemove = async () => {
+    if (!confirm("背景画像を削除しますか？")) return;
+    await base44.entities.Event.update(eventId, { map_image_url: null });
+    queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+  };
 
   const getMapCoords = useCallback((e) => {
     const rect = mapRef.current.getBoundingClientRect();
@@ -170,7 +195,7 @@ export default function VenueMap({ eventId }) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-bold flex items-center gap-2"><Map className="w-5 h-5 text-primary" />会場マップ</h2>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 flex-wrap justify-end">
           <Button
             size="sm"
             variant={mode === "move-pin" ? "default" : "outline"}
@@ -188,6 +213,23 @@ export default function VenueMap({ eventId }) {
           >
             <Plus className="w-3 h-3" />エリア追加
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingImage}
+            className="gap-1 h-7 text-xs"
+          >
+            {uploadingImage ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImagePlus className="w-3 h-3" />}
+            背景画像
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/svg+xml,image/gif,image/webp"
+            className="hidden"
+            onChange={handleImageUpload}
+          />
         </div>
       </div>
 
@@ -225,9 +267,27 @@ export default function VenueMap({ eventId }) {
             ref={mapRef}
             onClick={handleMapClick}
             onTouchEnd={handleMapTouchEnd}
-            className={`relative bg-slate-100 border-2 ${mode === "move-pin" ? "border-primary cursor-crosshair" : "border-border cursor-default"} rounded-xl overflow-hidden`}
+            className={`relative border-2 ${mode === "move-pin" ? "border-primary cursor-crosshair" : "border-border cursor-default"} rounded-xl overflow-hidden ${event?.map_image_url ? "bg-black" : "bg-slate-100"}`}
             style={{ aspectRatio: "16/9", minHeight: 200 }}
           >
+            {/* Background image */}
+            {event?.map_image_url && (
+              <>
+                <img
+                  src={event.map_image_url}
+                  alt="会場マップ"
+                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                  draggable={false}
+                />
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleImageRemove(); }}
+                  className="absolute top-2 left-2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition-colors"
+                  title="背景画像を削除"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
             {/* Areas */}
             {areas.map((area) => (
               <div key={area.id} className="absolute group" style={{
@@ -326,9 +386,10 @@ export default function VenueMap({ eventId }) {
               );
             })}
 
-            {areas.length === 0 && positionsOnMap.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-xs text-center px-4">
-                「エリア追加」でマップを作成し、右のリストからピンを配置してください
+            {areas.length === 0 && positionsOnMap.length === 0 && !event?.map_image_url && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground text-xs text-center px-4 gap-2">
+                <ImagePlus className="w-8 h-8 opacity-20" />
+                <span>「背景画像」で会場図を設定し、「エリア追加」やピンで配置してください</span>
               </div>
             )}
           </div>
