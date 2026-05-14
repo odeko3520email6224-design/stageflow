@@ -225,7 +225,7 @@ export default function VenueMap({ eventId }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold flex items-center gap-2"><Map className="w-5 h-5 text-primary" />会場マップ</h2>
+        <h2 className="text-sm font-bold flex items-center gap-1.5"><Map className="w-4 h-4 text-primary" />会場マップ</h2>
         <div className="flex gap-1.5 flex-wrap justify-end">
           <Button
             size="sm"

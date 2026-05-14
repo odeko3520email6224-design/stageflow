@@ -63,7 +63,7 @@ export default function PositionTypeManagement({ eventId }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold flex items-center gap-2"><Settings className="w-5 h-5 text-primary" />ポジション設定（全イベント共通）</h2>
+        <h2 className="text-sm font-bold flex items-center gap-1.5"><Settings className="w-4 h-4 text-primary" />ポジション設定（全イベント共通）</h2>
         <span className="text-xs text-muted-foreground">{positionTypes.length}件登録中</span>
       </div>
 
