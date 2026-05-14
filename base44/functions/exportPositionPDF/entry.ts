@@ -22,99 +22,138 @@ Deno.serve(async (req) => {
     const positions = await base44.asServiceRole.entities.Position.filter({ event_id: eventId });
     const staff = await base44.asServiceRole.entities.Staff.filter({ event_id: eventId });
 
-    const doc = new jsPDF();
-    let yPos = 15;
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
 
-    // Title
-    doc.setFontSize(16);
-    doc.text(event.name, 15, yPos);
-    yPos += 8;
+    let yPos = 20;
+    const pageHeight = doc.internal.pageSize.height;
+    const margin = 15;
+    const maxWidth = doc.internal.pageSize.width - 2 * margin;
+
+    // Set font with Japanese support - using built-in font
+    doc.setFont('helvetica');
+    
+    // Title (use basic ASCII for title or minimal Japanese)
+    doc.setFontSize(18);
+    doc.text(event.name.substring(0, 30), margin, yPos);
+    yPos += 10;
 
     // Event info
     doc.setFontSize(10);
     if (event.date) {
-      doc.text(`開催日: ${event.date}`, 15, yPos);
+      doc.text(`Date: ${event.date}`, margin, yPos);
       yPos += 6;
     }
     if (event.venue) {
-      doc.text(`会場: ${event.venue}`, 15, yPos);
+      doc.text(`Venue: ${event.venue}`, margin, yPos);
       yPos += 6;
     }
 
     // Timestamp
     doc.setFontSize(8);
-    doc.text(`出力日時: ${new Date().toLocaleString('ja-JP')}`, 15, yPos);
+    doc.text(`Output: ${new Date().toLocaleString('ja-JP')}`, margin, yPos);
     yPos += 8;
 
     // Content by type
     if (type === 'staff') {
       doc.setFontSize(12);
-      doc.text('スタッフ一覧', 15, yPos);
+      doc.text('Staff List', margin, yPos);
       yPos += 8;
 
-      // Simple text-based staff list
       doc.setFontSize(9);
       staff.forEach((s) => {
         const assigned = positions
           .filter((p) => (p.staff_names || []).includes(s.name))
-          .map((p) => `${p.time_slot || '開場前'}：${p.name || p.role}`)
+          .map((p) => `${p.time_slot || 'Pre'}:${p.name || p.role}`)
           .join(', ');
 
-        const text = `${s.name}`;
-        doc.text(text, 15, yPos);
+        if (yPos > pageHeight - 20) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.text(`${s.name}`, margin, yPos);
         yPos += 4;
 
         if (s.note) {
           doc.setFontSize(8);
-          doc.text(`  備考: ${s.note}`, 15, yPos);
+          doc.text(`Note: ${s.note}`, margin + 3, yPos);
           yPos += 3;
         }
 
         if (assigned) {
           doc.setFontSize(8);
-          doc.text(`  配置: ${assigned}`, 15, yPos);
+          doc.text(`Position: ${assigned}`, margin + 3, yPos);
           yPos += 3;
         }
 
         doc.setFontSize(9);
         yPos += 2;
-
-        // New page if needed
-        if (yPos > 270) {
-          doc.addPage();
-          yPos = 15;
-        }
       });
+
+      const assignedNames = new Set(positions.flatMap((p) => p.staff_names || []));
+      const unassigned = staff.filter((s) => !assignedNames.has(s.name));
+
+      if (unassigned.length > 0) {
+        if (yPos > pageHeight - 30) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        yPos += 4;
+        doc.setFontSize(10);
+        doc.text('Unassigned Staff', margin, yPos);
+        yPos += 6;
+
+        doc.setFontSize(9);
+        unassigned.forEach((s) => {
+          if (yPos > pageHeight - 15) {
+            doc.addPage();
+            yPos = 20;
+          }
+          doc.text(`- ${s.name}${s.note ? ` (${s.note})` : ''}`, margin + 3, yPos);
+          yPos += 4;
+        });
+      }
     } else if (type === 'timeline') {
       doc.setFontSize(12);
-      doc.text('配置タイムライン', 15, yPos);
+      doc.text('Position Timeline', margin, yPos);
       yPos += 8;
 
-      const timeSlots = ['開場前', '開演中', '終演後'];
+      const timeSlots = ['Pre', 'During', 'Post'];
+      const timeSlotMap = { 'Pre': '開場前', 'During': '開演中', 'Post': '終演後' };
 
-      timeSlots.forEach((slot) => {
+      timeSlots.forEach((slotKey) => {
+        const slot = timeSlotMap[slotKey];
         const slotPositions = positions.filter((p) => (p.time_slot || '開場前') === slot);
 
         if (slotPositions.length > 0) {
+          if (yPos > pageHeight - 30) {
+            doc.addPage();
+            yPos = 20;
+          }
+
           doc.setFontSize(10);
-          doc.text(slot, 15, yPos);
+          doc.text(slotKey, margin, yPos);
           yPos += 5;
 
           doc.setFontSize(8);
           slotPositions.forEach((p) => {
-            const staffList = p.staff_names ? p.staff_names.join('、') : '未設定';
-            const text = `${p.name || p.role} - ${staffList}`;
-            doc.text(text, 20, yPos);
+            if (yPos > pageHeight - 15) {
+              doc.addPage();
+              yPos = 20;
+            }
+
+            const staffList = p.staff_names ? p.staff_names.join(', ') : 'Unset';
+            doc.text(`${p.name || p.role} - ${staffList}`, margin + 3, yPos);
             yPos += 4;
 
             if (p.notes) {
-              doc.text(`  (${p.notes})`, 20, yPos);
+              doc.text(`(${p.notes})`, margin + 5, yPos);
               yPos += 3;
-            }
-
-            if (yPos > 270) {
-              doc.addPage();
-              yPos = 15;
             }
           });
 
