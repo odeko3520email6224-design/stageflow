@@ -44,33 +44,38 @@ export default function StaffTimeline({ eventId }) {
                 return;
               }
               
-              const imgData = canvas.toDataURL('image/jpeg', 0.95);
-              const imgWidth = 210;
-              const imgHeight = canvas.height > 0 ? (canvas.height * imgWidth) / canvas.width : 297;
-              
-              if (!isFinite(imgHeight) || imgHeight <= 0) {
-                alert('サイズ計算に失敗しました');
+              try {
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const imgWidth = 210;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                if (!isFinite(imgHeight) || imgHeight <= 0) {
+                  throw new Error('Invalid size calculation');
+                }
+                
+                const doc = new jsPDF('p', 'mm', 'a4');
+                const pageHeight = 297;
+                let currentY = 0;
+                
+                doc.addImage(imgData, 'JPEG', 0, currentY, imgWidth, imgHeight);
+                
+                currentY += imgHeight;
+                while (currentY < imgHeight) {
+                  doc.addPage();
+                  doc.addImage(imgData, 'JPEG', 0, pageHeight - (currentY - (Math.floor(currentY / pageHeight) - 1) * pageHeight), imgWidth, imgHeight);
+                  currentY += pageHeight;
+                }
+                
+                doc.save(`タイムライン_${new Date().toISOString().split('T')[0]}.pdf`);
+              } catch (error) {
+                console.error('PDF generation error:', error);
+                alert('PDF出力に失敗しました: ' + error.message);
+              } finally {
                 document.body.removeChild(iframe);
-                return;
               }
-              
-              const doc = new jsPDF({
-                orientation: 'p',
-                unit: 'mm',
-                format: 'a4'
-              });
-              
-              const pageHeight = 297;
-              doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-              
-              let yOffset = pageHeight;
-              while (yOffset < imgHeight) {
-                doc.addPage();
-                doc.addImage(imgData, 'JPEG', 0, -yOffset, imgWidth, imgHeight);
-                yOffset += pageHeight;
-              }
-              
-              doc.save(`タイムライン_${new Date().toISOString().split('T')[0]}.pdf`);
+            }).catch((error) => {
+              console.error('html2canvas error:', error);
+              alert('ページの変換に失敗しました');
               document.body.removeChild(iframe);
             });
           });
