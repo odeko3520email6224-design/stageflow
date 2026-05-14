@@ -113,9 +113,21 @@ export default function StaffList({ eventId }) {
               logging: false,
               backgroundColor: '#ffffff'
             }).then((canvas) => {
+              if (!canvas || canvas.width <= 0 || canvas.height <= 0) {
+                alert('ページのレンダリングに失敗しました');
+                document.body.removeChild(iframe);
+                return;
+              }
+              
               const imgData = canvas.toDataURL('image/jpeg', 0.95);
               const imgWidth = 210;
-              const imgHeight = (canvas.height * imgWidth) / canvas.width;
+              const imgHeight = canvas.height > 0 ? (canvas.height * imgWidth) / canvas.width : 297;
+              
+              if (!isFinite(imgHeight) || imgHeight <= 0) {
+                alert('サイズ計算に失敗しました');
+                document.body.removeChild(iframe);
+                return;
+              }
               
               const doc = new jsPDF({
                 orientation: 'p',
@@ -124,11 +136,9 @@ export default function StaffList({ eventId }) {
               });
               
               const pageHeight = 297;
-              let yOffset = 0;
-              
               doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
               
-              yOffset = pageHeight;
+              let yOffset = pageHeight;
               while (yOffset < imgHeight) {
                 doc.addPage();
                 doc.addImage(imgData, 'JPEG', 0, -yOffset, imgWidth, imgHeight);
