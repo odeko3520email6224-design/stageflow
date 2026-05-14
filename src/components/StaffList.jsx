@@ -94,69 +94,74 @@ export default function StaffList({ eventId }) {
     setExportingPDF(true);
     try {
       const response = await base44.functions.invoke('exportPositionPDF', { eventId, type: 'staff' });
+      if (response.data.error) {
+        alert('エラー: ' + response.data.error);
+        setExportingPDF(false);
+        return;
+      }
       const html = response.data.html;
       
-      // Create iframe to render HTML
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-      iframe.contentDocument.write(html);
-      iframe.contentDocument.close();
+      // Create temporary container
+      const container = document.createElement('div');
+      container.style.position = 'fixed';
+      container.style.left = '-9999px';
+      container.style.top = '-9999px';
+      container.style.width = '210mm';
+      container.style.backgroundColor = 'white';
+      container.innerHTML = html;
+      document.body.appendChild(container);
       
-      // Wait for fonts to load, then generate PDF
+      // Wait for fonts to load
       setTimeout(() => {
         import('html2canvas').then(({ default: html2canvas }) => {
           import('jspdf').then(({ jsPDF }) => {
-            html2canvas(iframe.contentDocument.body, {
+            html2canvas(container, {
               scale: 2,
               useCORS: true,
               logging: false,
-              backgroundColor: '#ffffff'
+              backgroundColor: '#ffffff',
+              allowTaint: true
             }).then((canvas) => {
               if (!canvas || canvas.width <= 0 || canvas.height <= 0) {
-                alert('ページのレンダリングに失敗しました');
-                document.body.removeChild(iframe);
-                return;
+                throw new Error('Canvas render failed');
               }
               
-              try {
-                const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                const imgWidth = 210;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                
-                if (!isFinite(imgHeight) || imgHeight <= 0) {
-                  throw new Error('Invalid size calculation');
-                }
-                
-                const doc = new jsPDF('p', 'mm', 'a4');
-                const pageHeight = 297;
-                let currentY = 0;
-                
-                doc.addImage(imgData, 'JPEG', 0, currentY, imgWidth, imgHeight);
-                
-                currentY += imgHeight;
-                while (currentY < imgHeight) {
-                  doc.addPage();
-                  doc.addImage(imgData, 'JPEG', 0, pageHeight - (currentY - (Math.floor(currentY / pageHeight) - 1) * pageHeight), imgWidth, imgHeight);
-                  currentY += pageHeight;
-                }
-                
-                doc.save(`配置表_${new Date().toISOString().split('T')[0]}.pdf`);
-              } catch (error) {
-                console.error('PDF generation error:', error);
-                alert('PDF出力に失敗しました: ' + error.message);
-              } finally {
-                document.body.removeChild(iframe);
+              const imgData = canvas.toDataURL('image/jpeg', 0.95);
+              const imgWidth = 210;
+              const imgHeight = (canvas.height * imgWidth) / canvas.width;
+              
+              if (!isFinite(imgHeight) || imgHeight <= 0) {
+                throw new Error('Invalid dimensions');
               }
+              
+              const doc = new jsPDF('p', 'mm', 'a4');
+              const pageHeight = 297;
+              let yPos = 0;
+              
+              doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+              yPos += imgHeight;
+              
+              while (yPos < imgHeight) {
+                doc.addPage();
+                doc.addImage(imgData, 'JPEG', 0, yPos - imgHeight, imgWidth, imgHeight);
+                yPos += pageHeight;
+              }
+              
+              doc.save(`配置表_${new Date().toISOString().split('T')[0]}.pdf`);
+              document.body.removeChild(container);
+              setExportingPDF(false);
             }).catch((error) => {
-              console.error('html2canvas error:', error);
-              alert('ページの変換に失敗しました');
-              document.body.removeChild(iframe);
+              console.error('Rendering error:', error);
+              alert('PDF作成に失敗しました');
+              document.body.removeChild(container);
+              setExportingPDF(false);
             });
           });
         });
-      }, 2000);
-    } finally {
+      }, 1500);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('エラーが発生しました: ' + error.message);
       setExportingPDF(false);
     }
   };
