@@ -2,58 +2,18 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Users, AlertCircle, ClipboardList, Download, BookOpen } from "lucide-react";
+import { Plus, AlertCircle, ClipboardList, Download, BookOpen } from "lucide-react";
 import PositionFormModal from "@/components/PositionFormModal";
+import PositionCard from "@/components/PositionCard";
 import { useUserRole } from "@/hooks/useUserRole";
-
-const ROLE_COLORS = {
-  "受付": "bg-blue-100 text-blue-700 border-blue-200",
-  "誘導": "bg-green-100 text-green-700 border-green-200",
-  "警備": "bg-red-100 text-red-700 border-red-200",
-  "その他": "bg-slate-100 text-slate-600 border-slate-200",
-};
 
 const TIME_SLOTS = ["開場前", "開演中", "終演後"];
 
 const TIME_SLOT_STYLES = {
-  "開場前": { header: "bg-amber-50 border-amber-200 text-amber-800", badge: "bg-amber-100 text-amber-700 border-amber-300" },
-  "開演中": { header: "bg-blue-50 border-blue-200 text-blue-800", badge: "bg-blue-100 text-blue-700 border-blue-300" },
-  "終演後": { header: "bg-slate-50 border-slate-200 text-slate-700", badge: "bg-slate-100 text-slate-600 border-slate-300" },
+  "開場前": { header: "bg-amber-50 border-amber-200 text-amber-800" },
+  "開演中": { header: "bg-blue-50 border-blue-200 text-blue-800" },
+  "終演後": { header: "bg-slate-50 border-slate-200 text-slate-700" },
 };
-
-function PositionCard({ pos, onEdit, onDelete, isAdmin }) {
-  const staffNames = pos.staff_names || [];
-  const posLabel = pos.name || pos.role;
-  return (
-    <div className="bg-card border border-border rounded-lg overflow-hidden hover:border-primary/30 transition-colors">
-      {/* Position header row */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-muted/20">
-        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: pos.color || "#6366f1" }} />
-        <span className="text-xs font-medium text-foreground">{pos.name || pos.role}</span>
-        {pos.notes && <span className="text-xs text-muted-foreground truncate flex-1">{pos.notes}</span>}
-        <div className="flex gap-1 ml-auto flex-shrink-0">
-          <button onClick={() => onEdit(pos)} disabled={!isAdmin} className="p-1 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none">
-            <Pencil className="w-3 h-3" />
-          </button>
-          <button onClick={() => onDelete(pos.id)} disabled={!isAdmin} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none">
-            <Trash2 className="w-3 h-3" />
-          </button>
-        </div>
-      </div>
-      {staffNames.length > 0 ? (
-        <div className="divide-y divide-border/40">
-          {staffNames.map((name, i) => (
-            <div key={i} className="flex items-center gap-2 px-3 py-1.5">
-              <span className="text-xs text-foreground">{name}</span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="px-3 py-2 text-xs text-muted-foreground">スタッフ未登録</div>
-      )}
-    </div>
-  );
-}
 
 export default function StaffList({ eventId }) {
   const [showModal, setShowModal] = useState(false);
@@ -230,9 +190,9 @@ export default function StaffList({ eventId }) {
                         <PositionCard
                           key={pos.id}
                           pos={pos}
+                          isAdmin={isAdmin}
                           onEdit={(p) => { setEditing(p); setShowModal(true); }}
                           onDelete={(id) => { if (confirm("削除しますか？")) deleteMutation.mutate(id); }}
-                          isAdmin={isAdmin}
                         />
                       ))}
                     </div>
