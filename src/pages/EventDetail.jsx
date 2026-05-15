@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ChevronLeft, User, LogOut } from "lucide-react";
+import { ChevronLeft, User, LogOut, Users, ClipboardList, MapPin, Clock, Bell, Settings } from "lucide-react";
 import VenueMap from "@/components/VenueMap";
 import StaffManagement from "@/components/StaffManagement";
 import PositionTypeManagement from "@/components/PositionTypeManagement";
@@ -91,22 +91,23 @@ export default function EventDetail() {
         <div className="max-w-6xl mx-auto px-3">
           <div className="flex gap-6">
             {[
-              { id: "staff", label: "スタッフ管理" },
-              { id: "dragdrop", label: "配置表" },
-              { id: "map", label: "会場マップ" },
-              { id: "timeline", label: "タイムライン" },
-              { id: "notice", label: "連絡事項" },
-              { id: "admin", label: "管理" },
-            ].map(({ id, label }) => (
+              { id: "staff", label: "スタッフ管理", icon: Users },
+              { id: "dragdrop", label: "配置表", icon: ClipboardList },
+              { id: "map", label: "会場マップ", icon: MapPin },
+              { id: "timeline", label: "タイムライン", icon: Clock },
+              { id: "notice", label: "連絡事項", icon: Bell },
+              { id: "admin", label: "管理", icon: Settings },
+            ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setTab(id)}
-                className={`py-3 text-sm font-medium border-b-2 transition-colors select-none ${
+                className={`flex items-center gap-2 py-3 text-sm font-medium border-b-2 transition-colors select-none ${
                   tab === id
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
+                <Icon className="w-4 h-4" />
                 {label}
               </button>
             ))}
