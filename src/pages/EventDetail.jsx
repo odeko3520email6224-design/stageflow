@@ -111,12 +111,42 @@ export default function EventDetail() {
       </div>
 
       <div className="max-w-6xl mx-auto px-2 py-2 pb-12">
-        {tab === "staff" && <StaffManagement eventId={eventId} />}
-        {tab === "dragdrop" && <StaffDragDropManager eventId={eventId} />}
-        {tab === "admin" && <PositionTypeManagement eventId={eventId} />}
-        {tab === "map" && <VenueMap eventId={eventId} />}
-        {tab === "timeline" && <StaffTimeline eventId={eventId} />}
-        {tab === "notice" && <AnnouncementManager eventId={eventId} />}
+        {tab === "staff" && (
+          <>
+            <p className="text-xs text-muted-foreground mb-2">スタッフの登録・編集・削除ができます。</p>
+            <StaffManagement eventId={eventId} />
+          </>
+        )}
+        {tab === "dragdrop" && (
+          <>
+            <p className="text-xs text-muted-foreground mb-2">スタッフを配置したい位置にドラッグして配置できます。</p>
+            <StaffDragDropManager eventId={eventId} />
+          </>
+        )}
+        {tab === "admin" && (
+          <>
+            <p className="text-xs text-muted-foreground mb-2">役職の登録や配置プリセットの管理ができます。</p>
+            <PositionTypeManagement eventId={eventId} />
+          </>
+        )}
+        {tab === "map" && (
+          <>
+            <p className="text-xs text-muted-foreground mb-2">会場マップ上にスタッフの配置を視覚的に配置できます。</p>
+            <VenueMap eventId={eventId} />
+          </>
+        )}
+        {tab === "timeline" && (
+          <>
+            <p className="text-xs text-muted-foreground mb-2">時間ごとのスタッフ配置を一覧で確認できます。</p>
+            <StaffTimeline eventId={eventId} />
+          </>
+        )}
+        {tab === "notice" && (
+          <>
+            <p className="text-xs text-muted-foreground mb-2">スタッフへの連絡事項を共有できます。</p>
+            <AnnouncementManager eventId={eventId} />
+          </>
+        )}
       </div>
     </div>
   );
