@@ -521,7 +521,6 @@ export default function VenueMap({ eventId }) {
           onClose={() => setShowAreaModal(false)}
           onSaved={() => {
             queryClient.invalidateQueries({ queryKey: ["mapareas", eventId] });
-            setShowAreaModal(false);
           }}
         />
       )}

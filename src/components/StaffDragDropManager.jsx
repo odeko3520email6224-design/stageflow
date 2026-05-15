@@ -223,7 +223,6 @@ export default function StaffDragDropManager({ eventId }) {
           onClose={() => setShowModal(false)}
           onSaved={() => {
             queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
-            setShowModal(false);
           }}
         />
       )}
