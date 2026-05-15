@@ -1,10 +1,12 @@
-import { Users, Map, Clock, Megaphone } from "lucide-react";
+import { Users, Map, Clock, Megaphone, ClipboardList, Settings } from "lucide-react";
 
 const TABS = [
   { id: "staff", label: "スタッフ", icon: Users },
+  { id: "dragdrop", label: "配置表", icon: ClipboardList },
   { id: "map", label: "マップ", icon: Map },
   { id: "timeline", label: "タイムライン", icon: Clock },
   { id: "notice", label: "連絡事項", icon: Megaphone },
+  { id: "admin", label: "管理", icon: Settings },
 ];
 
 export default function BottomTabBar({ activeTab, onTabChange }) {
