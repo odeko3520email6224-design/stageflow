@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { X } from "lucide-react";
 
 const AREA_COLORS = [
@@ -76,13 +76,15 @@ export default function MapAreaFormModal({ area, eventId, onClose, onSaved }) {
           </div>
           <div>
             <Label>図形</Label>
-            <Select value={form.type} onValueChange={(v) => set("type", v)}>
-              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="rectangle">長方形</SelectItem>
-                <SelectItem value="circle">円形</SelectItem>
-              </SelectContent>
-            </Select>
+            <ResponsiveSelect
+              value={form.type}
+              onValueChange={(v) => set("type", v)}
+              options={[
+                { value: "rectangle", label: "長方形" },
+                { value: "circle", label: "円形" },
+              ]}
+              placeholder="図形を選択"
+            />
           </div>
           <div>
             <Label>色</Label>

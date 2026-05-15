@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Calendar, MapPin, ChevronRight, Trash2, Pencil, LogOut, User } from "lucide-react";
@@ -24,14 +25,18 @@ export default function Events() {
   const queryClient = useQueryClient();
   const { canEdit } = useUserRole();
 
-  useEffect(() => {
-    base44.auth.me().then(setCurrentUser).catch(() => {});
-  }, []);
-
-  const { data: events = [], isLoading } = useQuery({
+  const { data: events = [], isLoading, refetch } = useQuery({
     queryKey: ["events"],
     queryFn: () => base44.entities.Event.list("-created_date"),
   });
+
+  const { isPulling, pullDistance } = usePullToRefresh(async () => {
+    await refetch();
+  });
+
+  useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Event.delete(id),
@@ -50,7 +55,13 @@ export default function Events() {
   };
 
   return (
-    <div className="min-h-screen bg-background safe-area-top safe-area-bottom">
+    <div className="min-h-screen bg-background safe-area-top safe-area-bottom relative">
+      {/* Pull-to-refresh indicator */}
+      {isPulling && (
+        <div className="fixed top-0 left-0 right-0 flex justify-center pt-2 z-30">
+          <div className="w-6 h-6 border-3 border-primary/30 border-t-primary rounded-full animate-spin" style={{ opacity: pullDistance / 100 }} />
+        </div>
+      )}
       <div className="max-w-5xl mx-auto px-3 py-3 pb-24 sm:pb-3">
       {/* Header */}
       <div className="mb-3">

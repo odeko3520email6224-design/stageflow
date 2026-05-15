@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { X, Check } from "lucide-react";
 
 const PRESET_COLORS = [
@@ -104,35 +104,30 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
             {positionTypes.length === 0 ? (
               <p className="text-xs text-muted-foreground mt-1">管理タブでポジションを登録してください</p>
             ) : (
-              <Select
+              <ResponsiveSelect
                 value={positionTypes.find((pt) => pt.name === form.name)?.id || ""}
                 onValueChange={handlePositionTypeSelect}
-              >
-                <SelectTrigger className="mt-1"><SelectValue placeholder="ポジションを選択" /></SelectTrigger>
-                <SelectContent>
-                  {positionTypes.map((pt) => (
-                    <SelectItem key={pt.id} value={pt.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: pt.color || "#6366f1" }} />
-                        {pt.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={positionTypes.map((pt) => ({
+                  value: pt.id,
+                  label: pt.name,
+                }))}
+                placeholder="ポジションを選択"
+              />
             )}
           </div>
 
           <div>
             <Label>時間帯</Label>
-            <Select value={form.time_slot} onValueChange={(v) => setForm({ ...form, time_slot: v })}>
-              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="開場前">開場前</SelectItem>
-                <SelectItem value="開演中">開演中</SelectItem>
-                <SelectItem value="終演後">終演後</SelectItem>
-              </SelectContent>
-            </Select>
+            <ResponsiveSelect
+              value={form.time_slot}
+              onValueChange={(v) => setForm({ ...form, time_slot: v })}
+              options={[
+                { value: "開場前", label: "開場前" },
+                { value: "開演中", label: "開演中" },
+                { value: "終演後", label: "終演後" },
+              ]}
+              placeholder="時間帯を選択"
+            />
           </div>
 
           {/* Staff selection - checklist dropdown */}

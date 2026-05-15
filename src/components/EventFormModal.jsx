@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { X } from "lucide-react";
 
 export default function EventFormModal({ event, onClose, onSaved }) {
@@ -68,16 +68,16 @@ export default function EventFormModal({ event, onClose, onSaved }) {
           </div>
           <div>
             <Label>ステータス</Label>
-            <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="準備中">準備中</SelectItem>
-                <SelectItem value="開催中">開催中</SelectItem>
-                <SelectItem value="終了">終了</SelectItem>
-              </SelectContent>
-            </Select>
+            <ResponsiveSelect
+              value={form.status}
+              onValueChange={(v) => setForm({ ...form, status: v })}
+              options={[
+                { value: "準備中", label: "準備中" },
+                { value: "開催中", label: "開催中" },
+                { value: "終了", label: "終了" },
+              ]}
+              placeholder="ステータスを選択"
+           />
           </div>
           <div>
             <Label>備考</Label>

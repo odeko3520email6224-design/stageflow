@@ -75,6 +75,18 @@
     @apply bg-background text-foreground font-noto;
     overscroll-behavior: none;
   }
+
+  /* iOS compatibility */
+  button, [role="button"], header, nav, .top-bar, .bottom-bar, [role="tab"], .tab-navigation {
+    @apply select-none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+
+  /* Allow text selection in descriptions and content areas */
+  p, span, div:not(button):not([role="button"]):not(header):not(nav) {
+    @apply select-auto;
+  }
 }
 
 @supports (padding: max(0px)) {

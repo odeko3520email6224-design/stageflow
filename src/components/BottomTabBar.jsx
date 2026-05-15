@@ -10,6 +10,14 @@ const TABS = [
 ];
 
 export default function BottomTabBar({ activeTab, onTabChange }) {
+  const handleTabClick = (tabId) => {
+    if (activeTab === tabId) {
+      // Reset search parameters when clicking active tab
+      window.history.pushState({}, "", window.location.pathname);
+    }
+    onTabChange(tabId);
+  };
+
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border flex items-center justify-around h-16 z-40 safe-area-bottom">
       {TABS.map(({ id, label, icon: Icon }) => {
@@ -17,7 +25,7 @@ export default function BottomTabBar({ activeTab, onTabChange }) {
         return (
           <button
             key={id}
-            onClick={() => onTabChange(id)}
+            onClick={() => handleTabClick(id)}
             className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-primary select-none ${
               activeTab === id
                 ? "text-primary"

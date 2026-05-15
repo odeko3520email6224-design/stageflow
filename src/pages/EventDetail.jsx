@@ -12,6 +12,7 @@ import AnnouncementManager from "@/components/AnnouncementManager";
 import AnnouncementAlert from "@/components/AnnouncementAlert";
 import StaffDragDropManager from "@/components/StaffDragDropManager";
 import BottomTabBar from "@/components/BottomTabBar";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -28,10 +29,14 @@ export default function EventDetail() {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
-  const { data: event, isLoading } = useQuery({
+  const { data: event, isLoading, refetch: refetchEvent } = useQuery({
     queryKey: ["event", eventId],
     queryFn: () => base44.entities.Event.filter({ id: eventId }),
     select: (d) => d[0],
+  });
+
+  const { isPulling, pullDistance } = usePullToRefresh(async () => {
+    await refetchEvent();
   });
 
   if (isLoading) {
@@ -47,7 +52,14 @@ export default function EventDetail() {
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Pull-to-refresh indicator */}
+      {isPulling && (
+        <div className="fixed top-0 left-0 right-0 flex justify-center pt-2 z-30">
+          <div className="w-6 h-6 border-3 border-primary/30 border-t-primary rounded-full animate-spin" style={{ opacity: pullDistance / 100 }} />
+        </div>
+      )}
+
       {/* Alert Banner */}
       <AnnouncementAlert eventId={eventId} />
 
