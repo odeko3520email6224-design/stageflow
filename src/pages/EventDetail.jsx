@@ -18,7 +18,7 @@ export default function EventDetail() {
   const { eventId } = useParams();
   const [tab, setTab] = useState("list");
 
-  const { isAdmin } = useUserRole();
+  const { isAdmin, canManageSettings } = useUserRole();
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function EventDetail() {
     { id: "map", label: "会場マップ", icon: Map },
     { id: "timeline", label: "タイムライン", icon: Clock },
     { id: "notice", label: "連絡", icon: Megaphone },
-    { id: "admin", label: "設定", icon: Settings },
+    ...(canManageSettings ? [{ id: "admin", label: "設定", icon: Settings }] : []),
   ];
 
   return (

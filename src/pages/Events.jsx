@@ -21,7 +21,7 @@ export default function Events() {
   const [editingEvent, setEditingEvent] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const queryClient = useQueryClient();
-  const { canEdit: isAdmin } = useUserRole();
+  const { canEdit } = useUserRole();
 
   useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -76,7 +76,7 @@ export default function Events() {
               </button>
             </div>
           )}
-          <Button onClick={() => { setEditingEvent(null); setShowModal(true); }} className="gap-1" size="sm" disabled={!isAdmin}>
+          <Button onClick={() => { setEditingEvent(null); setShowModal(true); }} className="gap-1" size="sm" disabled={!canEdit}>
             <Plus className="w-3.5 h-3.5" />
             新規
           </Button>
@@ -127,14 +127,14 @@ export default function Events() {
                   <div className="flex items-center gap-0.5 shrink-0">
                     <button
                       onClick={(e) => handleEdit(e, event)}
-                      disabled={!isAdmin}
+                      disabled={!canEdit}
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                     >
                       <Pencil className="w-3 h-3" />
                     </button>
                     <button
                       onClick={(e) => handleDelete(e, event.id)}
-                      disabled={!isAdmin}
+                      disabled={!canEdit}
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                     >
                       <Trash2 className="w-3 h-3" />
