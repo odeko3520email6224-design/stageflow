@@ -384,16 +384,22 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
 
 export default function AnnouncementManager({ eventId }) {
   const [showForm, setShowForm] = useState(false);
+  const [notifPermission, setNotifPermission] = useState(
+    typeof Notification !== "undefined" ? Notification.permission : "denied"
+  );
   const queryClient = useQueryClient();
   const prevIdsRef = useRef(new Set());
-  const notifPermRef = useRef(null);
 
   // Request browser notification permission on mount
   useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission().then((p) => { notifPermRef.current = p; });
-    } else if ("Notification" in window) {
-      notifPermRef.current = Notification.permission;
+    if (typeof Notification !== "undefined") {
+      if (Notification.permission === "default") {
+        Notification.requestPermission().then((p) => {
+          setNotifPermission(p);
+        });
+      } else {
+        setNotifPermission(Notification.permission);
+      }
     }
   }, []);
 
@@ -454,9 +460,27 @@ export default function AnnouncementManager({ eventId }) {
             </span>
           )}
         </h2>
-        <Button size="sm" onClick={() => setShowForm(true)} className="gap-1 h-7 text-xs">
-          <Plus className="w-3 h-3" />新規作成
-        </Button>
+        <div className="flex items-center gap-2">
+          {notifPermission !== "granted" && (
+            <button
+              onClick={() => {
+                if (typeof Notification !== "undefined" && Notification.permission === "default") {
+                  Notification.requestPermission().then((p) => setNotifPermission(p));
+                }
+              }}
+              className={`text-[11px] px-2 py-1 rounded-lg border font-medium transition-colors ${
+                notifPermission === "denied"
+                  ? "bg-red-50 border-red-200 text-red-700 cursor-not-allowed"
+                  : "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
+              }`}
+            >
+              {notifPermission === "denied" ? "通知ブロック中" : "通知を有効にする"}
+            </button>
+          )}
+          <Button size="sm" onClick={() => setShowForm(true)} className="gap-1 h-7 text-xs">
+            <Plus className="w-3 h-3" />新規作成
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
