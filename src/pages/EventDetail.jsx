@@ -64,9 +64,9 @@ export default function EventDetail() {
       <AnnouncementAlert eventId={eventId} />
 
       {/* Top bar */}
-      <div className="bg-card border-b border-border sticky top-0 z-50 safe-area-top">
+      <div className="bg-card border-b border-border sticky top-0 z-50 safe-area-top pt-2">
         {/* Row 1: back + event name + user */}
-        <div className="max-w-6xl mx-auto px-3 pt-2 pb-1 flex items-center gap-2">
+        <div className="max-w-6xl mx-auto px-3 pb-1 flex items-center gap-2">
           <Link to="/" className="relative z-[100] p-1.5 rounded-lg hover:bg-muted transition-colors shrink-0" aria-label="戻る">
             <ChevronLeft className="w-5 h-5" />
           </Link>
@@ -116,7 +116,7 @@ export default function EventDetail() {
               <button
                 key={id}
                 onClick={() => setTab(id)}
-                className={`flex items-center gap-2 py-3 text-sm font-medium border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 select-none ${
+                className={`flex items-center gap-2 py-3 text-sm font-medium border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 select-none will-change-auto ${
                   tab === id
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground"
@@ -131,12 +131,12 @@ export default function EventDetail() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-2 py-2 pb-24 sm:pb-12">
+      <div className="max-w-6xl mx-auto px-2 py-2 pb-24 sm:pb-12 overflow-hidden">
         <motion.div
           key={tab}
-          initial={{ opacity: 0, x: 10 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -10 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
         >
           {tab === "staff" && <StaffManagement eventId={eventId} />}

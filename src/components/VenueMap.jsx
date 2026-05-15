@@ -359,7 +359,7 @@ export default function VenueMap({ eventId }) {
       {/* Mobile: horizontal scroll wrapper / Desktop: flex row */}
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Map Canvas */}
-          <div className="flex-1 -mx-4 lg:mx-0 overflow-x-auto lg:overflow-visible">
+          <div className="flex-1 -mx-4 lg:mx-0 overflow-x-auto lg:overflow-visible scrollbar-hide">
             <div className="px-4 lg:px-0" style={{ minWidth: 320 }}>
             <div
               ref={mapRef}

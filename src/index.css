@@ -87,6 +87,15 @@
   p, span, div:not(button):not([role="button"]):not(header):not(nav) {
     @apply select-auto;
   }
+
+  /* Hide scrollbars globally while preserving scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @supports (padding: max(0px)) {
