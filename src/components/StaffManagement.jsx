@@ -245,7 +245,7 @@ export default function StaffManagement({ eventId }) {
         <EditModal
           staff={editingStaff}
           onClose={() => setEditingStaff(null)}
-          onSaved={() => setEditingStaff(null)}
+          onSaved={() => {}}
         />
       )}
     </div>

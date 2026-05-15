@@ -156,7 +156,6 @@ export default function Events() {
           onClose={() => setShowModal(false)}
           onSaved={() => {
             queryClient.invalidateQueries({ queryKey: ["events"] });
-            setShowModal(false);
           }}
         />
       )}
