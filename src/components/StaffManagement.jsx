@@ -224,11 +224,19 @@ export default function StaffManagement({ eventId }) {
                 </div>
                 {assigned.length > 0 && (
                   <div className="mt-1 flex flex-wrap gap-0.5 pl-8">
-                    {assigned.map((a, i) => (
-                      <span key={i} className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${TIME_SLOT_COLORS[a.slot]}`}>
-                        {a.slot}：{a.posName}
-                      </span>
-                    ))}
+                    {assigned.map((a, i) => {
+                      const pos = positions.find((p) => (p.name || p.role) === a.posName && (p.time_slot || "開場前") === a.slot);
+                      const color = pos?.color || "#6366f1";
+                      return (
+                        <span key={i} className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full border" style={{
+                          backgroundColor: `${color}20`,
+                          borderColor: `${color}40`,
+                          color: color
+                        }}>
+                          {a.slot}：{a.posName}
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
               </div>

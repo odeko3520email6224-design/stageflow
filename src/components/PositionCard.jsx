@@ -29,8 +29,14 @@ export default function PositionCard({
     >
       {/* ポジションヘッダー */}
       <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-border/60 bg-muted/20">
-        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: pos.color || "#6366f1" }} />
-        <span className="text-xs font-medium text-foreground">{pos.name || pos.role}</span>
+        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: pos.color || "#6366f1" }} />
+        <span className="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full border" style={{ 
+          backgroundColor: pos.color ? `${pos.color}20` : "#6366f120",
+          borderColor: pos.color ? `${pos.color}40` : "#6366f140",
+          color: pos.color || "#6366f1"
+        }}>
+          {pos.name || pos.role}
+        </span>
         {pos.notes && <span className="text-[10px] text-muted-foreground truncate flex-1">{pos.notes}</span>}
         {/* 編集・削除ボタン（配置表のみ） */}
         {(onEdit || onDelete) && (
