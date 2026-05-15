@@ -18,11 +18,13 @@ export default function BottomTabBar({ activeTab, onTabChange }) {
           <button
             key={id}
             onClick={() => onTabChange(id)}
-            className={`flex flex-col items-center justify-center flex-1 h-full gap-1 select-none transition-colors ${
+            className={`flex flex-col items-center justify-center flex-1 h-full gap-1 select-none transition-colors focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-primary ${
               activeTab === id
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             }`}
+            aria-current={activeTab === id ? "page" : undefined}
+            aria-label={label}
           >
             <IconComponent className="w-5 h-5" />
             <span className="text-[10px] font-medium">{label}</span>

@@ -68,14 +68,14 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
-      <div className="bg-card w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl h-[90vh] sm:h-auto flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h3 className="font-bold text-base flex items-center gap-2">
-            <Send className="w-4 h-4 text-primary" />連絡事項を作成
-          </h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-muted text-muted-foreground">
-            <X className="w-4 h-4" />
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 overflow-hidden">
+    <div className="bg-card w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl h-[90vh] sm:h-auto flex flex-col">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <h3 className="font-bold text-base flex items-center gap-2">
+          <Send className="w-4 h-4 text-primary" />連絡事項を作成
+        </h3>
+        <button onClick={onClose} className="p-1 rounded hover:bg-muted text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="閉じる">
+          <X className="w-4 h-4" />
           </button>
         </div>
         <div className="p-4 space-y-3 flex-1 overflow-y-auto">
@@ -299,16 +299,17 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
         <div className="flex gap-1 shrink-0">
           <button
             onClick={() => setShowConfirm(!showConfirm)}
-            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200 hover:bg-green-200 transition-colors"
+            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200 hover:bg-green-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            title="確認を行う"
           >
             <CheckCircle2 className="w-3 h-3" />確認を行う
           </button>
           {ann.body && (
-            <button onClick={() => setExpanded(!expanded)} className="p-1 rounded hover:bg-muted text-muted-foreground">
+            <button onClick={() => setExpanded(!expanded)} className="p-1 rounded hover:bg-muted text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title={expanded ? "閉じる" : "詳細を表示"}>
               {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
           )}
-          <button onClick={() => onDelete(ann.id)} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground">
+          <button onClick={() => onDelete(ann.id)} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="削除">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -319,7 +320,7 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
         <div className="px-3 pb-3 border-t border-border/60 pt-2.5 bg-green-50/50">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold text-green-800">自分の名前をタップして確認済みにする</p>
-            <button onClick={() => setShowConfirm(false)} className="p-1 rounded hover:bg-muted text-muted-foreground">
+            <button onClick={() => setShowConfirm(false)} className="p-1 rounded hover:bg-muted text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="パネルを閉じる">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>

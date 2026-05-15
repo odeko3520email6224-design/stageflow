@@ -43,11 +43,11 @@ function EditModal({ staff, onClose, onSaved }) {
   }, [localName, localNote]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-base">スタッフ編集</h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="閉じる">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -206,13 +206,15 @@ export default function StaffManagement({ eventId }) {
                   </div>
                   <button
                     onClick={() => setEditingStaff(staff)}
-                    className="p-1 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors"
+                    className="p-1 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    title="編集"
                   >
                     <Pencil className="w-3 h-3" />
                   </button>
                   <button
                     onClick={() => { if (confirm(`「${staff.name}」を削除しますか？`)) deleteMutation.mutate(staff.id); }}
-                    className="p-1 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
+                    className="p-1 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    title="削除"
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>

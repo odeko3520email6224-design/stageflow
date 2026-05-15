@@ -42,17 +42,19 @@ export default function PositionCard({
               <button
                 onClick={() => onEdit(pos)}
                 disabled={!isAdmin}
-                className="p-1 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                className="p-1 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                title="編集"
               >
                 <Pencil className="w-3 h-3" />
               </button>
             )}
             {onDelete && (
-              <button
-                onClick={() => onDelete(pos.id)}
-                disabled={!isAdmin}
-                className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none"
-              >
+               <button
+                 onClick={() => onDelete(pos.id)}
+                 disabled={!isAdmin}
+                 className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                 title="削除"
+               >
                 <Trash2 className="w-3 h-3" />
               </button>
             )}
@@ -80,10 +82,11 @@ export default function PositionCard({
             >
               <span className="text-xs text-foreground">{name}</span>
               {onStaffRemove && isAdmin && (
-                <button
-                  onClick={() => onStaffRemove(pos.id, name)}
-                  className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
-                >
+                 <button
+                   onClick={() => onStaffRemove(pos.id, name)}
+                   className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                   title={`${name}を削除`}
+                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
               )}

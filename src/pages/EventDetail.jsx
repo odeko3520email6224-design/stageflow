@@ -53,8 +53,8 @@ export default function EventDetail() {
       <div className="bg-card border-b border-border sticky top-0 z-50 safe-area-top">
         {/* Row 1: back + event name + user */}
         <div className="max-w-6xl mx-auto px-3 pt-2 pb-1 flex items-center gap-2">
-          <Link to="/" className="relative z-[100] p-1 rounded-lg hover:bg-muted transition-colors shrink-0">
-            <ChevronLeft className="w-4 h-4" />
+          <Link to="/" className="relative z-[100] p-1.5 rounded-lg hover:bg-muted transition-colors shrink-0" aria-label="戻る">
+            <ChevronLeft className="w-5 h-5" />
           </Link>
           <div className="min-w-0 flex-1">
             <h1 className="font-bold text-base leading-tight truncate">{event.name}</h1>
@@ -76,8 +76,9 @@ export default function EventDetail() {
               </div>
               <button
                 onClick={() => base44.auth.logout()}
-                className="ml-1 p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors"
+                className="ml-1 p-1 rounded text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 title="ログアウト"
+                aria-label="ログアウト"
               >
                 <LogOut className="w-3 h-3" />
               </button>
@@ -101,11 +102,12 @@ export default function EventDetail() {
               <button
                 key={id}
                 onClick={() => setTab(id)}
-                className={`flex items-center gap-2 py-3 text-sm font-medium border-b-2 transition-colors select-none ${
+                className={`flex items-center gap-2 py-3 text-sm font-medium border-b-2 transition-colors select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                   tab === id
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
+                aria-current={tab === id ? "page" : undefined}
               >
                 <Icon className="w-4 h-4" />
                 {label}
