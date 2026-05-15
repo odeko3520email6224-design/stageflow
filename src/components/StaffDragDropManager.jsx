@@ -12,7 +12,8 @@ import PresetSelector from "@/components/PresetSelector";
 
 export default function StaffDragDropManager({ eventId }) {
   const queryClient = useQueryClient();
-  const { canEdit: isAdmin } = useUserRole();
+  const { canEdit } = useUserRole();
+  const isAdmin = canEdit;
 
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
@@ -57,10 +58,6 @@ export default function StaffDragDropManager({ eventId }) {
   };
 
   const handleDragStart = (e, staffName) => {
-    if (!isAdmin) {
-      e.preventDefault();
-      return;
-    }
     setDraggedStaff(staffName);
     e.dataTransfer.effectAllowed = "move";
   };
@@ -72,7 +69,7 @@ export default function StaffDragDropManager({ eventId }) {
 
   const handleDrop = (e, positionId) => {
     e.preventDefault();
-    if (!draggedStaff || !isAdmin) return;
+    if (!draggedStaff) return;
 
     const position = positions.find((p) => p.id === positionId);
     if (!position) return;
@@ -97,7 +94,6 @@ export default function StaffDragDropManager({ eventId }) {
   };
 
   const removeStaffFromPosition = (positionId, staffName) => {
-    if (!isAdmin) return;
 
     const position = positions.find((p) => p.id === positionId);
     if (!position) return;
@@ -147,8 +143,7 @@ export default function StaffDragDropManager({ eventId }) {
                 </div>
                 <button
                   onClick={() => openAdd(slot)}
-                  disabled={!isAdmin}
-                  className="text-[11px] flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-white/60 hover:bg-white/90 transition-colors font-medium disabled:opacity-30 disabled:pointer-events-none"
+                  className="text-[11px] flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-white/60 hover:bg-white/90 transition-colors font-medium"
                 >
                   <Plus className="w-2.5 h-2.5" />追加
                 </button>
@@ -205,11 +200,9 @@ export default function StaffDragDropManager({ eventId }) {
               {unassigned.map((s) => (
                 <div
                   key={s.id}
-                  draggable={isAdmin}
-                  onDragStart={(e) => isAdmin && handleDragStart(e, s.name)}
-                  className={`flex items-center gap-2 px-2 py-1 rounded-lg bg-amber-50/50 border border-amber-100 ${
-                    isAdmin ? "cursor-move hover:bg-amber-50" : ""
-                  } ${draggedStaff === s.name ? "opacity-50" : ""}`}
+                  draggable={true}
+                  onDragStart={(e) => handleDragStart(e, s.name)}
+                  className={`flex items-center gap-2 px-2 py-1 rounded-lg bg-amber-50/50 border border-amber-100 cursor-move hover:bg-amber-50 ${draggedStaff === s.name ? "opacity-50" : ""}`}
                 >
                   <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-[10px] shrink-0">
                     {s.name.charAt(0)}
