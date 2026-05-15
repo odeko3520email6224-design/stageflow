@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,8 +35,13 @@ function EditModal({ staff, onClose, onSaved }) {
   // Auto-save on changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (localName.trim() && (localName !== staff.name || localNote !== (staff.note || ""))) {
-        updateMutation.mutate({ name: localName.trim(), note: localNote.trim() });
+      if (localName.trim() && (localName !== prevDataRef.current.name || localNote !== prevDataRef.current.note)) {
+        updateMutation.mutate({ name: localName.trim(), note: localNote.trim() }, {
+          onSuccess: () => {
+            toast.success("保存しました");
+            prevDataRef.current = { name: localName, note: localNote };
+          }
+        });
       }
     }, 1000);
     return () => clearTimeout(timer);

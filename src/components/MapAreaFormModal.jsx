@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,10 +39,20 @@ export default function MapAreaFormModal({ area, eventId, onClose, onSaved }) {
   });
 
   // Auto-save on form changes (only for existing areas)
+  const prevFormRef = useRef(form);
   useEffect(() => {
-    if (!area) return; // Don't auto-save new areas
+    if (!area) return;
     const timer = setTimeout(() => {
-      if (form.name) mutation.mutate(form);
+      const prev = prevFormRef.current;
+      const hasChanges = prev.name !== form.name || prev.type !== form.type || prev.x !== form.x || prev.y !== form.y || prev.width !== form.width || prev.height !== form.height || prev.color !== form.color;
+      if (hasChanges && form.name) {
+        mutation.mutate(form, {
+          onSuccess: () => {
+            toast.success("保存しました");
+            prevFormRef.current = form;
+          }
+        });
+      }
     }, 1000);
     return () => clearTimeout(timer);
   }, [form]);
@@ -132,7 +143,12 @@ export default function MapAreaFormModal({ area, eventId, onClose, onSaved }) {
         <div className="flex gap-3 mt-6">
           <Button variant="outline" className="flex-1" onClick={onClose}>閉じる</Button>
           {!area && (
-            <Button className="flex-1" disabled={!form.name || mutation.isPending} onClick={() => mutation.mutate(form)}>
+            <Button className="flex-1" disabled={!form.name || mutation.isPending} onClick={() => mutation.mutate(form, {
+              onSuccess: () => {
+                toast.success("作成しました");
+                setTimeout(onClose, 500);
+              }
+            })}>
               {mutation.isPending ? "作成中..." : "作成"}
             </Button>
           )}

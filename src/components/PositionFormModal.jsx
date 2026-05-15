@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,10 +52,20 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
   });
 
   // Auto-save on form changes (only for existing positions)
+  const prevFormRef = useRef(form);
   useEffect(() => {
-    if (!position) return; // Don't auto-save new positions
+    if (!position) return;
     const timer = setTimeout(() => {
-      mutation.mutate({ ...form, name: form.name || form.role });
+      const prev = prevFormRef.current;
+      const hasChanges = prev.name !== form.name || prev.role !== form.role || prev.time_slot !== form.time_slot || prev.staff_names !== form.staff_names || prev.notes !== form.notes || prev.color !== form.color;
+      if (hasChanges) {
+        mutation.mutate({ ...form, name: form.name || form.role }, {
+          onSuccess: () => {
+            toast.success("保存しました");
+            prevFormRef.current = form;
+          }
+        });
+      }
     }, 1000);
     return () => clearTimeout(timer);
   }, [form]);
@@ -186,9 +197,14 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
             <Button
               className="flex-1"
               disabled={!form.name || mutation.isPending}
-              onClick={() => mutation.mutate({ ...form, name: form.name || form.role })}
+              onClick={() => mutation.mutate({ ...form, name: form.name || form.role }, {
+                onSuccess: () => {
+                  toast.success("作成しました");
+                  setTimeout(onClose, 500);
+                }
+              })}
             >
-              {mutation.isPending ? "保存中..." : "作成"}
+              {mutation.isPending ? "作成中..." : "作成"}
             </Button>
           )}
         </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,10 +26,20 @@ export default function EventFormModal({ event, onClose, onSaved }) {
   });
 
   // Auto-save on form changes (only for existing events)
+  const prevFormRef = useRef(form);
   useEffect(() => {
-    if (!event) return; // Don't auto-save new events
+    if (!event) return;
     const timer = setTimeout(() => {
-      if (form.name) mutation.mutate(form);
+      const prev = prevFormRef.current;
+      const hasChanges = prev.name !== form.name || prev.date !== form.date || prev.venue !== form.venue || prev.description !== form.description || prev.status !== form.status;
+      if (hasChanges && form.name) {
+        mutation.mutate(form, {
+          onSuccess: () => {
+            toast.success("保存しました");
+            prevFormRef.current = form;
+          }
+        });
+      }
     }, 1000);
     return () => clearTimeout(timer);
   }, [form]);
@@ -79,7 +90,12 @@ export default function EventFormModal({ event, onClose, onSaved }) {
             <Button
               className="flex-1"
               disabled={!form.name || mutation.isPending}
-              onClick={() => mutation.mutate(form)}
+              onClick={() => mutation.mutate(form, {
+                onSuccess: () => {
+                  toast.success("作成しました");
+                  setTimeout(onClose, 500);
+                }
+              })}
             >
               {mutation.isPending ? "作成中..." : "作成"}
             </Button>
