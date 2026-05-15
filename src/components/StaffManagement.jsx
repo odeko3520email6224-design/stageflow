@@ -7,12 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Users, AlertCircle, Pencil, X, Check, UserCog, Download } from "lucide-react";
 import StaffScrapeModal from "@/components/StaffScrapeModal";
 import { useUserRole } from "@/hooks/useUserRole";
-
-const TIME_SLOT_COLORS = {
-  "開場前": "bg-amber-100 text-amber-700 border-amber-200",
-  "開演中": "bg-blue-100 text-blue-700 border-blue-200",
-  "終演後": "bg-slate-100 text-slate-600 border-slate-200",
-};
+import { TIME_SLOT_STYLES } from "@/lib/constants";
 
 function EditModal({ staff, onClose, onSaved }) {
   const [name, setName] = useState(staff.name);
@@ -224,19 +219,11 @@ export default function StaffManagement({ eventId }) {
                 </div>
                 {assigned.length > 0 && (
                   <div className="mt-1 flex flex-wrap gap-0.5 pl-8">
-                    {assigned.map((a, i) => {
-                      const pos = positions.find((p) => (p.name || p.role) === a.posName && (p.time_slot || "開場前") === a.slot);
-                      const color = pos?.color || "#6366f1";
-                      return (
-                        <span key={i} className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full border" style={{
-                          backgroundColor: `${color}20`,
-                          borderColor: `${color}40`,
-                          color: color
-                        }}>
-                          {a.slot}：{a.posName}
-                        </span>
-                      );
-                    })}
+                    {assigned.map((a, i) => (
+                      <span key={i} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${TIME_SLOT_STYLES[a.slot]?.badge || "bg-slate-100 border-slate-200 text-slate-700"}`}>
+                        {a.slot}：{a.posName}
+                      </span>
+                    ))}
                   </div>
                 )}
               </div>
