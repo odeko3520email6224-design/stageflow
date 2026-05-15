@@ -53,9 +53,15 @@ export default function Events() {
       <div className="max-w-5xl mx-auto px-3 py-3">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <div>
-          <h1 className="text-lg font-bold text-foreground tracking-tight">イベント一覧</h1>
-          <p className="text-muted-foreground text-[10px]">イベントを選択して配置管理</p>
+        <div className="flex items-center gap-2">
+          <div>
+            <h1 className="text-lg font-bold text-foreground tracking-tight">イベント一覧</h1>
+            <p className="text-muted-foreground text-[10px]">イベントを選択して配置管理</p>
+          </div>
+          <Button onClick={() => { setEditingEvent(null); setShowModal(true); }} className="gap-1" size="sm" disabled={!canEdit}>
+            <Plus className="w-3.5 h-3.5" />
+            新規
+          </Button>
         </div>
         <div className="flex items-center gap-2">
           {currentUser && (
@@ -76,10 +82,6 @@ export default function Events() {
               </button>
             </div>
           )}
-          <Button onClick={() => { setEditingEvent(null); setShowModal(true); }} className="gap-1" size="sm" disabled={!canEdit}>
-            <Plus className="w-3.5 h-3.5" />
-            新規
-          </Button>
         </div>
       </div>
 

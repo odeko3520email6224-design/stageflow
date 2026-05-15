@@ -16,7 +16,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 
 export default function EventDetail() {
   const { eventId } = useParams();
-  const [tab, setTab] = useState("list");
+  const [tab, setTab] = useState("staff");
 
   const { isAdmin, canManageSettings } = useUserRole();
   const [currentUser, setCurrentUser] = useState(null);

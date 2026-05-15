@@ -37,7 +37,7 @@ export default function StaffScrapeModal({ eventId, onClose }) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <h2 className="font-bold text-base flex items-center gap-2">
             <Download className="w-4 h-4 text-primary" />
-            サイトからスタッフを取得
+            点呼表からスタッフリストを取得
           </h2>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
             <X className="w-4 h-4" />
@@ -58,7 +58,7 @@ export default function StaffScrapeModal({ eventId, onClose }) {
               }}
             />
             <p className="text-[11px] text-muted-foreground mt-1">
-              <code className="bg-muted px-1 rounded">&lt;span class="onamae"&gt;&lt;span class="search"&gt;</code> から名前を取得します
+              A-CAST 点呼表からスタッフリストを取得します。電話番号などの情報は収集しません。
             </p>
           </div>
 
@@ -91,7 +91,7 @@ export default function StaffScrapeModal({ eventId, onClose }) {
           <Button variant="outline" onClick={onClose} className="flex-1">キャンセル</Button>
           <Button onClick={handleScrape} disabled={!url.trim() || loading} className="flex-1 gap-2">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            {loading ? "取得中..." : "取得する"}
+            {loading ? "取得中..." : "点呼表から取得"}
           </Button>
         </div>
       </div>
