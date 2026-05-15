@@ -62,10 +62,7 @@ export default function PositionTypeManagement({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-bold flex items-center gap-1.5"><Settings className="w-4 h-4 text-primary" />ポジション設定（全イベント共通）</h2>
-        <span className="text-xs text-muted-foreground">{positionTypes.length}件登録中</span>
-      </div>
+      <h2 className="text-base font-bold flex items-center gap-1.5 mb-3"><Settings className="w-4 h-4 text-primary" />ポジション設定（全イベント共通）</h2>
 
       {/* Add form */}
       <div className="bg-card border border-border rounded-xl p-3 mb-4">
@@ -127,7 +124,9 @@ export default function PositionTypeManagement({ eventId }) {
         </div>
       )}
 
+      <div className="border-t border-border my-4" />
       <PositionPresetManager eventId={eventId} />
+      <div className="border-t border-border my-4" />
       <MapTemplateManagement eventId={eventId} />
     </div>
   );

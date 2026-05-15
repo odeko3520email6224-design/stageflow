@@ -62,13 +62,10 @@ export default function MapTemplateManagement({ eventId }) {
 
   return (
     <div className="mt-6 border-t border-border pt-5">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-base font-bold flex items-center gap-2">
-          <Map className="w-4 h-4 text-primary" />
-          会場マップテンプレート
-        </h3>
-        <span className="text-xs text-muted-foreground">{templates.length}件</span>
-      </div>
+      <h3 className="text-base font-bold flex items-center gap-2 mb-3">
+        <Map className="w-4 h-4 text-primary" />
+        会場マップテンプレート
+      </h3>
 
       {/* 現在のマップをテンプレート保存 */}
       <div className="bg-card border border-border rounded-xl p-3 mb-4">
