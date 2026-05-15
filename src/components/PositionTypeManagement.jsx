@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Settings } from "lucide-react";
+import { Plus, Trash2, Settings, Moon, Sun } from "lucide-react";
 import MapTemplateManagement from "@/components/MapTemplateManagement";
 import PositionPresetManager from "@/components/PositionPresetManager";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useTheme } from "@/lib/ThemeProvider";
 
 const PRESET_COLORS = [
   "#6366f1", "#3b82f6", "#10b981", "#f59e0b",
@@ -27,6 +28,7 @@ export default function PositionTypeManagement({ eventId }) {
   const [color, setColor] = useState(PRESET_COLORS[0]);
   const queryClient = useQueryClient();
   const { canEdit: isAdmin } = useUserRole();
+  const { isDark, setIsDark } = useTheme();
 
   const { data: positionTypes = [], isLoading } = useQuery({
     queryKey: ["positionTypes"],
@@ -62,7 +64,17 @@ export default function PositionTypeManagement({ eventId }) {
 
   return (
     <div>
-      <h2 className="text-base font-bold flex items-center gap-1.5 mb-3"><Settings className="w-4 h-4 text-primary" />ポジション設定（全イベント共通）</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-bold flex items-center gap-1.5"><Settings className="w-4 h-4 text-primary" />ポジション設定（全イベント共通）</h2>
+        <button
+          onClick={() => setIsDark(!isDark)}
+          className="p-2 rounded-lg hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={isDark ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
+          title={isDark ? 'ライトモード' : 'ダークモード'}
+        >
+          {isDark ? <Sun className="w-5 h-5 text-amber-500" aria-hidden="true" /> : <Moon className="w-5 h-5 text-slate-600" aria-hidden="true" />}
+        </button>
+      </div>
 
       {/* Add form */}
       <div className="bg-card border border-border rounded-xl p-3 mb-4">

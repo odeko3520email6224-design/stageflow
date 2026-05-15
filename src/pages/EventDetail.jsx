@@ -64,7 +64,7 @@ export default function EventDetail() {
       <AnnouncementAlert eventId={eventId} />
 
       {/* Top bar */}
-      <div className="bg-card border-b border-border sticky top-0 z-50 safe-area-top pt-2">
+      <div className="bg-card border-b border-border sticky top-0 z-50 safe-area-top pt-4">
         {/* Row 1: back + event name + user */}
         <div className="max-w-6xl mx-auto px-3 pb-1 flex items-center gap-2">
           <Link to="/" className="relative z-[100] p-1.5 rounded-lg hover:bg-muted transition-colors shrink-0" aria-label="戻る">
