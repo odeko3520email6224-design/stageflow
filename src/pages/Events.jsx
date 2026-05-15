@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Calendar, MapPin, ChevronRight, Trash2, Pencil } from "lucide-react";
+import { Plus, Calendar, MapPin, ChevronRight, Trash2, Pencil, LogOut, User } from "lucide-react";
 import EventFormModal from "@/components/EventFormModal";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -19,8 +19,13 @@ const statusColor = {
 export default function Events() {
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const queryClient = useQueryClient();
   const { canEdit: isAdmin } = useUserRole();
+
+  useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["events"],
@@ -52,10 +57,30 @@ export default function Events() {
           <h1 className="text-lg font-bold text-foreground tracking-tight">イベント一覧</h1>
           <p className="text-muted-foreground text-[10px]">イベントを選択して配置管理</p>
         </div>
-        <Button onClick={() => { setEditingEvent(null); setShowModal(true); }} className="gap-1" size="sm" disabled={!isAdmin}>
-          <Plus className="w-3.5 h-3.5" />
-          新規
-        </Button>
+        <div className="flex items-center gap-2">
+          {currentUser && (
+            <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2 py-1">
+              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+                <User className="w-3 h-3 text-primary" />
+              </div>
+              <div className="text-right">
+                <div className="text-xs font-medium leading-none">{currentUser.full_name || currentUser.email}</div>
+                {currentUser.full_name && <div className="text-[10px] text-muted-foreground leading-none mt-0.5">{currentUser.email}</div>}
+              </div>
+              <button
+                onClick={() => base44.auth.logout()}
+                className="ml-1 p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors"
+                title="ログアウト"
+              >
+                <LogOut className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+          <Button onClick={() => { setEditingEvent(null); setShowModal(true); }} className="gap-1" size="sm" disabled={!isAdmin}>
+            <Plus className="w-3.5 h-3.5" />
+            新規
+          </Button>
+        </div>
       </div>
 
         {isLoading ? (
