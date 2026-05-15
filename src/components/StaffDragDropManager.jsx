@@ -112,9 +112,13 @@ export default function StaffDragDropManager({ eventId }) {
     return acc;
   }, {});
 
-  // 全スロットいずれにも配置されていないスタッフのみ未配置とする
-  const assignedNames = new Set(positions.flatMap((p) => p.staff_names || []));
-  const unassigned = staffList.filter((s) => !assignedNames.has(s.name));
+  // 3つのスロット全てに配置されていないスタッフのみ未配置とする
+  const unassigned = staffList.filter((s) => {
+    const slotsWithAssignment = TIME_SLOTS.filter((slot) => {
+      return positions.some((p) => (p.time_slot || "開場前") === slot && (p.staff_names || []).includes(s.name));
+    });
+    return slotsWithAssignment.length < TIME_SLOTS.length;
+  });
 
   return (
     <div>
