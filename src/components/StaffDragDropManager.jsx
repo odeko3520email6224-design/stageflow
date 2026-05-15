@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { AlertCircle, ClipboardList, BookOpen, Plus } from "lucide-react";
+import { AlertCircle, ClipboardList, BookOpen, Plus, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import PositionCard from "@/components/PositionCard";
 import PositionFormModal from "@/components/PositionFormModal";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 
 export default function StaffDragDropManager({ eventId }) {
@@ -41,6 +43,8 @@ export default function StaffDragDropManager({ eventId }) {
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
     },
   });
+
+  const { exporting: exportingPDF, exportPDF: handleExportPDF } = usePDFExport(eventId, "staff", "配置表");
 
   const [draggedStaff, setDraggedStaff] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -131,7 +135,11 @@ export default function StaffDragDropManager({ eventId }) {
       )}
 
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-bold flex items-center gap-1.5"><ClipboardList className="w-4 h-4 text-primary" />ドラッグ配置表</h2>
+        <h2 className="text-sm font-bold flex items-center gap-1.5"><ClipboardList className="w-4 h-4 text-primary" />配置表</h2>
+        <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={handleExportPDF} disabled={exportingPDF || positions.length === 0}>
+          <Download className="w-3 h-3" />
+          {exportingPDF ? 'エクスポート中...' : 'PDF出力'}
+        </Button>
       </div>
 
       <div className="space-y-2">

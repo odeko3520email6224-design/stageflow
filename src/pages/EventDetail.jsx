@@ -3,7 +3,6 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { ChevronLeft, List, Map, Users, Settings, Clock, Megaphone, User, LogOut } from "lucide-react";
-import StaffList from "@/components/StaffList";
 import VenueMap from "@/components/VenueMap";
 import StaffManagement from "@/components/StaffManagement";
 import PositionTypeManagement from "@/components/PositionTypeManagement";
@@ -44,8 +43,7 @@ export default function EventDetail() {
 
   const TABS = [
     { id: "staff", label: "スタッフ管理", icon: Users },
-    { id: "dragdrop", label: "ドラッグ配置表", icon: List },
-    { id: "list", label: "配置表", icon: List },
+    { id: "dragdrop", label: "配置表", icon: List },
     { id: "map", label: "会場マップ", icon: Map },
     { id: "timeline", label: "タイムライン", icon: Clock },
     { id: "notice", label: "連絡", icon: Megaphone },
@@ -116,7 +114,6 @@ export default function EventDetail() {
         {tab === "staff" && <StaffManagement eventId={eventId} />}
         {tab === "dragdrop" && <StaffDragDropManager eventId={eventId} />}
         {tab === "admin" && <PositionTypeManagement eventId={eventId} />}
-        {tab === "list" && <StaffList eventId={eventId} />}
         {tab === "map" && <VenueMap eventId={eventId} />}
         {tab === "timeline" && <StaffTimeline eventId={eventId} />}
         {tab === "notice" && <AnnouncementManager eventId={eventId} />}
