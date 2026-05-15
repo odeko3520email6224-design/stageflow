@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ChevronLeft, List, Map, Users, Settings, Clock, Megaphone } from "lucide-react";
+import { ChevronLeft, List, Map, Users, Settings, Clock, Megaphone, User, LogOut } from "lucide-react";
 import StaffList from "@/components/StaffList";
 import VenueMap from "@/components/VenueMap";
 import StaffManagement from "@/components/StaffManagement";
@@ -20,6 +20,11 @@ export default function EventDetail() {
   const [tab, setTab] = useState("list");
 
   const { isAdmin } = useUserRole();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
 
   const { data: event, isLoading } = useQuery({
     queryKey: ["event", eventId],
@@ -54,7 +59,7 @@ export default function EventDetail() {
 
       {/* Top bar - 2 rows */}
       <div className="bg-card border-b border-border sticky top-0 z-50">
-        {/* Row 1: back + event name */}
+        {/* Row 1: back + event name + user */}
         <div className="max-w-6xl mx-auto px-3 pt-2 pb-1 flex items-center gap-2">
           <Link to="/" className="relative z-[100] p-1 rounded-lg hover:bg-muted transition-colors shrink-0">
             <ChevronLeft className="w-4 h-4" />
@@ -68,6 +73,24 @@ export default function EventDetail() {
               </div>
             )}
           </div>
+          {currentUser && (
+            <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2 py-1 shrink-0">
+              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+                <User className="w-3 h-3 text-primary" />
+              </div>
+              <div className="text-right hidden sm:block">
+                <div className="text-xs font-medium leading-none">{currentUser.full_name || currentUser.email}</div>
+                {currentUser.full_name && <div className="text-[10px] text-muted-foreground leading-none mt-0.5">{currentUser.email}</div>}
+              </div>
+              <button
+                onClick={() => base44.auth.logout()}
+                className="ml-1 p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors"
+                title="ログアウト"
+              >
+                <LogOut className="w-3 h-3" />
+              </button>
+            </div>
+          )}
         </div>
         {/* Row 2: tabs */}
         <div className="max-w-6xl mx-auto px-1 pb-0 overflow-x-auto scrollbar-hide">
