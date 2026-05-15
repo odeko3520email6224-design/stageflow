@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,26 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
       onSaved();
     },
   });
+
+  // Auto-save on form changes
+  const prevFormRef = useRef(form);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const prev = prevFormRef.current;
+      if (
+        prev.name !== form.name ||
+        prev.role !== form.role ||
+        prev.time_slot !== form.time_slot ||
+        prev.staff_names !== form.staff_names ||
+        prev.notes !== form.notes ||
+        prev.color !== form.color
+      ) {
+        mutation.mutate({ ...form, name: form.name || form.role });
+        prevFormRef.current = form;
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [form]);
 
   const toggleStaff = (staffName) => {
     setForm((f) => {
@@ -172,13 +192,16 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
         </div>
 
         <div className="flex gap-3 mt-6">
-          <Button variant="outline" className="flex-1" onClick={onClose}>キャンセル</Button>
+          <Button variant="outline" className="flex-1" onClick={onClose}>閉じる</Button>
           <Button
             className="flex-1"
             disabled={mutation.isPending}
-            onClick={() => mutation.mutate({ ...form, name: form.name || form.role })}
+            onClick={() => {
+              mutation.mutate({ ...form, name: form.name || form.role });
+              setTimeout(onClose, 500);
+            }}
           >
-            {mutation.isPending ? "保存中..." : "保存"}
+            {mutation.isPending ? "保存中..." : "保存済み"}
           </Button>
         </div>
       </div>

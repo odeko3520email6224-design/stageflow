@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,10 @@ function EditModal({ staff, onClose, onSaved }) {
   const [note, setNote] = useState(staff.note || "");
   const queryClient = useQueryClient();
 
+  const [localName, setLocalName] = useState(staff.name);
+  const [localNote, setLocalNote] = useState(staff.note || "");
+  const prevDataRef = useRef({ name: staff.name, note: staff.note || "" });
+
   const updateMutation = useMutation({
     mutationFn: (data) => base44.entities.Staff.update(staff.id, data),
     onSuccess: () => {
@@ -26,6 +30,17 @@ function EditModal({ staff, onClose, onSaved }) {
       onSaved();
     },
   });
+
+  // Auto-save on changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localName !== prevDataRef.current.name || localNote !== prevDataRef.current.note) {
+        updateMutation.mutate({ name: localName.trim(), note: localNote.trim() });
+        prevDataRef.current = { name: localName, note: localNote };
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [localName, localNote]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -39,22 +54,25 @@ function EditModal({ staff, onClose, onSaved }) {
         <div className="space-y-3">
           <div>
             <label className="text-xs font-medium text-muted-foreground">スタッフ名</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} className="mt-1" />
+            <Input value={localName} onChange={(e) => setLocalName(e.target.value)} className="mt-1" />
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">備考</label>
-            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="任意" className="mt-1" />
+            <Input value={localNote} onChange={(e) => setLocalNote(e.target.value)} placeholder="任意" className="mt-1" />
           </div>
         </div>
         <div className="flex gap-2 mt-4">
-          <Button variant="outline" className="flex-1" size="sm" onClick={onClose}>キャンセル</Button>
+          <Button variant="outline" className="flex-1" size="sm" onClick={onClose}>閉じる</Button>
           <Button
             className="flex-1"
             size="sm"
-            disabled={!name.trim() || updateMutation.isPending}
-            onClick={() => updateMutation.mutate({ name: name.trim(), note: note.trim() })}
+            disabled={!localName.trim() || updateMutation.isPending}
+            onClick={() => {
+              updateMutation.mutate({ name: localName.trim(), note: localNote.trim() });
+              setTimeout(onClose, 500);
+            }}
           >
-            {updateMutation.isPending ? "保存中..." : "保存"}
+            {updateMutation.isPending ? "保存中..." : "保存済み"}
           </Button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,25 @@ export default function EventFormModal({ event, onClose, onSaved }) {
         : base44.entities.Event.create(data),
     onSuccess: onSaved,
   });
+
+  // Auto-save on form changes
+  const prevFormRef = useRef(form);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const prev = prevFormRef.current;
+      if (
+        prev.name !== form.name ||
+        prev.date !== form.date ||
+        prev.venue !== form.venue ||
+        prev.description !== form.description ||
+        prev.status !== form.status
+      ) {
+        if (form.name) mutation.mutate(form);
+        prevFormRef.current = form;
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [form]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -65,13 +84,16 @@ export default function EventFormModal({ event, onClose, onSaved }) {
           </div>
         </div>
         <div className="flex gap-3 mt-6">
-          <Button variant="outline" className="flex-1" onClick={onClose}>キャンセル</Button>
+          <Button variant="outline" className="flex-1" onClick={onClose}>閉じる</Button>
           <Button
             className="flex-1"
             disabled={!form.name || mutation.isPending}
-            onClick={() => mutation.mutate(form)}
+            onClick={() => {
+              mutation.mutate(form);
+              setTimeout(onClose, 500);
+            }}
           >
-            {mutation.isPending ? "保存中..." : "保存"}
+            {mutation.isPending ? "保存中..." : "保存済み"}
           </Button>
         </div>
       </div>
