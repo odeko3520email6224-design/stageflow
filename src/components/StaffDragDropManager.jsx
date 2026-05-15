@@ -34,6 +34,17 @@ export default function StaffDragDropManager({ eventId }) {
   const updatePositionMutation = useMutation({
     mutationFn: ({ positionId, staffNames }) =>
       base44.entities.Position.update(positionId, { staff_names: staffNames }),
+    onMutate: async ({ positionId, staffNames }) => {
+      await queryClient.cancelQueries({ queryKey: ["positions", eventId] });
+      const previousPositions = queryClient.getQueryData(["positions", eventId]);
+      queryClient.setQueryData(["positions", eventId], (old) =>
+        old.map((p) => (p.id === positionId ? { ...p, staff_names: staffNames } : p))
+      );
+      return { previousPositions };
+    },
+    onError: (err, newData, context) => {
+      queryClient.setQueryData(["positions", eventId], context.previousPositions);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
     },
@@ -48,7 +59,20 @@ export default function StaffDragDropManager({ eventId }) {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Position.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positions", eventId] }),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["positions", eventId] });
+      const previousPositions = queryClient.getQueryData(["positions", eventId]);
+      queryClient.setQueryData(["positions", eventId], (old) =>
+        old.filter((p) => p.id !== id)
+      );
+      return { previousPositions };
+    },
+    onError: (err, id, context) => {
+      queryClient.setQueryData(["positions", eventId], context.previousPositions);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+    },
   });
 
   const openAdd = (slot) => {
@@ -148,7 +172,7 @@ export default function StaffDragDropManager({ eventId }) {
                 </div>
                 <button
                   onClick={() => openAdd(slot)}
-                  className="text-[11px] flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-white/60 hover:bg-white/90 transition-colors font-medium"
+                  className="text-[11px] flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-white/60 hover:bg-white/90 transition-colors font-medium select-none"
                 >
                   <Plus className="w-2.5 h-2.5" />追加
                 </button>

@@ -29,7 +29,7 @@ export default function PositionCard({
       onDrop={onDrop}
     >
       {/* ポジションヘッダー */}
-      <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-border/60 bg-muted/20">
+      <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-border/60 bg-muted/20 select-none">
         <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: pos.color || "#6366f1" }} />
         <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${TIME_SLOT_STYLES[pos.time_slot || "開場前"]?.badge || "bg-slate-100 border-slate-200 text-slate-700"}`}>
           {pos.name || pos.role}
@@ -75,7 +75,7 @@ export default function PositionCard({
                   : undefined
               }
               className={[
-                "flex items-center justify-between gap-2 px-2 py-1",
+                "flex items-center justify-between gap-2 px-2 py-1 select-none",
                 draggable && isAdmin ? "cursor-move hover:bg-muted/50" : "",
                 draggable && draggedStaff === name ? "opacity-50" : "",
               ].join(" ")}

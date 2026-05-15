@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { ChevronLeft, User, LogOut, Users, ClipboardList, MapPin, Clock, Bell, Settings } from "lucide-react";
+import { motion } from "framer-motion";
 import VenueMap from "@/components/VenueMap";
 import StaffManagement from "@/components/StaffManagement";
 import PositionTypeManagement from "@/components/PositionTypeManagement";
@@ -14,10 +15,11 @@ import BottomTabBar from "@/components/BottomTabBar";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useTabNavigation } from "@/hooks/useTabNavigation";
 
 export default function EventDetail() {
   const { eventId } = useParams();
-  const [tab, setTab] = useState("staff");
+  const [tab, setTab] = useTabNavigation("staff");
 
   const { isAdmin, canManageSettings } = useUserRole();
   const [currentUser, setCurrentUser] = useState(null);
@@ -102,7 +104,7 @@ export default function EventDetail() {
               <button
                 key={id}
                 onClick={() => setTab(id)}
-                className={`flex items-center gap-2 py-3 text-sm font-medium border-b-2 transition-colors select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                className={`flex items-center gap-2 py-3 text-sm font-medium border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 select-none ${
                   tab === id
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground"
@@ -118,12 +120,20 @@ export default function EventDetail() {
       </div>
 
       <div className="max-w-6xl mx-auto px-2 py-2 pb-24 sm:pb-12">
-        {tab === "staff" && <StaffManagement eventId={eventId} />}
-        {tab === "dragdrop" && <StaffDragDropManager eventId={eventId} />}
-        {tab === "admin" && <PositionTypeManagement eventId={eventId} />}
-        {tab === "map" && <VenueMap eventId={eventId} />}
-        {tab === "timeline" && <StaffTimeline eventId={eventId} />}
-        {tab === "notice" && <AnnouncementManager eventId={eventId} />}
+        <motion.div
+          key={tab}
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          {tab === "staff" && <StaffManagement eventId={eventId} />}
+          {tab === "dragdrop" && <StaffDragDropManager eventId={eventId} />}
+          {tab === "admin" && <PositionTypeManagement eventId={eventId} />}
+          {tab === "map" && <VenueMap eventId={eventId} />}
+          {tab === "timeline" && <StaffTimeline eventId={eventId} />}
+          {tab === "notice" && <AnnouncementManager eventId={eventId} />}
+        </motion.div>
       </div>
 
       {/* Bottom Tab Navigation - Mobile Only */}

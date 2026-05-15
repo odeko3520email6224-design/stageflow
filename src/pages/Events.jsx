@@ -6,6 +6,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Calendar, MapPin, ChevronRight, Trash2, Pencil, LogOut, User } from "lucide-react";
+import { motion } from "framer-motion";
 import EventFormModal from "@/components/EventFormModal";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -65,7 +66,7 @@ export default function Events() {
             新規
           </Button>
           {currentUser && (
-            <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2 py-1 min-w-0">
+            <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2 py-1 min-w-0 group">
               <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                 <User className="w-3 h-3 text-primary" />
               </div>
@@ -73,13 +74,30 @@ export default function Events() {
                 <div className="text-xs font-medium leading-none truncate">{currentUser.full_name || currentUser.email}</div>
                 {currentUser.full_name && <div className="text-[10px] text-muted-foreground leading-none mt-0.5 truncate">{currentUser.email}</div>}
               </div>
-              <button
-                onClick={() => base44.auth.logout()}
-                className="ml-1 p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors shrink-0"
-                title="ログアウト"
-              >
-                <LogOut className="w-3 h-3" />
-              </button>
+              <div className="ml-1 flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                {currentUser.role === 'admin' && (
+                  <button
+                    onClick={() => {
+                      if (confirm('このアカウントを削除しますか？ この操作は取り消せません。')) {
+                        base44.users.inviteUser(currentUser.email, 'user').then(() => {
+                          base44.auth.logout();
+                        });
+                      }
+                    }}
+                    className="p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none"
+                    title="アカウント削除"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
+                <button
+                  onClick={() => base44.auth.logout()}
+                  className="p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none"
+                  title="ログアウト"
+                >
+                  <LogOut className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -96,7 +114,12 @@ export default function Events() {
             <p className="text-sm mt-1">新規イベントを追加してください</p>
           </div>
         ) : (
-          <div className="grid gap-2">
+          <motion.div 
+            className="grid gap-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             {events.map((event) => (
               <Link
                 key={event.id}
@@ -146,7 +169,7 @@ export default function Events() {
                 </div>
               </Link>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
 

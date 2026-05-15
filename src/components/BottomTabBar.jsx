@@ -18,7 +18,7 @@ export default function BottomTabBar({ activeTab, onTabChange }) {
           <button
             key={id}
             onClick={() => onTabChange(id)}
-            className={`flex flex-col items-center justify-center flex-1 h-full gap-1 select-none transition-colors focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-primary ${
+            className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-primary select-none ${
               activeTab === id
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
