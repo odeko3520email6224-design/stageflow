@@ -124,7 +124,10 @@ export default function StaffDragDropManager({ eventId }) {
       <PresetSelector eventId={eventId} />
 
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-bold flex items-center gap-1.5"><ClipboardList className="w-4 h-4 text-primary" />配置表</h2>
+        <div>
+          <h2 className="text-sm font-bold flex items-center gap-1.5 mb-0.5"><ClipboardList className="w-4 h-4 text-primary" />配置表</h2>
+          <p className="text-[11px] text-muted-foreground">スタッフそれぞれの配置管理が可能です。スマホ、タブレットなどでは、各スタッフをドラッグ&ドロップで配置することも可能です。</p>
+        </div>
         <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={handleExportPDF} disabled={exportingPDF || positions.length === 0}>
           <Download className="w-3 h-3" />
           {exportingPDF ? 'エクスポート中...' : 'PDF出力'}
