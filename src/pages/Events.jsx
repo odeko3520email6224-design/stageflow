@@ -52,28 +52,30 @@ export default function Events() {
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-3 py-3">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div>
+      <div className="mb-3">
+        {/* Row 1: Title */}
+        <div className="mb-1.5">
           <h1 className="text-lg font-bold text-foreground tracking-tight">イベント一覧</h1>
           <p className="text-muted-foreground text-[10px]">イベントを選択して配置管理</p>
         </div>
-        <div className="flex items-center gap-2">
+        {/* Row 2: New button + Account */}
+        <div className="flex items-center justify-between gap-2">
           <Button onClick={() => { setEditingEvent(null); setShowModal(true); }} className="gap-1" size="sm" disabled={!canEdit}>
             <Plus className="w-3.5 h-3.5" />
             新規
           </Button>
           {currentUser && (
-            <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2 py-1">
-              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+            <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2 py-1 min-w-0">
+              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                 <User className="w-3 h-3 text-primary" />
               </div>
-              <div className="text-right">
-                <div className="text-xs font-medium leading-none">{currentUser.full_name || currentUser.email}</div>
-                {currentUser.full_name && <div className="text-[10px] text-muted-foreground leading-none mt-0.5">{currentUser.email}</div>}
+              <div className="text-right min-w-0">
+                <div className="text-xs font-medium leading-none truncate">{currentUser.full_name || currentUser.email}</div>
+                {currentUser.full_name && <div className="text-[10px] text-muted-foreground leading-none mt-0.5 truncate">{currentUser.email}</div>}
               </div>
               <button
                 onClick={() => base44.auth.logout()}
-                className="ml-1 p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors"
+                className="ml-1 p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors shrink-0"
                 title="ログアウト"
               >
                 <LogOut className="w-3 h-3" />
