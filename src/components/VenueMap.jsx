@@ -20,7 +20,7 @@ const TIME_SLOT_STYLES = {
   "終演後": "bg-slate-50 text-slate-700 border-slate-300",
 };
 
-function SidePanel({ positions, draggingPin, setDraggingPin, setMode, slotFilter }) {
+function SidePanel({ positions, draggingPin, setDraggingPin, setMode, slotFilter, onSidePanelDragStart }) {
   const filtered = positions.filter((p) => (p.time_slot || "開場前") === slotFilter);
   const onMap = filtered.filter((p) => p.map_x != null && p.map_y != null);
   const notOnMap = filtered.filter((p) => p.map_x == null || p.map_y == null);
@@ -37,8 +37,10 @@ function SidePanel({ positions, draggingPin, setDraggingPin, setMode, slotFilter
             {notOnMap.map((pos) => (
               <button
                 key={pos.id}
+                draggable
+                onDragStart={(e) => onSidePanelDragStart(e, pos)}
                 onClick={() => { setDraggingPin(pos); setMode("move-pin"); }}
-                className={`w-full flex items-center gap-2 bg-card border rounded-lg px-2 py-1.5 text-left transition-all hover:border-primary/50 ${draggingPin?.id === pos.id ? "border-primary bg-primary/5" : "border-border"}`}
+                className={`w-full flex items-center gap-2 bg-card border rounded-lg px-2 py-1.5 text-left transition-all hover:border-primary/50 cursor-grab active:cursor-grabbing ${draggingPin?.id === pos.id ? "border-primary bg-primary/5" : "border-border"}`}
               >
                 <div className="w-4 h-4 rounded-full border-2 border-white shadow flex-shrink-0" style={{ backgroundColor: pos.color || ROLE_COLORS[pos.role] || "#6366f1" }} />
                 <div className="min-w-0">
@@ -90,6 +92,9 @@ export default function VenueMap({ eventId }) {
   const [scale, setScale] = useState(1);
   const longPressTimer = useRef(null);
   const lastDistanceRef = useRef(null);
+  // Drag state for pins already on the map
+  const dragPinRef = useRef(null); // { id, startX, startY }
+  const isDraggingOnMap = useRef(false);
 
 
   const { data: positions = [] } = useQuery({
@@ -215,6 +220,66 @@ export default function VenueMap({ eventId }) {
     }
   };
 
+  // Drag handlers for pins already on the map
+  const handlePinDragStart = (e, pos) => {
+    e.stopPropagation();
+    isDraggingOnMap.current = false;
+    dragPinRef.current = pos;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", pos.id);
+    setTooltip(null);
+  };
+
+  const handleMapDragOver = (e) => {
+    e.preventDefault();
+    isDraggingOnMap.current = true;
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleMapDrop = (e) => {
+    e.preventDefault();
+    if (!dragPinRef.current) return;
+    const rect = mapRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    updatePosition.mutate({
+      id: dragPinRef.current.id,
+      data: { map_x: Math.max(0, Math.min(100, x)), map_y: Math.max(0, Math.min(100, y)) },
+    });
+    dragPinRef.current = null;
+    isDraggingOnMap.current = false;
+  };
+
+  // Touch drag handlers for pins on map (mobile)
+  const pinTouchDragRef = useRef(null);
+
+  const handlePinTouchStartOnMap = (e, pos) => {
+    longPressTimer.current = setTimeout(() => {
+      pinTouchDragRef.current = pos;
+      setTooltip(null);
+    }, 300);
+  };
+
+  const handleMapTouchMoveForDrag = (e) => {
+    if (!pinTouchDragRef.current) return;
+    e.preventDefault();
+    // visual feedback handled by drop on touchEnd
+  };
+
+  const handleMapTouchEndForDrag = (e) => {
+    clearTimeout(longPressTimer.current);
+    if (!pinTouchDragRef.current) return;
+    const touch = e.changedTouches[0];
+    const rect = mapRef.current.getBoundingClientRect();
+    const x = ((touch.clientX - rect.left) / rect.width) * 100;
+    const y = ((touch.clientY - rect.top) / rect.height) * 100;
+    updatePosition.mutate({
+      id: pinTouchDragRef.current.id,
+      data: { map_x: Math.max(0, Math.min(100, x)), map_y: Math.max(0, Math.min(100, y)) },
+    });
+    pinTouchDragRef.current = null;
+  };
+
   // Filter pins by slot tab
   const filteredPositions = slotFilter === "all"
     ? positions
@@ -299,9 +364,11 @@ export default function VenueMap({ eventId }) {
             <div
               ref={mapRef}
               onClick={handleMapClick}
-              onTouchEnd={handleMapTouchEnd}
-              onTouchMove={handleTouchMove}
-              onTouchCancel={handleTouchEnd}
+              onTouchEnd={(e) => { handleMapTouchEnd(e); handleMapTouchEndForDrag(e); }}
+              onTouchMove={(e) => { handleTouchMove(e); handleMapTouchMoveForDrag(e); }}
+              onTouchCancel={(e) => { handleTouchEnd(e); pinTouchDragRef.current = null; }}
+              onDragOver={handleMapDragOver}
+              onDrop={handleMapDrop}
               className={`relative border-2 ${mode === "move-pin" ? "border-primary cursor-crosshair" : "border-border cursor-default"} rounded-xl overflow-hidden ${event?.map_image_url ? "bg-black" : "bg-slate-100"}`}
               style={{ aspectRatio: "16/9", minHeight: 200, touchAction: "pinch-zoom" }}
           >
@@ -361,11 +428,13 @@ export default function VenueMap({ eventId }) {
                   style={{ left: `${pos.map_x}%`, top: `${pos.map_y}%`, transform: "translate(-50%, -50%)" }}
                 >
                   <button
-                    onClick={(e) => handlePinClick(e, pos)}
-                    onTouchStart={(e) => handlePinTouchStart(e, pos)}
-                    onTouchEnd={handlePinTouchEnd}
+                    draggable
+                    onDragStart={(e) => handlePinDragStart(e, pos)}
+                    onClick={(e) => { if (isDraggingOnMap.current) { isDraggingOnMap.current = false; return; } handlePinClick(e, pos); }}
+                    onTouchStart={(e) => { handlePinTouchStart(e, pos); handlePinTouchStartOnMap(e, pos); }}
+                    onTouchEnd={(e) => { handlePinTouchEnd(); }}
                     onTouchMove={handlePinTouchEnd}
-                    className="flex flex-col items-center group select-none"
+                    className="flex flex-col items-center group select-none cursor-grab active:cursor-grabbing"
                   >
                     <div
                       className="w-5 h-5 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-[9px] font-bold transition-transform group-hover:scale-110 select-none"
@@ -441,6 +510,7 @@ export default function VenueMap({ eventId }) {
           setDraggingPin={setDraggingPin}
           setMode={setMode}
           slotFilter={slotFilter}
+          onSidePanelDragStart={(e, pos) => { dragPinRef.current = pos; e.dataTransfer.effectAllowed = "move"; }}
         />
       </div>
 
