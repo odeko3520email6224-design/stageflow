@@ -73,5 +73,15 @@
   }
   body {
     @apply bg-background text-foreground font-noto;
+    overscroll-behavior: none;
+  }
+}
+
+@supports (padding: max(0px)) {
+  .safe-area-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.25rem);
+  }
+  .safe-area-top {
+    padding-top: max(env(safe-area-inset-top), 0);
   }
 }

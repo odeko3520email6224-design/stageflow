@@ -49,8 +49,8 @@ export default function Events() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-5xl mx-auto px-3 py-3">
+    <div className="min-h-screen bg-background safe-area-top safe-area-bottom">
+      <div className="max-w-5xl mx-auto px-3 py-3 pb-24 sm:pb-3">
       {/* Header */}
       <div className="mb-3">
         {/* Row 1: Title */}
@@ -60,7 +60,7 @@ export default function Events() {
         </div>
         {/* Row 2: New button + Account */}
         <div className="flex items-center justify-between gap-2">
-          <Button onClick={() => { setEditingEvent(null); setShowModal(true); }} className="gap-1" size="sm" disabled={!canEdit}>
+          <Button onClick={() => { setEditingEvent(null); setShowModal(true); }} className="gap-1 select-none" size="sm" disabled={!canEdit}>
             <Plus className="w-3.5 h-3.5" />
             新規
           </Button>
@@ -128,19 +128,19 @@ export default function Events() {
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
                     <button
-                      onClick={(e) => handleEdit(e, event)}
-                      disabled={!canEdit}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                    >
-                      <Pencil className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={(e) => handleDelete(e, event.id)}
-                      disabled={!canEdit}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
+                       onClick={(e) => handleEdit(e, event)}
+                       disabled={!canEdit}
+                       className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-30 disabled:pointer-events-none select-none"
+                     >
+                       <Pencil className="w-3 h-3" />
+                     </button>
+                     <button
+                       onClick={(e) => handleDelete(e, event.id)}
+                       disabled={!canEdit}
+                       className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30 disabled:pointer-events-none select-none"
+                     >
+                       <Trash2 className="w-3 h-3" />
+                     </button>
                     <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>
                 </div>
