@@ -52,21 +52,23 @@ export default function EventDetail() {
       {/* Top bar */}
       <div className="bg-card border-b border-border sticky top-0 z-50 safe-area-top">
         {/* Row 1: back + event name + user */}
-        <div className="max-w-6xl mx-auto px-3 pt-2 pb-1 flex items-center gap-2">
-          <Link to="/" className="relative z-[100] p-1 rounded-lg hover:bg-muted transition-colors shrink-0">
-            <ChevronLeft className="w-4 h-4" />
-          </Link>
-          <div className="min-w-0 flex-1">
-            <h1 className="font-bold text-base leading-tight truncate">{event.name}</h1>
-            {(event.date || event.venue) && (
-              <div className="text-[10px] text-muted-foreground leading-tight">
-                {event.date && format(new Date(event.date), "M月d日（E）", { locale: ja })}
-                {event.venue && `　${event.venue}`}
-              </div>
-            )}
+        <div className="max-w-6xl mx-auto px-3 pt-2 pb-1 flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Link to="/" className="relative z-[100] p-1 rounded-lg hover:bg-muted transition-colors shrink-0">
+              <ChevronLeft className="w-4 h-4" />
+            </Link>
+            <div className="min-w-0 flex-1">
+              <h1 className="font-bold text-base leading-tight truncate">{event.name}</h1>
+              {(event.date || event.venue) && (
+                <div className="text-[10px] text-muted-foreground leading-tight">
+                  {event.date && format(new Date(event.date), "M月d日（E）", { locale: ja })}
+                  {event.venue && `　${event.venue}`}
+                </div>
+              )}
+            </div>
           </div>
           {currentUser && (
-            <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2 py-1 shrink-0">
+            <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2 py-1 shrink-0 sm:ml-auto">
               <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
                 <User className="w-3 h-3 text-primary" />
               </div>
