@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import {
   Bell, Plus, Trash2, Users, CheckCircle2, Clock, AlertTriangle,
-  ShieldAlert, Send, X, Eye, ChevronDown, ChevronUp, Megaphone
+  ShieldAlert, Send, X, Eye, ChevronDown, ChevronUp, Megaphone, Paperclip, FileText
 } from "lucide-react";
 
 const PRIORITY_STYLES = {
@@ -15,10 +15,13 @@ const PRIORITY_STYLES = {
 
 function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
   const queryClient = useQueryClient();
+  const fileInputRef = useRef(null);
   const [form, setForm] = useState({
     title: "", body: "", priority: "通常", target_staff: [], is_alert: false,
   });
   const [allStaff, setAllStaff] = useState(true);
+  const [attachedFiles, setAttachedFiles] = useState([]); // [{name, url}]
+  const [uploading, setUploading] = useState(false);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Announcement.create(data),
@@ -38,6 +41,21 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
     }));
   };
 
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setUploading(true);
+    const uploaded = await Promise.all(
+      files.map(async (file) => {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        return { name: file.name, url: file_url };
+      })
+    );
+    setAttachedFiles((prev) => [...prev, ...uploaded]);
+    setUploading(false);
+    e.target.value = "";
+  };
+
   const handleSubmit = () => {
     if (!form.title.trim()) return;
     createMutation.mutate({
@@ -45,6 +63,7 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
       event_id: eventId,
       target_staff: allStaff ? [] : form.target_staff,
       read_by: [],
+      file_urls: attachedFiles.map((f) => f.url),
     });
   };
 
@@ -118,6 +137,34 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
               <div className="text-xs font-semibold">アラートバナー表示</div>
               <div className="text-[10px] text-muted-foreground">ページ上部に緊急通知として表示</div>
             </div>
+          </div>
+
+          {/* File attachment */}
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground mb-1 block">ファイル添付</label>
+            <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileChange} />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border bg-muted hover:bg-muted/80 transition-colors text-muted-foreground"
+            >
+              <Paperclip className="w-3.5 h-3.5" />
+              {uploading ? "アップロード中..." : "ファイルを選択"}
+            </button>
+            {attachedFiles.length > 0 && (
+              <div className="mt-1.5 space-y-1">
+                {attachedFiles.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs bg-card border border-border rounded-lg px-2 py-1">
+                    <FileText className="w-3 h-3 text-muted-foreground shrink-0" />
+                    <span className="flex-1 truncate">{f.name}</span>
+                    <button onClick={() => setAttachedFiles((prev) => prev.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Target staff */}
@@ -221,6 +268,19 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
           {ann.body && (
             <p className={`text-xs text-muted-foreground mt-0.5 ${expanded ? "" : "line-clamp-1"}`}>{ann.body}</p>
           )}
+          {(ann.file_urls || []).length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {ann.file_urls.map((url, i) => {
+                const fileName = url.split("/").pop().split("?")[0] || `添付${i + 1}`;
+                return (
+                  <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-muted border border-border text-muted-foreground hover:text-primary hover:border-primary transition-colors">
+                    <Paperclip className="w-2.5 h-2.5" />{fileName}
+                  </a>
+                );
+              })}
+            </div>
+          )}
           <div className="flex items-center gap-3 mt-1.5">
             <span className="flex items-center gap-1 text-[10px] text-green-600">
               <CheckCircle2 className="w-3 h-3" />{readCount}名既読
@@ -241,7 +301,7 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
             onClick={() => setShowConfirm(!showConfirm)}
             className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200 hover:bg-green-200 transition-colors"
           >
-            <CheckCircle2 className="w-3 h-3" />確認
+            <CheckCircle2 className="w-3 h-3" />確認を行う
           </button>
           {ann.body && (
             <button onClick={() => setExpanded(!expanded)} className="p-1 rounded hover:bg-muted text-muted-foreground">
@@ -325,6 +385,17 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
 export default function AnnouncementManager({ eventId }) {
   const [showForm, setShowForm] = useState(false);
   const queryClient = useQueryClient();
+  const prevIdsRef = useRef(new Set());
+  const notifPermRef = useRef(null);
+
+  // Request browser notification permission on mount
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().then((p) => { notifPermRef.current = p; });
+    } else if ("Notification" in window) {
+      notifPermRef.current = Notification.permission;
+    }
+  }, []);
 
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
@@ -335,7 +406,29 @@ export default function AnnouncementManager({ eventId }) {
     queryKey: ["announcements", eventId],
     queryFn: () => base44.entities.Announcement.filter({ event_id: eventId }),
     select: (d) => d.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)),
+    refetchInterval: 15000, // poll every 15s for new announcements
   });
+
+  // Fire browser notification for new announcements
+  useEffect(() => {
+    if (!announcements.length) return;
+    const currentIds = new Set(announcements.map((a) => a.id));
+    if (prevIdsRef.current.size === 0) {
+      // Initial load — just record ids, don't notify
+      prevIdsRef.current = currentIds;
+      return;
+    }
+    const newItems = announcements.filter((a) => !prevIdsRef.current.has(a.id));
+    if (newItems.length > 0 && "Notification" in window && Notification.permission === "granted") {
+      newItems.forEach((a) => {
+        new Notification(`📢 新着連絡: ${a.title}`, {
+          body: a.body || "",
+          icon: "/favicon.ico",
+        });
+      });
+    }
+    prevIdsRef.current = currentIds;
+  }, [announcements]);
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Announcement.delete(id),

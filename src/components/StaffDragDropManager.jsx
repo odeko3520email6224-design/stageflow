@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { AlertCircle, ClipboardList, Plus, Download } from "lucide-react";
+import { AlertCircle, ClipboardList, Plus, Download, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PositionCard from "@/components/PositionCard";
 import PositionFormModal from "@/components/PositionFormModal";
@@ -112,6 +112,7 @@ export default function StaffDragDropManager({ eventId }) {
     return acc;
   }, {});
 
+  // 全スロットいずれにも配置されていないスタッフのみ未配置とする
   const assignedNames = new Set(positions.flatMap((p) => p.staff_names || []));
   const unassigned = staffList.filter((s) => !assignedNames.has(s.name));
 
@@ -215,6 +216,55 @@ export default function StaffDragDropManager({ eventId }) {
           </div>
         );
       })()}
+      {/* Staff overview list */}
+      <div className="mt-3 border border-border rounded-xl overflow-hidden">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted border-b border-border">
+          <Users className="w-3 h-3 text-muted-foreground" />
+          <span className="font-bold text-xs">スタッフ一覧</span>
+          <span className="text-[10px] text-muted-foreground">{staffList.length}名</span>
+        </div>
+        <div className="bg-card divide-y divide-border">
+          {staffList.length === 0 ? (
+            <p className="text-[11px] text-muted-foreground text-center py-3">スタッフが登録されていません</p>
+          ) : (
+            staffList.map((s) => {
+              const slotAssignments = TIME_SLOTS.map((slot) => {
+                const pos = positions.filter(
+                  (p) => (p.time_slot || "開場前") === slot && (p.staff_names || []).includes(s.name)
+                );
+                return { slot, positions: pos };
+              }).filter((sa) => sa.positions.length > 0);
+              return (
+                <div key={s.id} className="flex items-start gap-2 px-3 py-2">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] shrink-0 mt-0.5">
+                    {s.name.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium">{s.name}</p>
+                    {slotAssignments.length === 0 ? (
+                      <span className="text-[10px] text-amber-600 flex items-center gap-0.5"><AlertCircle className="w-2.5 h-2.5" />全スロット未配置</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1 mt-0.5">
+                        {slotAssignments.map(({ slot, positions: ps }) =>
+                          ps.map((p) => {
+                            const style = TIME_SLOT_STYLES[slot];
+                            return (
+                              <span key={p.id} className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${style.header}`}>
+                                {slot}：{p.name}
+                              </span>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
       {showModal && (
         <PositionFormModal
           position={editing}
