@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { AlertCircle, ClipboardList, Plus, Download, Users } from "lucide-react";
+import { AlertCircle, ClipboardList, Plus, Download, Users, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PositionCard from "@/components/PositionCard";
 import PositionFormModal from "@/components/PositionFormModal";
@@ -18,6 +18,11 @@ export default function StaffDragDropManager({ eventId }) {
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
     queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+  });
+
+  const { data: positionTypes = [] } = useQuery({
+    queryKey: ["positionTypes"],
+    queryFn: () => base44.entities.PositionType.list(),
   });
 
   const { data: positions = [] } = useQuery({
@@ -148,27 +153,37 @@ export default function StaffDragDropManager({ eventId }) {
     <div>
       <PresetSelector eventId={eventId} />
 
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+      <div className="flex flex-col gap-2 mb-2">
         <div className="flex-1">
           <h2 className="text-sm font-bold flex items-center gap-1.5 mb-0.5"><ClipboardList className="w-4 h-4 text-primary" />配置表</h2>
-          <p className="text-[11px] text-muted-foreground">スタッフそれぞれの配置管理が可能です。スマホ、タブレットなどでは、各スタッフをドラッグ&ドロップで配置することも可能です。</p>
+          <p className="text-[11px] text-muted-foreground">スタッフそれぞれの配置管理が可能です。</p>
         </div>
-        <Button size="sm" variant="outline" className="gap-1 h-7 text-xs sm:ml-auto shrink-0" onClick={handleExportPDF} disabled={exportingPDF || positions.length === 0}>
-          <Download className="w-3 h-3" />
+        <Button size="sm" variant="outline" className="gap-1 h-9 text-sm w-full" onClick={handleExportPDF} disabled={exportingPDF || positions.length === 0}>
+          <Download className="w-3.5 h-3.5" />
           {exportingPDF ? 'エクスポート中...' : 'PDF出力'}
         </Button>
+        {/* 全体合計人数 */}
+        {positions.length > 0 && (() => {
+          const totalAssigned = [...new Set(positions.flatMap((p) => p.staff_names || []))].length;
+          return (
+            <div className="text-sm font-medium text-foreground">全時間帯合計：{totalAssigned}名配置済み</div>
+          );
+        })()}
       </div>
 
       <div className="space-y-2">
         {TIME_SLOTS.map((slot) => {
           const style = TIME_SLOT_STYLES[slot];
+          const slotPositions = grouped[slot];
+          const slotStaffCount = [...new Set(slotPositions.flatMap((p) => p.staff_names || []))].length;
           return (
             <div key={slot} className={`border rounded-xl overflow-hidden ${style.header.split(" ").slice(0, 2).join(" ")}`}>
               {/* Section header */}
               <div className={`flex items-center justify-between px-3 py-1.5 border-b ${style.header}`}>
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-xs">{slot}</span>
-                  <span className="text-[10px] opacity-70">{grouped[slot].length}件</span>
+                  <span className="text-[10px] opacity-70">{slotPositions.length}件</span>
+                  <span className="text-[10px] opacity-70 flex items-center gap-0.5"><Users className="w-2.5 h-2.5" />{slotStaffCount}名</span>
                 </div>
                 <button
                   onClick={() => openAdd(slot)}
@@ -184,25 +199,30 @@ export default function StaffDragDropManager({ eventId }) {
                   <p className="text-[11px] text-muted-foreground text-center py-2">ポジションがありません</p>
                 ) : (
                   <div className="grid gap-1">
-                    {grouped[slot].map((pos) => (
-                      <PositionCard
-                        key={pos.id}
-                        pos={pos}
-                        isAdmin={isAdmin}
-                        draggable={true}
-                        draggedStaff={draggedStaff}
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDrop(e, pos.id)}
-                        onStaffDragStart={(e, name, posId) => {
-                          handleDragStart(e, name);
-                          removeStaffFromPosition(posId, name);
-                        }}
-                        onStaffRemove={removeStaffFromPosition}
-                        onEdit={(p) => { setEditing(p); setShowModal(true); }}
-                        onDelete={(id) => { if (confirm("削除しますか？")) deleteMutation.mutate(id); }}
-                        emptyLabel="スタッフをドラッグして配置"
-                      />
-                    ))}
+                    {grouped[slot].map((pos) => {
+                      const matchingPT = positionTypes.find((pt) => pt.name === pos.name);
+                      return (
+                       <PositionCard
+                         key={pos.id}
+                         pos={pos}
+                         isAdmin={isAdmin}
+                         draggable={true}
+                         draggedStaff={draggedStaff}
+                         onDragOver={handleDragOver}
+                         onDrop={(e) => handleDrop(e, pos.id)}
+                         onStaffDragStart={(e, name, posId) => {
+                           handleDragStart(e, name);
+                           removeStaffFromPosition(posId, name);
+                         }}
+                         onStaffRemove={removeStaffFromPosition}
+                         onEdit={(p) => { setEditing(p); setShowModal(true); }}
+                         onDelete={(id) => { if (confirm("削除しますか？")) deleteMutation.mutate(id); }}
+                         emptyLabel="スタッフをドラッグして配置"
+                         staffList={staffList}
+                         requiredCount={matchingPT?.required_count || 0}
+                       />
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -269,6 +289,7 @@ export default function StaffDragDropManager({ eventId }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium">{s.name}</p>
+                    {s.note && <p className="text-[10px] text-muted-foreground">{s.note}</p>}
                     {slotAssignments.length === 0 ? (
                       <span className="text-[10px] text-amber-600 flex items-center gap-0.5"><AlertCircle className="w-2.5 h-2.5" />全スロット未配置</span>
                     ) : (

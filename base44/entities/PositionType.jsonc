@@ -25,6 +25,11 @@
       "type": "string",
       "description": "\u8868\u793a\u8272",
       "default": "#6366f1"
+    },
+    "required_count": {
+      "type": "number",
+      "description": "\u5fc5\u8981\u4eba\u6570",
+      "default": 0
     }
   },
   "required": [

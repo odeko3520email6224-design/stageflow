@@ -327,9 +327,9 @@ export default function PositionPresetManager({ eventId }) {
   return (
     <div className="mt-3">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-base font-bold flex items-center gap-1.5">
+        <h2 className="text-sm font-bold flex items-center gap-1.5">
           <BookOpen className="w-4 h-4 text-primary" />ポジションプリセット
-        </h3>
+        </h2>
         {isAdmin && !creating && (
           <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setCreating(true)}>
             <Plus className="w-3.5 h-3.5" />新規プリセット

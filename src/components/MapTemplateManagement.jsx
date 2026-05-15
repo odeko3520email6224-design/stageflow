@@ -3,12 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Map, Download, Save } from "lucide-react";
+import { Trash2, Map, Save, Zap, X } from "lucide-react";
 
 export default function MapTemplateManagement({ eventId }) {
   const [newName, setNewName] = useState("");
   const [saving, setSaving] = useState(false);
   const [applying, setApplying] = useState(null);
+  const [clearing, setClearing] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: templates = [], isLoading } = useQuery({
@@ -42,6 +43,14 @@ export default function MapTemplateManagement({ eventId }) {
     setSaving(false);
   };
 
+  const handleClearAreas = async () => {
+    if (!confirm("現在のマップエリアをすべて削除しますか？")) return;
+    setClearing(true);
+    await Promise.all(currentAreas.map((a) => base44.entities.MapArea.delete(a.id)));
+    queryClient.invalidateQueries({ queryKey: ["mapareas", eventId] });
+    setClearing(false);
+  };
+
   // テンプレートを現在のイベントに適用（既存エリアを削除して上書き）
   const handleApply = async (template) => {
     if (!confirm(`「${template.name}」を現在のイベントに適用しますか？\n既存のマップエリアはすべて削除されます。`)) return;
@@ -61,11 +70,10 @@ export default function MapTemplateManagement({ eventId }) {
   };
 
   return (
-    <div className="mt-6 border-t border-border pt-5">
-      <h3 className="text-base font-bold flex items-center gap-2 mb-3">
-        <Map className="w-4 h-4 text-primary" />
-        会場マップテンプレート
-      </h3>
+    <div className="mt-4 border-t border-border pt-4">
+      <h2 className="text-sm font-bold flex items-center gap-1.5 mb-3">
+        <Map className="w-4 h-4 text-primary" />会場マップテンプレート
+      </h2>
 
       {/* 現在のマップをテンプレート保存 */}
       <div className="bg-card border border-border rounded-xl p-3 mb-4">
@@ -87,9 +95,16 @@ export default function MapTemplateManagement({ eventId }) {
             {saving ? "保存中..." : "保存"}
           </Button>
         </div>
-        {currentAreas.length > 0 && (
-          <p className="text-[10px] text-muted-foreground mt-1.5">現在 {currentAreas.length} エリア登録中</p>
-        )}
+        <div className="flex items-center justify-between mt-1.5">
+          {currentAreas.length > 0 && (
+            <p className="text-[10px] text-muted-foreground">現在 {currentAreas.length} エリア登録中</p>
+          )}
+          {currentAreas.length > 0 && (
+            <Button size="sm" variant="outline" className="gap-1 h-7 text-xs text-destructive hover:bg-destructive/10 border-destructive/30" disabled={clearing} onClick={handleClearAreas}>
+              <X className="w-3 h-3" />{clearing ? "削除中..." : "エリアを解除"}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* テンプレート一覧 */}
@@ -113,12 +128,11 @@ export default function MapTemplateManagement({ eventId }) {
               </div>
               <Button
                 size="sm"
-                variant="outline"
                 className="gap-1 h-7 text-xs shrink-0"
                 disabled={applying === tpl.id}
                 onClick={() => handleApply(tpl)}
               >
-                <Download className="w-3 h-3" />
+                <Zap className="w-3 h-3" />
                 {applying === tpl.id ? "適用中..." : "適用"}
               </Button>
               <button

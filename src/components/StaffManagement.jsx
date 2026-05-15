@@ -137,17 +137,15 @@ export default function StaffManagement({ eventId }) {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+      <div className="flex flex-col gap-2 mb-2">
         <div className="flex-1">
           <h2 className="text-sm font-bold flex items-center gap-1.5 mb-0.5"><UserCog className="w-4 h-4 text-primary" />スタッフ管理</h2>
-          <p className="text-[11px] text-muted-foreground">スタッフの追加、編集、削除などの管理が可能です。A-CAST 点呼表からのスタッフリストの取得も可能です。</p>
+          <p className="text-[11px] text-muted-foreground">スタッフの追加、編集、削除などの管理が可能です。</p>
         </div>
-        <div className="flex items-center gap-1.5 sm:ml-auto shrink-0">
-          <span className="text-[11px] text-muted-foreground">{staffList.length}名</span>
-          <Button size="sm" variant="outline" className="gap-0.5 h-6 text-[11px] px-2" onClick={() => setShowScrapeModal(true)}>
-            <Download className="w-2.5 h-2.5" />取得
-          </Button>
-        </div>
+        <div className="text-sm font-medium text-foreground">登録スタッフ数：{staffList.length}名</div>
+        <Button size="sm" variant="outline" className="gap-1 h-9 text-sm w-full" onClick={() => setShowScrapeModal(true)}>
+          <Download className="w-3.5 h-3.5" />A-CAST点呼表から取得
+        </Button>
       </div>
 
       {/* Add form */}
