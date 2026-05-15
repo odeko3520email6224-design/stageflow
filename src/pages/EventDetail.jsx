@@ -86,6 +86,34 @@ export default function EventDetail() {
         </div>
       </div>
 
+      {/* Desktop Tab Navigation */}
+      <div className="hidden sm:block border-b border-border">
+        <div className="max-w-6xl mx-auto px-3">
+          <div className="flex gap-6">
+            {[
+              { id: "staff", label: "スタッフ管理" },
+              { id: "dragdrop", label: "配置表" },
+              { id: "map", label: "会場マップ" },
+              { id: "timeline", label: "タイムライン" },
+              { id: "notice", label: "連絡事項" },
+              { id: "admin", label: "管理" },
+            ].map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setTab(id)}
+                className={`py-3 text-sm font-medium border-b-2 transition-colors select-none ${
+                  tab === id
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-6xl mx-auto px-2 py-2 pb-24 sm:pb-12">
         {tab === "staff" && <StaffManagement eventId={eventId} />}
         {tab === "dragdrop" && <StaffDragDropManager eventId={eventId} />}
