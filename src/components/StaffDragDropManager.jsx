@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { AlertCircle, ClipboardList, BookOpen, Plus, Download } from "lucide-react";
+import { AlertCircle, ClipboardList, Plus, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PositionCard from "@/components/PositionCard";
 import PositionFormModal from "@/components/PositionFormModal";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
+import PresetSelector from "@/components/PresetSelector";
 
 export default function StaffDragDropManager({ eventId }) {
   const queryClient = useQueryClient();
@@ -26,13 +27,6 @@ export default function StaffDragDropManager({ eventId }) {
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
     queryFn: () => base44.entities.Event.filter({ id: eventId }),
-    select: (d) => d[0],
-  });
-
-  const { data: activePreset } = useQuery({
-    queryKey: ["positionPreset", event?.active_preset_id],
-    queryFn: () => base44.entities.PositionPreset.filter({ id: event.active_preset_id }),
-    enabled: !!event?.active_preset_id,
     select: (d) => d[0],
   });
 
@@ -127,12 +121,7 @@ export default function StaffDragDropManager({ eventId }) {
 
   return (
     <div>
-      {activePreset && (
-        <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl bg-primary/5 border border-primary/20 text-primary text-xs font-medium">
-          <BookOpen className="w-3.5 h-3.5 shrink-0" />
-          <span>適用中プリセット：{activePreset.name}</span>
-        </div>
-      )}
+      <PresetSelector eventId={eventId} />
 
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-sm font-bold flex items-center gap-1.5"><ClipboardList className="w-4 h-4 text-primary" />配置表</h2>
