@@ -289,9 +289,9 @@ export default function VenueMap({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-bold flex items-center gap-1.5"><Map className="w-4 h-4 text-primary" />会場マップ</h2>
-        <div className="flex gap-1.5 flex-wrap justify-end">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
+        <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1"><Map className="w-4 h-4 text-primary" />会場マップ</h2>
+        <div className="flex gap-1.5 flex-wrap justify-end sm:ml-auto shrink-0">
           <Button
             size="sm"
             variant={mode === "move-pin" ? "default" : "outline"}

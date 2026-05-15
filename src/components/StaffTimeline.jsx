@@ -57,9 +57,9 @@ export default function StaffTimeline({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-sm font-bold flex items-center gap-1.5"><CalendarClock className="w-4 h-4 text-primary" />担当者別タイムライン</h2>
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-6">
+        <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1"><CalendarClock className="w-4 h-4 text-primary" />担当者別タイムライン</h2>
+        <div className="flex items-center gap-3 sm:ml-auto shrink-0">
           <span className="text-sm text-muted-foreground">{allNames.length}名</span>
           <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={handleExportPDF} disabled={exportingPDF || allNames.length === 0}>
             <Download className="w-3 h-3" />

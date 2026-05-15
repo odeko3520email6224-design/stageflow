@@ -451,8 +451,8 @@ export default function AnnouncementManager({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-bold flex items-center gap-1.5">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+        <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1">
           <Megaphone className="w-4 h-4 text-primary" />連絡事項
           {urgentCount > 0 && (
             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
@@ -460,7 +460,7 @@ export default function AnnouncementManager({ eventId }) {
             </span>
           )}
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:ml-auto shrink-0">
           {notifPermission !== "granted" && (
             <button
               onClick={() => {
