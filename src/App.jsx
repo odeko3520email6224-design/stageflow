@@ -51,7 +51,7 @@ function App() {
         <Router>
           <AuthenticatedApp />
         </Router>
-        <Toaster />
+        <Toaster position="top-center" zIndex={99999} />
       </QueryClientProvider>
     </AuthProvider>
   )
