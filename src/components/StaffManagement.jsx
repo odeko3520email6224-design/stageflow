@@ -34,9 +34,8 @@ function EditModal({ staff, onClose, onSaved }) {
   // Auto-save on changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (localName !== prevDataRef.current.name || localNote !== prevDataRef.current.note) {
+      if (localName.trim() && (localName !== staff.name || localNote !== (staff.note || ""))) {
         updateMutation.mutate({ name: localName.trim(), note: localNote.trim() });
-        prevDataRef.current = { name: localName, note: localNote };
       }
     }, 1000);
     return () => clearTimeout(timer);
@@ -63,17 +62,6 @@ function EditModal({ staff, onClose, onSaved }) {
         </div>
         <div className="flex gap-2 mt-4">
           <Button variant="outline" className="flex-1" size="sm" onClick={onClose}>閉じる</Button>
-          <Button
-            className="flex-1"
-            size="sm"
-            disabled={!localName.trim() || updateMutation.isPending}
-            onClick={() => {
-              updateMutation.mutate({ name: localName.trim(), note: localNote.trim() });
-              setTimeout(onClose, 500);
-            }}
-          >
-            {updateMutation.isPending ? "保存中..." : "保存済み"}
-          </Button>
         </div>
       </div>
     </div>

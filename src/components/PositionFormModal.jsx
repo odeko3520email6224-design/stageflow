@@ -50,22 +50,11 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
     },
   });
 
-  // Auto-save on form changes
-  const prevFormRef = useRef(form);
+  // Auto-save on form changes (only for existing positions)
   useEffect(() => {
+    if (!position) return; // Don't auto-save new positions
     const timer = setTimeout(() => {
-      const prev = prevFormRef.current;
-      if (
-        prev.name !== form.name ||
-        prev.role !== form.role ||
-        prev.time_slot !== form.time_slot ||
-        prev.staff_names !== form.staff_names ||
-        prev.notes !== form.notes ||
-        prev.color !== form.color
-      ) {
-        mutation.mutate({ ...form, name: form.name || form.role });
-        prevFormRef.current = form;
-      }
+      mutation.mutate({ ...form, name: form.name || form.role });
     }, 1000);
     return () => clearTimeout(timer);
   }, [form]);
@@ -193,16 +182,15 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
 
         <div className="flex gap-3 mt-6">
           <Button variant="outline" className="flex-1" onClick={onClose}>閉じる</Button>
-          <Button
-            className="flex-1"
-            disabled={mutation.isPending}
-            onClick={() => {
-              mutation.mutate({ ...form, name: form.name || form.role });
-              setTimeout(onClose, 500);
-            }}
-          >
-            {mutation.isPending ? "保存中..." : "保存済み"}
-          </Button>
+          {!position && (
+            <Button
+              className="flex-1"
+              disabled={!form.name || mutation.isPending}
+              onClick={() => mutation.mutate({ ...form, name: form.name || form.role })}
+            >
+              {mutation.isPending ? "保存中..." : "作成"}
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -37,23 +37,11 @@ export default function MapAreaFormModal({ area, eventId, onClose, onSaved }) {
     onSuccess: onSaved,
   });
 
-  // Auto-save on form changes
-  const prevFormRef = useRef(form);
+  // Auto-save on form changes (only for existing areas)
   useEffect(() => {
+    if (!area) return; // Don't auto-save new areas
     const timer = setTimeout(() => {
-      const prev = prevFormRef.current;
-      if (
-        prev.name !== form.name ||
-        prev.type !== form.type ||
-        prev.x !== form.x ||
-        prev.y !== form.y ||
-        prev.width !== form.width ||
-        prev.height !== form.height ||
-        prev.color !== form.color
-      ) {
-        if (form.name) mutation.mutate(form);
-        prevFormRef.current = form;
-      }
+      if (form.name) mutation.mutate(form);
     }, 1000);
     return () => clearTimeout(timer);
   }, [form]);
@@ -143,9 +131,11 @@ export default function MapAreaFormModal({ area, eventId, onClose, onSaved }) {
 
         <div className="flex gap-3 mt-6">
           <Button variant="outline" className="flex-1" onClick={onClose}>閉じる</Button>
-          <Button className="flex-1" disabled={!form.name || mutation.isPending} onClick={() => { mutation.mutate(form); setTimeout(onClose, 500); }}>
-            {mutation.isPending ? "保存中..." : "保存済み"}
-          </Button>
+          {!area && (
+            <Button className="flex-1" disabled={!form.name || mutation.isPending} onClick={() => mutation.mutate(form)}>
+              {mutation.isPending ? "作成中..." : "作成"}
+            </Button>
+          )}
         </div>
       </div>
     </div>
