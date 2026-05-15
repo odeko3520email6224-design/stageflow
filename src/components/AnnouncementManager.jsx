@@ -68,8 +68,8 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-card w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+      <div className="bg-card w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl h-[90vh] sm:h-auto flex flex-col">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <h3 className="font-bold text-base flex items-center gap-2">
             <Send className="w-4 h-4 text-primary" />連絡事項を作成
@@ -78,7 +78,7 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="p-4 space-y-3 max-h-[70vh] overflow-y-auto">
+        <div className="p-4 space-y-3 flex-1 overflow-y-auto">
           {/* Priority */}
           <div>
             <label className="text-xs font-semibold text-muted-foreground mb-1 block">優先度</label>
