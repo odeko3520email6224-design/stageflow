@@ -68,7 +68,7 @@ export default function Events() {
         {/* Row 1: Title */}
         <div className="mb-1.5">
           <h1 className="text-lg font-bold text-foreground tracking-tight">イベント一覧</h1>
-          <p className="text-muted-foreground text-[10px]"></p>
+          <p className="text-muted-foreground text-[10px]">イベント・コンサートの配置管理を行う</p>
         </div>
         {/* Row 2: New button + Account */}
         <div className="flex items-center justify-between gap-2">
