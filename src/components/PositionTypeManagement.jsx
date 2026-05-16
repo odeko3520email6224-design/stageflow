@@ -113,7 +113,8 @@ export default function PositionTypeManagement({ eventId }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-bold flex items-center gap-1.5"><Settings className="w-4 h-4 text-primary" />ポジション設定（全イベント共通）</h2>
+        <h2 className="text-sm font-bold flex items-center gap-1.5"><Settings className="w-4 h-4 text-primary" />ポジション設定</h2>
+        <p className="text-[11px] text-muted-foreground">必要人数は各イベントの配置表タブで個別に変更できます。ここでの設定はプリセット適用時の初期値です。</p>
         <button
           onClick={() => setIsDark(!isDark)}
           className="p-2 rounded-lg hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -125,7 +126,7 @@ export default function PositionTypeManagement({ eventId }) {
 
       {/* Add form */}
       <div className="bg-card border border-border rounded-xl p-2.5 mb-2">
-        <p className="text-[11px] font-medium mb-1.5 text-muted-foreground">ポジションを追加</p>
+        <p className="text-[11px] font-medium mb-1.5 text-muted-foreground">ポジションを追加（必要人数はプリセット適用時の初期値です）</p>
         <div className="space-y-1.5">
           <Input
             value={name}
