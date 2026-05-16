@@ -288,8 +288,10 @@ export default function StaffDragDropManager({ eventId }) {
                     {s.name.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium">{s.name}</p>
-                    {s.note && <p className="text-[10px] text-muted-foreground">{s.note}</p>}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-xs font-medium">{s.name}</p>
+                      {s.note && <span className="text-[10px] text-muted-foreground">({s.note})</span>}
+                    </div>
                     {slotAssignments.length === 0 ? (
                       <span className="text-[10px] text-amber-600 flex items-center gap-0.5"><AlertCircle className="w-2.5 h-2.5" />全スロット未配置</span>
                     ) : (

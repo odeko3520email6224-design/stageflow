@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Settings, Moon, Sun } from "lucide-react";
+import { Plus, Minus, Trash2, Settings, Moon, Sun } from "lucide-react";
 import MapTemplateManagement from "@/components/MapTemplateManagement";
 import PositionPresetManager from "@/components/PositionPresetManager";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -106,13 +106,21 @@ export default function PositionTypeManagement({ eventId }) {
             </select>
             <div className="flex items-center gap-1">
               <span className="text-xs text-muted-foreground shrink-0">必要人数</span>
-              <input
-                type="number"
-                min="0"
-                value={requiredCount}
-                onChange={(e) => setRequiredCount(Number(e.target.value))}
-                className="w-14 h-8 text-xs border border-border rounded-lg px-2 bg-background text-center"
-              />
+              <div className="flex items-center border border-border rounded-lg overflow-hidden">
+                <button type="button" onClick={() => setRequiredCount((n) => Math.max(0, n - 1))} className="w-7 h-8 flex items-center justify-center bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">
+                  <Minus className="w-3 h-3" />
+                </button>
+                <input
+                  type="number"
+                  min="0"
+                  value={requiredCount}
+                  onChange={(e) => setRequiredCount(Number(e.target.value))}
+                  className="w-10 h-8 text-xs bg-background text-center border-x border-border focus:outline-none"
+                />
+                <button type="button" onClick={() => setRequiredCount((n) => n + 1)} className="w-7 h-8 flex items-center justify-center bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">
+                  <Plus className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -152,14 +160,15 @@ export default function PositionTypeManagement({ eventId }) {
               {/* 必要人数 */}
               <div className="flex items-center gap-1 shrink-0">
                 <span className="text-[10px] text-muted-foreground">必要:</span>
-                <input
-                  type="number"
-                  min="0"
-                  value={pt.required_count || 0}
-                  onChange={(e) => updateRequiredMutation.mutate({ id: pt.id, required_count: Number(e.target.value) })}
-                  className="w-10 h-6 text-[11px] border border-border rounded px-1 bg-background text-center"
-                  disabled={!isAdmin}
-                />
+                <div className="flex items-center border border-border rounded overflow-hidden">
+                  <button type="button" disabled={!isAdmin} onClick={() => updateRequiredMutation.mutate({ id: pt.id, required_count: Math.max(0, (pt.required_count || 0) - 1) })} className="w-5 h-6 flex items-center justify-center bg-muted hover:bg-muted/80 disabled:opacity-30 disabled:pointer-events-none text-muted-foreground">
+                    <Minus className="w-2.5 h-2.5" />
+                  </button>
+                  <span className="w-7 text-[11px] text-center bg-background border-x border-border leading-6">{pt.required_count || 0}</span>
+                  <button type="button" disabled={!isAdmin} onClick={() => updateRequiredMutation.mutate({ id: pt.id, required_count: (pt.required_count || 0) + 1 })} className="w-5 h-6 flex items-center justify-center bg-muted hover:bg-muted/80 disabled:opacity-30 disabled:pointer-events-none text-muted-foreground">
+                    <Plus className="w-2.5 h-2.5" />
+                  </button>
+                </div>
               </div>
               <button
                 onClick={() => { if (confirm(`「${pt.name}」を削除しますか？`)) deleteMutation.mutate(pt.id); }}

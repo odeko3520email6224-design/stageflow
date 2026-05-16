@@ -192,15 +192,15 @@ export default function StaffManagement({ eventId }) {
                     {staff.name.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <p className="font-medium text-xs">{staff.name}</p>
+                      {staff.note && <span className="text-[10px] text-muted-foreground">({staff.note})</span>}
                       {unassigned &&
                     <span className="flex items-center gap-0.5 text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full">
                           <AlertCircle className="w-2 h-2" />未配置
                         </span>
                     }
                     </div>
-                    {staff.note && <p className="text-[10px] text-muted-foreground truncate">{staff.note}</p>}
                   </div>
                   <button
                   onClick={() => setEditingStaff(staff)}
