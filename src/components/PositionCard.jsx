@@ -18,7 +18,18 @@ export default function PositionCard({
 }) {
   const staffNames = pos.staff_names || [];
   const assignedCount = staffNames.length;
-  const remaining = requiredCount > 0 ? requiredCount - assignedCount : null;
+  const diff = requiredCount > 0 ? requiredCount - assignedCount : null;
+
+  let statusBadge = null;
+  if (requiredCount > 0) {
+    if (diff > 0) {
+      statusBadge = { label: `残${diff}名`, cls: "bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/40 dark:border-amber-700 dark:text-amber-300" };
+    } else if (diff === 0) {
+      statusBadge = { label: "充足", cls: "bg-green-100 border-green-300 text-green-800 dark:bg-green-900/40 dark:border-green-700 dark:text-green-300" };
+    } else {
+      statusBadge = { label: `超過${Math.abs(diff)}名`, cls: "bg-red-100 border-red-300 text-red-800 dark:bg-red-900/40 dark:border-red-700 dark:text-red-300" };
+    }
+  }
 
   return (
     <div
@@ -31,10 +42,10 @@ export default function PositionCard({
         <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: pos.color || "#6366f1" }} />
         <span className="text-xs font-semibold text-foreground">{pos.name || pos.role}</span>
         {/* 人数バッジ */}
-        <span className="text-[10px] text-muted-foreground">{assignedCount}名</span>
-        {remaining !== null && (
-          <span className={`text-[10px] font-semibold px-1 py-0.5 rounded border ${remaining > 0 ? "bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/40 dark:border-amber-700 dark:text-amber-300" : "bg-green-100 border-green-300 text-green-800 dark:bg-green-900/40 dark:border-green-700 dark:text-green-300"}`}>
-            {remaining > 0 ? `残${remaining}名` : "充足"}
+        <span className="text-[10px] text-muted-foreground">{assignedCount}名{requiredCount > 0 ? `/${requiredCount}名` : ""}</span>
+        {statusBadge && (
+          <span className={`text-[10px] font-semibold px-1 py-0.5 rounded border ${statusBadge.cls}`}>
+            {statusBadge.label}
           </span>
         )}
         {pos.notes && <span className="text-[10px] text-muted-foreground truncate flex-1">{pos.notes}</span>}

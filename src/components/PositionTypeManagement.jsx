@@ -8,6 +8,7 @@ import MapTemplateManagement from "@/components/MapTemplateManagement";
 import PositionPresetManager from "@/components/PositionPresetManager";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTheme } from "@/lib/ThemeProvider";
+import { TIME_SLOT_STYLES } from "@/lib/constants";
 
 const PRESET_COLORS = [
   "#6366f1", "#3b82f6", "#10b981", "#f59e0b",
@@ -23,12 +24,33 @@ const ROLE_COLORS = {
 
 const ROLES = ["受付", "誘導", "警備", "その他"];
 
+// 時間帯ごとの必要人数コントロール
+function SlotCountControl({ label, value, onChange, disabled, styleClass }) {
+  return (
+    <div className={`flex items-center justify-between px-2 py-1.5 rounded-lg border ${styleClass}`}>
+      <span className="text-[11px] font-semibold">{label}</span>
+      <div className="flex items-center border border-border rounded overflow-hidden bg-background">
+        <button type="button" disabled={disabled} onClick={() => onChange(Math.max(0, value - 1))}
+          className="w-5 h-6 flex items-center justify-center bg-muted hover:bg-muted/80 disabled:opacity-30 disabled:pointer-events-none text-muted-foreground">
+          <Minus className="w-2.5 h-2.5" />
+        </button>
+        <span className="w-7 text-[11px] text-center leading-6">{value}</span>
+        <button type="button" disabled={disabled} onClick={() => onChange(value + 1)}
+          className="w-5 h-6 flex items-center justify-center bg-muted hover:bg-muted/80 disabled:opacity-30 disabled:pointer-events-none text-muted-foreground">
+          <Plus className="w-2.5 h-2.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function PositionTypeManagement({ eventId }) {
-  // eventId is kept for context but PositionTypes are now global (shared across events)
   const [name, setName] = useState("");
   const [role, setRole] = useState("受付");
   const [color, setColor] = useState(PRESET_COLORS[0]);
-  const [requiredCount, setRequiredCount] = useState(0);
+  const [reqBefore, setReqBefore] = useState(0);
+  const [reqDuring, setReqDuring] = useState(0);
+  const [reqAfter, setReqAfter] = useState(0);
   const queryClient = useQueryClient();
   const { canEdit: isAdmin } = useUserRole();
   const { isDark, setIsDark } = useTheme();
@@ -45,12 +67,14 @@ export default function PositionTypeManagement({ eventId }) {
       setName("");
       setRole("受付");
       setColor(PRESET_COLORS[0]);
-      setRequiredCount(0);
+      setReqBefore(0);
+      setReqDuring(0);
+      setReqAfter(0);
     },
   });
 
-  const updateRequiredMutation = useMutation({
-    mutationFn: ({ id, required_count }) => base44.entities.PositionType.update(id, { required_count }),
+  const updateSlotCountMutation = useMutation({
+    mutationFn: ({ id, field, value }) => base44.entities.PositionType.update(id, { [field]: value }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positionTypes"] }),
   });
 
@@ -64,12 +88,27 @@ export default function PositionTypeManagement({ eventId }) {
 
   const handleAdd = () => {
     if (!name.trim()) return;
-    createMutation.mutate({ event_id: eventId, name: name.trim(), role, color, required_count: requiredCount });
+    createMutation.mutate({
+      event_id: eventId,
+      name: name.trim(),
+      role,
+      color,
+      required_count: reqBefore, // 後方互換
+      required_count_before: reqBefore,
+      required_count_during: reqDuring,
+      required_count_after: reqAfter,
+    });
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); handleAdd(); }
   };
+
+  const SLOT_FIELDS = [
+    { slot: "開場前", field: "required_count_before", styleClass: TIME_SLOT_STYLES["開場前"].header },
+    { slot: "開演中", field: "required_count_during", styleClass: TIME_SLOT_STYLES["開演中"].header },
+    { slot: "終演後", field: "required_count_after", styleClass: TIME_SLOT_STYLES["終演後"].header },
+  ];
 
   return (
     <div>
@@ -79,9 +118,8 @@ export default function PositionTypeManagement({ eventId }) {
           onClick={() => setIsDark(!isDark)}
           className="p-2 rounded-lg hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label={isDark ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
-          title={isDark ? 'ライトモード' : 'ダークモード'}
         >
-          {isDark ? <Sun className="w-5 h-5 text-amber-500" aria-hidden="true" /> : <Moon className="w-5 h-5 text-slate-600" aria-hidden="true" />}
+          {isDark ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5 text-slate-600" />}
         </button>
       </div>
 
@@ -96,7 +134,7 @@ export default function PositionTypeManagement({ eventId }) {
             placeholder="ポジション名（例：メイン受付A）"
             className="h-8 text-sm"
           />
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
@@ -104,24 +142,13 @@ export default function PositionTypeManagement({ eventId }) {
             >
               {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground shrink-0">必要人数</span>
-              <div className="flex items-center border border-border rounded-lg overflow-hidden">
-                <button type="button" onClick={() => setRequiredCount((n) => Math.max(0, n - 1))} className="w-7 h-8 flex items-center justify-center bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">
-                  <Minus className="w-3 h-3" />
-                </button>
-                <input
-                  type="number"
-                  min="0"
-                  value={requiredCount}
-                  onChange={(e) => setRequiredCount(Number(e.target.value))}
-                  className="w-10 h-8 text-xs bg-background text-center border-x border-border focus:outline-none"
-                />
-                <button type="button" onClick={() => setRequiredCount((n) => n + 1)} className="w-7 h-8 flex items-center justify-center bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">
-                  <Plus className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
+          </div>
+          {/* 時間帯別必要人数 */}
+          <p className="text-[11px] font-semibold text-muted-foreground">時間帯別 必要人数</p>
+          <div className="space-y-1">
+            <SlotCountControl label="開場前" value={reqBefore} onChange={setReqBefore} disabled={false} styleClass={TIME_SLOT_STYLES["開場前"].header} />
+            <SlotCountControl label="開演中" value={reqDuring} onChange={setReqDuring} disabled={false} styleClass={TIME_SLOT_STYLES["開演中"].header} />
+            <SlotCountControl label="終演後" value={reqAfter} onChange={setReqAfter} disabled={false} styleClass={TIME_SLOT_STYLES["終演後"].header} />
           </div>
           <div className="flex items-center gap-2">
             <div className="flex gap-1.5 flex-1">
@@ -151,32 +178,32 @@ export default function PositionTypeManagement({ eventId }) {
       ) : (
         <div className="bg-card border border-border rounded-xl overflow-hidden mb-3">
           {positionTypes.map((pt, idx) => (
-            <div key={pt.id} className={`flex items-center gap-2 px-3 py-2 ${idx > 0 ? "border-t border-border/50" : ""}`}>
-              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: pt.color || "#6366f1" }} />
-              <div className="flex-1 min-w-0">
-                <span className="font-medium text-xs">{pt.name}</span>
+            <div key={pt.id} className={`px-3 py-2 ${idx > 0 ? "border-t border-border/50" : ""}`}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: pt.color || "#6366f1" }} />
+                <span className="font-medium text-xs flex-1">{pt.name}</span>
+                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border shrink-0 ${ROLE_COLORS[pt.role] || ROLE_COLORS["その他"]}`}>{pt.role}</span>
+                <button
+                  onClick={() => { if (confirm(`「${pt.name}」を削除しますか？`)) deleteMutation.mutate(pt.id); }}
+                  disabled={!isAdmin}
+                  className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
-              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border shrink-0 ${ROLE_COLORS[pt.role] || ROLE_COLORS["その他"]}`}>{pt.role}</span>
-              {/* 必要人数 */}
-              <div className="flex items-center gap-1 shrink-0">
-                <span className="text-[10px] text-muted-foreground">必要:</span>
-                <div className="flex items-center border border-border rounded overflow-hidden">
-                  <button type="button" disabled={!isAdmin} onClick={() => updateRequiredMutation.mutate({ id: pt.id, required_count: Math.max(0, (pt.required_count || 0) - 1) })} className="w-5 h-6 flex items-center justify-center bg-muted hover:bg-muted/80 disabled:opacity-30 disabled:pointer-events-none text-muted-foreground">
-                    <Minus className="w-2.5 h-2.5" />
-                  </button>
-                  <span className="w-7 text-[11px] text-center bg-background border-x border-border leading-6">{pt.required_count || 0}</span>
-                  <button type="button" disabled={!isAdmin} onClick={() => updateRequiredMutation.mutate({ id: pt.id, required_count: (pt.required_count || 0) + 1 })} className="w-5 h-6 flex items-center justify-center bg-muted hover:bg-muted/80 disabled:opacity-30 disabled:pointer-events-none text-muted-foreground">
-                    <Plus className="w-2.5 h-2.5" />
-                  </button>
-                </div>
+              {/* 時間帯別必要人数 */}
+              <div className="space-y-1 pl-5">
+                {SLOT_FIELDS.map(({ slot, field, styleClass }) => (
+                  <SlotCountControl
+                    key={field}
+                    label={slot}
+                    value={pt[field] ?? pt.required_count ?? 0}
+                    onChange={(v) => updateSlotCountMutation.mutate({ id: pt.id, field, value: v })}
+                    disabled={!isAdmin}
+                    styleClass={styleClass}
+                  />
+                ))}
               </div>
-              <button
-                onClick={() => { if (confirm(`「${pt.name}」を削除しますか？`)) deleteMutation.mutate(pt.id); }}
-                disabled={!isAdmin}
-                className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
             </div>
           ))}
         </div>

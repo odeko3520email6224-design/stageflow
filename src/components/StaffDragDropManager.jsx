@@ -151,17 +151,11 @@ export default function StaffDragDropManager({ eventId }) {
 
   return (
     <div>
-      <PresetSelector eventId={eventId} />
-
       <div className="flex flex-col gap-2 mb-2">
         <div className="flex-1">
           <h2 className="text-sm font-bold flex items-center gap-1.5 mb-0.5"><ClipboardList className="w-4 h-4 text-primary" />配置表</h2>
           <p className="text-[11px] text-muted-foreground">スタッフそれぞれの配置管理が可能です。</p>
         </div>
-        <Button size="sm" variant="outline" className="gap-1 h-9 text-sm w-full" onClick={handleExportPDF} disabled={exportingPDF || positions.length === 0}>
-          <Download className="w-3.5 h-3.5" />
-          {exportingPDF ? 'エクスポート中...' : 'PDF出力'}
-        </Button>
         {/* 全体合計人数 */}
         {positions.length > 0 && (() => {
           const totalAssigned = [...new Set(positions.flatMap((p) => p.staff_names || []))].length;
@@ -169,6 +163,11 @@ export default function StaffDragDropManager({ eventId }) {
             <div className="text-sm font-medium text-foreground">全時間帯合計：{totalAssigned}名配置済み</div>
           );
         })()}
+        <PresetSelector eventId={eventId} />
+        <Button size="sm" variant="outline" className="gap-1 h-9 text-sm w-full" onClick={handleExportPDF} disabled={exportingPDF || positions.length === 0}>
+          <Download className="w-3.5 h-3.5" />
+          {exportingPDF ? 'エクスポート中...' : 'PDF出力'}
+        </Button>
       </div>
 
       <div className="space-y-2">
@@ -201,6 +200,13 @@ export default function StaffDragDropManager({ eventId }) {
                   <div className="grid gap-1">
                     {grouped[slot].map((pos) => {
                       const matchingPT = positionTypes.find((pt) => pt.name === pos.name);
+                      const slotRequiredCount = matchingPT
+                        ? (slot === "開場前"
+                            ? (matchingPT.required_count_before ?? matchingPT.required_count ?? 0)
+                            : slot === "開演中"
+                            ? (matchingPT.required_count_during ?? matchingPT.required_count ?? 0)
+                            : (matchingPT.required_count_after ?? matchingPT.required_count ?? 0))
+                        : 0;
                       return (
                        <PositionCard
                          key={pos.id}
@@ -219,7 +225,7 @@ export default function StaffDragDropManager({ eventId }) {
                          onDelete={(id) => { if (confirm("削除しますか？")) deleteMutation.mutate(id); }}
                          emptyLabel="スタッフをドラッグして配置"
                          staffList={staffList}
-                         requiredCount={matchingPT?.required_count || 0}
+                         requiredCount={slotRequiredCount}
                        />
                       );
                     })}
@@ -276,7 +282,7 @@ export default function StaffDragDropManager({ eventId }) {
             <p className="text-[11px] text-muted-foreground text-center py-3">スタッフが登録されていません</p>
           ) : (
             staffList.map((s) => {
-              const slotAssignments = TIME_SLOTS.map((slot) => {
+              const slotAssignments = ["開場前", "開演中", "終演後"].map((slot) => {
                 const pos = positions.filter(
                   (p) => (p.time_slot || "開場前") === slot && (p.staff_names || []).includes(s.name)
                 );

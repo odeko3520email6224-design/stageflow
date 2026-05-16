@@ -126,13 +126,18 @@ export default function StaffManagement({ eventId }) {
     if (e.key === "Enter" && !e.nativeEvent.isComposing) {e.preventDefault();handleAdd();}
   };
 
-  // Build map: staffName -> assigned positions
+  // Build map: staffName -> assigned positions (sorted by slot order)
+  const SLOT_ORDER = ["開場前", "開演中", "終演後"];
   const assignedMap = {};
   positions.forEach((pos) => {
     (pos.staff_names || []).forEach((sName) => {
       if (!assignedMap[sName]) assignedMap[sName] = [];
       assignedMap[sName].push({ posName: pos.name || pos.role, slot: pos.time_slot || "開場前" });
     });
+  });
+  // Sort each staff's assignments by slot order
+  Object.keys(assignedMap).forEach((name) => {
+    assignedMap[name].sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
   });
 
   return (

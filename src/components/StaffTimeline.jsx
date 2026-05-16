@@ -1,13 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Clock, CalendarClock, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { usePDFExport } from "@/hooks/usePDFExport";
+import { Clock, CalendarClock } from "lucide-react";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 
 export default function StaffTimeline({ eventId }) {
-  const { exporting: exportingPDF, exportPDF: handleExportPDF } = usePDFExport(eventId, "timeline", "タイムライン");
-
   const { data: positions = [], isLoading: loadingPos } = useQuery({
     queryKey: ["positions", eventId],
     queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
@@ -45,6 +41,9 @@ export default function StaffTimeline({ eventId }) {
 
   const allNames = Object.keys(staffTimeline).sort();
 
+  // 全時間帯合計（重複なし）
+  const totalAssigned = [...new Set(positions.flatMap((p) => p.staff_names || []))].length;
+
   if (allNames.length === 0) {
     return (
       <div className="text-center py-20 text-muted-foreground">
@@ -57,15 +56,11 @@ export default function StaffTimeline({ eventId }) {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
         <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1"><CalendarClock className="w-4 h-4 text-primary" />担当者別タイムライン</h2>
-        <div className="flex items-center gap-3 sm:ml-auto shrink-0">
-          <span className="text-sm text-muted-foreground">{allNames.length}名</span>
-          <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={handleExportPDF} disabled={exportingPDF || allNames.length === 0}>
-            <Download className="w-3 h-3" />
-            {exportingPDF ? 'エクスポート中...' : 'PDF出力'}
-          </Button>
-        </div>
+        <span className="text-sm font-medium text-foreground sm:ml-auto shrink-0">
+          全時間帯：{totalAssigned}名配置済み
+        </span>
       </div>
 
       {/* Always show desktop grid table, with horizontal scroll on mobile */}

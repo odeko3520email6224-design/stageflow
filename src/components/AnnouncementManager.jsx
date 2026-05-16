@@ -605,7 +605,7 @@ export default function AnnouncementManager({ eventId }) {
         <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1">
           <Megaphone className="w-4 h-4 text-primary" />連絡事項
           {urgentCount > 0 && (
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700">
+            <span className="h-7 inline-flex items-center text-xs font-bold px-2 rounded-full bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700">
               {urgentCount}件未読あり
             </span>
           )}
@@ -618,7 +618,7 @@ export default function AnnouncementManager({ eventId }) {
                   Notification.requestPermission().then((p) => setNotifPermission(p));
                 }
               }}
-              className={`text-[11px] px-2 py-1 rounded-lg border font-medium transition-colors ${
+              className={`h-7 text-[11px] px-2 rounded-lg border font-medium transition-colors flex items-center ${
                 notifPermission === "denied"
                   ? "bg-red-50 border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300 cursor-not-allowed"
                   : "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900/50"
