@@ -2,24 +2,9 @@
   "name": "PositionType",
   "type": "object",
   "properties": {
-    "event_id": {
-      "type": "string",
-      "description": "\u30a4\u30d9\u30f3\u30c8ID"
-    },
     "name": {
       "type": "string",
       "description": "\u30dd\u30b8\u30b7\u30e7\u30f3\u540d\uff08\u4f8b\uff1a\u30e1\u30a4\u30f3\u53d7\u4ed8A\u3001\u8a98\u5c0eB\uff09"
-    },
-    "role": {
-      "type": "string",
-      "enum": [
-        "\u53d7\u4ed8",
-        "\u8a98\u5c0e",
-        "\u8b66\u5099",
-        "\u305d\u306e\u4ed6"
-      ],
-      "default": "\u53d7\u4ed8",
-      "description": "\u5f79\u5272\u7a2e\u5225"
     },
     "color": {
       "type": "string",
@@ -33,7 +18,7 @@
     },
     "required_count_before": {
       "type": "number",
-      "description": "\u958b\u5834\u524d\u306e\u5fc5\u8981\u4eba\u6570",
+      "description": "\u958b\u5834\u4e2d\u306e\u5fc5\u8981\u4eba\u6570",
       "default": 0
     },
     "required_count_during": {
@@ -45,10 +30,14 @@
       "type": "number",
       "description": "\u7d42\u6f14\u5f8c\u306e\u5fc5\u8981\u4eba\u6570",
       "default": 0
+    },
+    "order": {
+      "type": "number",
+      "description": "\u8868\u793a\u9806",
+      "default": 0
     }
   },
   "required": [
-    "event_id",
     "name"
   ]
 }

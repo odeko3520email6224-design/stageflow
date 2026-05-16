@@ -16,7 +16,6 @@ const PRESET_COLORS = [
 export default function PositionFormModal({ position, eventId, defaultTimeSlot = "開場中", onClose, onSaved }) {
   const [form, setForm] = useState({
     name: position?.name || "",
-    role: position?.role || "受付",
     time_slot: position?.time_slot || defaultTimeSlot,
     staff_names: position?.staff_names || [],
     notes: position?.notes || "",
@@ -57,7 +56,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
   const isTextChange = (prev, cur) =>
     prev.name !== cur.name || prev.notes !== cur.notes;
   const isNonTextChange = (prev, cur) =>
-    prev.role !== cur.role || prev.time_slot !== cur.time_slot ||
+    prev.time_slot !== cur.time_slot ||
     prev.staff_names !== cur.staff_names || prev.color !== cur.color;
 
   useEffect(() => {
@@ -69,7 +68,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
 
     const delay = nonTextChanged ? 0 : 500;
     const timer = setTimeout(() => {
-      mutation.mutate({ ...form, name: form.name || form.role }, {
+      mutation.mutate({ ...form }, {
         onSuccess: () => {
           toast.success("保存しました");
           prevFormRef.current = form;
@@ -93,7 +92,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
 
   const handlePositionTypeSelect = (ptId) => {
     const pt = positionTypes.find((p) => p.id === ptId);
-    if (pt) setForm((f) => ({ ...f, name: pt.name, role: pt.role, color: pt.color || f.color }));
+    if (pt) setForm((f) => ({ ...f, name: pt.name, color: pt.color || f.color }));
   };
 
   return (
@@ -201,7 +200,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
             <Button
               className="flex-1"
               disabled={!form.name || mutation.isPending}
-              onClick={() => mutation.mutate({ ...form, name: form.name || form.role }, {
+              onClick={() => mutation.mutate({ ...form }, {
                 onSuccess: () => {
                   toast.success("作成しました");
                   setTimeout(onClose, 500);

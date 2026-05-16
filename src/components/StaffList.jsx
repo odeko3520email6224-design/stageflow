@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Plus, AlertCircle, ClipboardList, Download, BookOpen } from "lucide-react";
 import PositionFormModal from "@/components/PositionFormModal";
-import PositionCard from "@/components/PositionCard";
+import PositionCard from "@/components/PositionCard.jsx";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
@@ -110,7 +110,7 @@ export default function StaffList({ eventId }) {
                           pos={pos}
                           isAdmin={isAdmin}
                           onEdit={(p) => { setEditing(p); setShowModal(true); }}
-                          onDelete={(id) => { if (confirm("削除しますか？")) deleteMutation.mutate(id); }}
+                          onDelete={(id) => deleteMutation.mutate(id)}
                         />
                       ))}
                     </div>

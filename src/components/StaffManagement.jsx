@@ -8,6 +8,7 @@ import { Plus, Trash2, Users, AlertCircle, Pencil, X, Check, UserCog, Download }
 import StaffScrapeModal from "@/components/StaffScrapeModal";
 import { useUserRole } from "@/hooks/useUserRole";
 import { TIME_SLOT_STYLES } from "@/lib/constants";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 function EditModal({ staff, onClose, onSaved }) {
   const [name, setName] = useState(staff.name);
@@ -74,6 +75,7 @@ export default function StaffManagement({ eventId }) {
   const [note, setNote] = useState("");
   const [editingStaff, setEditingStaff] = useState(null);
   const [showScrapeModal, setShowScrapeModal] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const queryClient = useQueryClient();
 
 
@@ -142,7 +144,7 @@ export default function StaffManagement({ eventId }) {
 
   return (
     <div>
-      <div className="flex flex-col gap-1.5 mb-1.5">
+      <div className="flex flex-col gap-1.5 mb-3">
         <div className="flex-1">
           <h2 className="text-sm font-bold flex items-center gap-1.5 mb-0.5"><UserCog className="w-4 h-4 text-primary" />スタッフ管理</h2>
           <p className="text-[11px] text-muted-foreground">スタッフの追加、編集、削除などの管理が可能です。A-CAST点呼表からのスタッフリスト取得も可能です。</p>
@@ -215,10 +217,9 @@ export default function StaffManagement({ eventId }) {
                     <Pencil className="w-3 h-3" />
                   </button>
                   <button
-                  onClick={() => {if (confirm(`「${staff.name}」を削除しますか？`)) deleteMutation.mutate(staff.id);}}
+                  onClick={() => setConfirmDelete({ id: staff.id, name: staff.name })}
                   className="p-1 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   title="削除">
-                  
                     <Trash2 className="w-3 h-3" />
                   </button>
                 </div>
@@ -246,8 +247,16 @@ export default function StaffManagement({ eventId }) {
         staff={editingStaff}
         onClose={() => setEditingStaff(null)}
         onSaved={() => {}} />
-
       }
+
+      {confirmDelete && (
+        <ConfirmDialog
+          message={`「${confirmDelete.name}」を削除しますか？`}
+          confirmLabel="削除"
+          onConfirm={() => { deleteMutation.mutate(confirmDelete.id); setConfirmDelete(null); }}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </div>);
 
 }

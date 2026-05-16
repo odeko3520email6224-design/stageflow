@@ -6,6 +6,7 @@ import {
   Bell, Plus, Trash2, Users, CheckCircle2, Clock, AlertTriangle,
   ShieldAlert, Send, X, Eye, ChevronDown, ChevronUp, Megaphone, Paperclip, FileText, Pencil
 } from "lucide-react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const PRIORITY_STYLES = {
   "通常": { badge: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700", icon: Bell },
@@ -359,6 +360,7 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [confirmName, setConfirmName] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const queryClient = useQueryClient();
 
   const style = PRIORITY_STYLES[ann.priority] || PRIORITY_STYLES["通常"];
@@ -449,7 +451,7 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
               {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
           )}
-          <button onClick={() => onDelete(ann.id)} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="削除">
+          <button onClick={() => setShowDeleteConfirm(true)} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="削除">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -528,6 +530,14 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
           onSaved={() => setShowEdit(false)}
         />
       )}
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          message="この連絡事項を削除しますか？"
+          confirmLabel="削除"
+          onConfirm={() => { onDelete(ann.id); setShowDeleteConfirm(false); }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </div>
   );
 }
@@ -601,7 +611,7 @@ export default function AnnouncementManager({ eventId }) {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
         <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1">
           <Megaphone className="w-4 h-4 text-primary" />連絡事項
           {urgentCount > 0 && (
@@ -650,7 +660,7 @@ export default function AnnouncementManager({ eventId }) {
               key={ann.id}
               ann={ann}
               staffList={staffList}
-              onDelete={(id) => { if (confirm("削除しますか？")) deleteMutation.mutate(id); }}
+              onDelete={(id) => deleteMutation.mutate(id)}
             />
           ))}
         </div>

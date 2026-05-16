@@ -101,8 +101,8 @@ export default function EventDetail() {
         </div>
       </div>
 
-      {/* Desktop Tab Navigation */}
-      <div className="hidden sm:block border-b border-border bg-white dark:bg-card">
+      {/* Tab Navigation - always visible, sticky on desktop/tablet */}
+      <div className="hidden sm:block border-b border-border bg-card sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-3">
           <div className="flex gap-5">
             {[

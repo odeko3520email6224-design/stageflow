@@ -12,13 +12,25 @@ const PRIORITY_STYLES = {
 export default function AnnouncementAlert({ eventId }) {
   const [dismissed, setDismissed] = useState(new Set());
 
+  const { data: staffList = [] } = useQuery({
+    queryKey: ["staff", eventId],
+    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+  });
+
   const { data: announcements = [] } = useQuery({
     queryKey: ["announcements-alert", eventId],
     queryFn: () => base44.entities.Announcement.filter({ event_id: eventId, is_alert: true }),
-    refetchInterval: 30000,
+    refetchInterval: 15000,
   });
 
-  const visible = announcements.filter((a) => !dismissed.has(a.id));
+  const visible = announcements.filter((a) => {
+    if (dismissed.has(a.id)) return false;
+    const totalTargets = a.target_staff?.length > 0 ? a.target_staff.length : staffList.length;
+    const readCount = (a.read_by || []).length;
+    if (totalTargets > 0 && readCount >= totalTargets) return false;
+    return true;
+  });
+
   if (visible.length === 0) return null;
 
   return (
@@ -34,10 +46,8 @@ export default function AnnouncementAlert({ eventId }) {
               <span className="font-semibold text-sm">{a.title}</span>
               {a.body && <p className="text-xs mt-0.5 opacity-90 line-clamp-2">{a.body}</p>}
             </div>
-            <button
-              onClick={() => setDismissed((prev) => new Set([...prev, a.id]))}
-              className="shrink-0 opacity-80 hover:opacity-100 transition-opacity p-0.5"
-            >
+            <button onClick={() => setDismissed((prev) => new Set([...prev, a.id]))}
+              className="shrink-0 opacity-80 hover:opacity-100 transition-opacity p-0.5">
               <X className="w-4 h-4" />
             </button>
           </div>
