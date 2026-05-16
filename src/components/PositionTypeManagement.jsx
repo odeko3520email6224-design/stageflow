@@ -24,19 +24,19 @@ const ROLE_COLORS = {
 
 const ROLES = ["受付", "誘導", "警備", "その他"];
 
-// 時間帯ごとの必要人数コントロール
+// 時間帯ごとの必要人数コントロール（横並びコンパクト版）
 function SlotCountControl({ label, value, onChange, disabled, styleClass }) {
   return (
-    <div className={`flex items-center justify-between px-2 py-1.5 rounded-lg border ${styleClass}`}>
-      <span className="text-[11px] font-semibold">{label}</span>
-      <div className="flex items-center border border-border rounded overflow-hidden bg-background">
+    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded border ${styleClass}`}>
+      <span className="text-[10px] font-semibold flex-1">{label}</span>
+      <div className="flex items-center border border-border/60 rounded overflow-hidden bg-background">
         <button type="button" disabled={disabled} onClick={() => onChange(Math.max(0, value - 1))}
-          className="w-5 h-6 flex items-center justify-center bg-muted hover:bg-muted/80 disabled:opacity-30 disabled:pointer-events-none text-muted-foreground">
+          className="w-5 h-5 flex items-center justify-center bg-muted hover:bg-muted/80 disabled:opacity-30 disabled:pointer-events-none text-muted-foreground">
           <Minus className="w-2.5 h-2.5" />
         </button>
-        <span className="w-7 text-[11px] text-center leading-6">{value}</span>
+        <span className="w-6 text-[11px] text-center leading-5">{value}</span>
         <button type="button" disabled={disabled} onClick={() => onChange(value + 1)}
-          className="w-5 h-6 flex items-center justify-center bg-muted hover:bg-muted/80 disabled:opacity-30 disabled:pointer-events-none text-muted-foreground">
+          className="w-5 h-5 flex items-center justify-center bg-muted hover:bg-muted/80 disabled:opacity-30 disabled:pointer-events-none text-muted-foreground">
           <Plus className="w-2.5 h-2.5" />
         </button>
       </div>
@@ -112,7 +112,7 @@ export default function PositionTypeManagement({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <h2 className="text-sm font-bold flex items-center gap-1.5"><Settings className="w-4 h-4 text-primary" />ポジション設定（全イベント共通）</h2>
         <button
           onClick={() => setIsDark(!isDark)}
@@ -124,9 +124,9 @@ export default function PositionTypeManagement({ eventId }) {
       </div>
 
       {/* Add form */}
-      <div className="bg-card border border-border rounded-xl p-3 mb-3">
-        <p className="text-xs font-medium mb-2 text-muted-foreground">ポジションを追加</p>
-        <div className="space-y-2">
+      <div className="bg-card border border-border rounded-xl p-2.5 mb-2">
+        <p className="text-[11px] font-medium mb-1.5 text-muted-foreground">ポジションを追加</p>
+        <div className="space-y-1.5">
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -134,32 +134,29 @@ export default function PositionTypeManagement({ eventId }) {
             placeholder="ポジション名（例：メイン受付A）"
             className="h-8 text-sm"
           />
-          <div className="flex items-center gap-2">
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="h-8 text-xs border border-border rounded-lg px-2 bg-background flex-1 min-w-[80px]"
-            >
-              {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="h-7 text-xs border border-border rounded-lg px-2 bg-background w-full"
+          >
+            {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
           {/* 時間帯別必要人数 */}
-          <p className="text-[11px] font-semibold text-muted-foreground">時間帯別 必要人数</p>
-          <div className="space-y-1">
+          <div className="flex gap-1">
             <SlotCountControl label="開場前" value={reqBefore} onChange={setReqBefore} disabled={false} styleClass={TIME_SLOT_STYLES["開場前"].header} />
             <SlotCountControl label="開演中" value={reqDuring} onChange={setReqDuring} disabled={false} styleClass={TIME_SLOT_STYLES["開演中"].header} />
             <SlotCountControl label="終演後" value={reqAfter} onChange={setReqAfter} disabled={false} styleClass={TIME_SLOT_STYLES["終演後"].header} />
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1.5 flex-1">
+          <div className="flex items-center gap-1.5">
+            <div className="flex gap-1 flex-1">
               {PRESET_COLORS.map((c) => (
                 <button key={c} type="button" onClick={() => setColor(c)}
-                  className={`w-6 h-6 rounded-full border-2 transition-transform ${color === c ? "border-foreground scale-110" : "border-transparent"}`}
+                  className={`w-5 h-5 rounded-full border-2 transition-transform ${color === c ? "border-foreground scale-110" : "border-transparent"}`}
                   style={{ backgroundColor: c }} />
               ))}
             </div>
-            <Button onClick={handleAdd} disabled={!isAdmin || !name.trim() || createMutation.isPending} size="sm" className="gap-1 h-8 shrink-0">
-              <Plus className="w-3.5 h-3.5" />追加
+            <Button onClick={handleAdd} disabled={!isAdmin || !name.trim() || createMutation.isPending} size="sm" className="gap-1 h-7 shrink-0">
+              <Plus className="w-3 h-3" />追加
             </Button>
           </div>
         </div>
@@ -176,10 +173,10 @@ export default function PositionTypeManagement({ eventId }) {
           <p className="text-sm font-medium">ポジションが登録されていません</p>
         </div>
       ) : (
-        <div className="bg-card border border-border rounded-xl overflow-hidden mb-3">
+        <div className="bg-card border border-border rounded-xl overflow-hidden mb-2">
           {positionTypes.map((pt, idx) => (
-            <div key={pt.id} className={`px-3 py-2 ${idx > 0 ? "border-t border-border/50" : ""}`}>
-              <div className="flex items-center gap-2 mb-1.5">
+            <div key={pt.id} className={`px-2.5 py-1.5 ${idx > 0 ? "border-t border-border/50" : ""}`}>
+              <div className="flex items-center gap-2 mb-1">
                 <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: pt.color || "#6366f1" }} />
                 <span className="font-medium text-xs flex-1">{pt.name}</span>
                 <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border shrink-0 ${ROLE_COLORS[pt.role] || ROLE_COLORS["その他"]}`}>{pt.role}</span>
@@ -192,7 +189,7 @@ export default function PositionTypeManagement({ eventId }) {
                 </button>
               </div>
               {/* 時間帯別必要人数 */}
-              <div className="space-y-1 pl-5">
+              <div className="flex gap-1 pl-5">
                 {SLOT_FIELDS.map(({ slot, field, styleClass }) => (
                   <SlotCountControl
                     key={field}
@@ -209,7 +206,7 @@ export default function PositionTypeManagement({ eventId }) {
         </div>
       )}
 
-      <div className="border-t border-border my-4" />
+      <div className="border-t border-border my-3" />
       <PositionPresetManager eventId={eventId} />
       <MapTemplateManagement eventId={eventId} />
     </div>

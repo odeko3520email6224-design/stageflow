@@ -142,7 +142,7 @@ export default function StaffManagement({ eventId }) {
 
   return (
     <div>
-      <div className="flex flex-col gap-2 mb-2">
+      <div className="flex flex-col gap-1.5 mb-1.5">
         <div className="flex-1">
           <h2 className="text-sm font-bold flex items-center gap-1.5 mb-0.5"><UserCog className="w-4 h-4 text-primary" />スタッフ管理</h2>
           <p className="text-[11px] text-muted-foreground">スタッフの追加、編集、削除などの管理が可能です。A-CAST点呼表からのスタッフリスト取得も可能です。</p>
@@ -154,7 +154,7 @@ export default function StaffManagement({ eventId }) {
       </div>
 
       {/* Add form */}
-      <div className="bg-card border border-border rounded-xl p-2 mb-2">
+      <div className="bg-card border border-border rounded-xl p-1.5 mb-1.5">
         <div className="flex gap-1.5">
           <Input
             value={name}
@@ -191,7 +191,7 @@ export default function StaffManagement({ eventId }) {
           const assigned = assignedMap[staff.name] || [];
           const unassigned = assigned.length === 0;
           return (
-            <div key={staff.id} className={`bg-card border rounded-lg px-2.5 py-1.5 ${unassigned ? "border-amber-300" : "border-border"}`}>
+            <div key={staff.id} className={`bg-card border rounded-lg px-2 py-1 ${unassigned ? "border-amber-300" : "border-border"}`}>
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
                     {staff.name.charAt(0)}

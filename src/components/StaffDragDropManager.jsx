@@ -151,7 +151,7 @@ export default function StaffDragDropManager({ eventId }) {
 
   return (
     <div>
-      <div className="flex flex-col gap-2 mb-2">
+      <div className="flex flex-col gap-1.5 mb-1.5">
         <div className="flex-1">
           <h2 className="text-sm font-bold flex items-center gap-1.5 mb-0.5"><ClipboardList className="w-4 h-4 text-primary" />配置表</h2>
           <p className="text-[11px] text-muted-foreground">スタッフそれぞれの配置管理が可能です。</p>
@@ -170,7 +170,7 @@ export default function StaffDragDropManager({ eventId }) {
         </Button>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {TIME_SLOTS.map((slot) => {
           const style = TIME_SLOT_STYLES[slot];
           const slotPositions = grouped[slot];
@@ -178,7 +178,7 @@ export default function StaffDragDropManager({ eventId }) {
           return (
             <div key={slot} className={`border rounded-xl overflow-hidden ${style.header.split(" ").slice(0, 2).join(" ")}`}>
               {/* Section header */}
-              <div className={`flex items-center justify-between px-3 py-1.5 border-b ${style.header}`}>
+              <div className={`flex items-center justify-between px-2.5 py-1 border-b ${style.header}`}>
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-xs">{slot}</span>
                   <span className="text-[10px] opacity-70">{slotPositions.length}件</span>
@@ -193,9 +193,9 @@ export default function StaffDragDropManager({ eventId }) {
               </div>
 
               {/* Positions */}
-              <div className="bg-card p-2">
+              <div className="bg-card p-1.5">
                 {grouped[slot].length === 0 ? (
-                  <p className="text-[11px] text-muted-foreground text-center py-2">ポジションがありません</p>
+                  <p className="text-[11px] text-muted-foreground text-center py-1.5">ポジションがありません</p>
                 ) : (
                   <div className="grid gap-1">
                     {grouped[slot].map((pos) => {
@@ -241,14 +241,14 @@ export default function StaffDragDropManager({ eventId }) {
       {(() => {
         if (unassigned.length === 0) return null;
         return (
-          <div className="mt-2 border border-amber-300 dark:border-amber-700 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/40 border-b border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300">
+          <div className="mt-1.5 border border-amber-300 dark:border-amber-700 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 dark:bg-amber-900/40 border-b border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300">
               <AlertCircle className="w-3 h-3" />
               <span className="font-bold text-xs">未配置スタッフ</span>
               <span className="text-[10px] opacity-70">{unassigned.length}名</span>
             </div>
             <div
-              className="bg-card p-2 grid gap-1 min-h-[36px]"
+              className="bg-card p-1.5 grid gap-1 min-h-[32px]"
               onDragOver={handleDragOver}
               onDrop={handleDropUnassigned}
             >
@@ -271,8 +271,8 @@ export default function StaffDragDropManager({ eventId }) {
         );
       })()}
       {/* Staff overview list */}
-      <div className="mt-3 border border-border rounded-xl overflow-hidden">
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted border-b border-border">
+      <div className="mt-2 border border-border rounded-xl overflow-hidden">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted border-b border-border">
           <Users className="w-3 h-3 text-muted-foreground" />
           <span className="font-bold text-xs">スタッフ一覧</span>
           <span className="text-[10px] text-muted-foreground">{staffList.length}名</span>
@@ -289,7 +289,7 @@ export default function StaffDragDropManager({ eventId }) {
                 return { slot, positions: pos };
               }).filter((sa) => sa.positions.length > 0);
               return (
-                <div key={s.id} className="flex items-start gap-2 px-3 py-2">
+                <div key={s.id} className="flex items-start gap-2 px-2.5 py-1.5">
                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] shrink-0 mt-0.5">
                     {s.name.charAt(0)}
                   </div>
