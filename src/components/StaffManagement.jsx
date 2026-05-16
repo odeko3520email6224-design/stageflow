@@ -27,18 +27,18 @@ function EditModal({ staff, onClose, onSaved }) {
     }
   });
 
-  // Auto-save on changes
+  // Auto-save: text fields → 500ms
   useEffect(() => {
+    if (!localName.trim()) return;
+    if (localName === prevDataRef.current.name && localNote === prevDataRef.current.note) return;
     const timer = setTimeout(() => {
-      if (localName.trim() && (localName !== prevDataRef.current.name || localNote !== prevDataRef.current.note)) {
-        updateMutation.mutate({ name: localName.trim(), note: localNote.trim() }, {
-          onSuccess: () => {
-            toast.success("保存しました");
-            prevDataRef.current = { name: localName, note: localNote };
-          }
-        });
-      }
-    }, 1000);
+      updateMutation.mutate({ name: localName.trim(), note: localNote.trim() }, {
+        onSuccess: () => {
+          toast.success("保存しました");
+          prevDataRef.current = { name: localName, note: localNote };
+        }
+      });
+    }, 500);
     return () => clearTimeout(timer);
   }, [localName, localNote]);
 
@@ -196,7 +196,7 @@ export default function StaffManagement({ eventId }) {
                       <p className="font-medium text-xs">{staff.name}</p>
                       {staff.note && <span className="text-[10px] text-muted-foreground">({staff.note})</span>}
                       {unassigned &&
-                    <span className="flex items-center gap-0.5 text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full">
+                    <span className="flex items-center gap-0.5 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700">
                           <AlertCircle className="w-2 h-2" />未配置
                         </span>
                     }

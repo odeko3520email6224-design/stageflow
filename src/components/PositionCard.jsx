@@ -33,7 +33,7 @@ export default function PositionCard({
         {/* 人数バッジ */}
         <span className="text-[10px] text-muted-foreground">{assignedCount}名</span>
         {remaining !== null && (
-          <span className={`text-[10px] font-semibold px-1 py-0.5 rounded border ${remaining > 0 ? "bg-amber-50 border-amber-200 text-amber-700" : "bg-green-50 border-green-200 text-green-700"}`}>
+          <span className={`text-[10px] font-semibold px-1 py-0.5 rounded border ${remaining > 0 ? "bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/40 dark:border-amber-700 dark:text-amber-300" : "bg-green-100 border-green-300 text-green-800 dark:bg-green-900/40 dark:border-green-700 dark:text-green-300"}`}>
             {remaining > 0 ? `残${remaining}名` : "充足"}
           </span>
         )}
@@ -72,7 +72,7 @@ export default function PositionCard({
               >
                 <div className="flex-1 min-w-0">
                   <span className="text-xs text-foreground">{name}</span>
-                  {staffData?.note && <span className="text-[10px] text-muted-foreground ml-1.5">{staffData.note}</span>}
+                  {staffData?.note && <span className="text-[10px] text-muted-foreground ml-1.5">({staffData.note})</span>}
                 </div>
                 {onStaffRemove && isAdmin && (
                   <button onClick={() => onStaffRemove(pos.id, name)} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors" title={`${name}を削除`}>

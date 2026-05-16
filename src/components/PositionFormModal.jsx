@@ -52,21 +52,30 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
   });
 
   // Auto-save on form changes (only for existing positions)
+  // Text fields (name, notes) use 500ms debounce; all other changes save instantly
   const prevFormRef = useRef(form);
+  const isTextChange = (prev, cur) =>
+    prev.name !== cur.name || prev.notes !== cur.notes;
+  const isNonTextChange = (prev, cur) =>
+    prev.role !== cur.role || prev.time_slot !== cur.time_slot ||
+    prev.staff_names !== cur.staff_names || prev.color !== cur.color;
+
   useEffect(() => {
     if (!position) return;
+    const prev = prevFormRef.current;
+    const textChanged = isTextChange(prev, form);
+    const nonTextChanged = isNonTextChange(prev, form);
+    if (!textChanged && !nonTextChanged) return;
+
+    const delay = nonTextChanged ? 0 : 500;
     const timer = setTimeout(() => {
-      const prev = prevFormRef.current;
-      const hasChanges = prev.name !== form.name || prev.role !== form.role || prev.time_slot !== form.time_slot || prev.staff_names !== form.staff_names || prev.notes !== form.notes || prev.color !== form.color;
-      if (hasChanges) {
-        mutation.mutate({ ...form, name: form.name || form.role }, {
-          onSuccess: () => {
-            toast.success("保存しました");
-            prevFormRef.current = form;
-          }
-        });
-      }
-    }, 1000);
+      mutation.mutate({ ...form, name: form.name || form.role }, {
+        onSuccess: () => {
+          toast.success("保存しました");
+          prevFormRef.current = form;
+        }
+      });
+    }, delay);
     return () => clearTimeout(timer);
   }, [form]);
 
@@ -154,7 +163,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
                         {selected && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
                       </div>
                       {staff.name}
-                      {staff.note && <span className="text-xs text-muted-foreground ml-auto">{staff.note}</span>}
+                      {staff.note && <span className="text-xs text-muted-foreground ml-auto">({staff.note})</span>}
                     </button>
                   );
                 })}

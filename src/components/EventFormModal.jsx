@@ -25,22 +25,29 @@ export default function EventFormModal({ event, onClose, onSaved }) {
     onSuccess: onSaved,
   });
 
-  // Auto-save on form changes (only for existing events)
+  // Auto-save: text fields (name, venue, description) → 500ms, others (date, status) → instant
   const prevFormRef = useRef(form);
+  const isTextChange = (prev, cur) =>
+    prev.name !== cur.name || prev.venue !== cur.venue || prev.description !== cur.description;
+  const isNonTextChange = (prev, cur) =>
+    prev.date !== cur.date || prev.status !== cur.status;
+
   useEffect(() => {
-    if (!event) return;
+    if (!event || !form.name) return;
+    const prev = prevFormRef.current;
+    const textChanged = isTextChange(prev, form);
+    const nonTextChanged = isNonTextChange(prev, form);
+    if (!textChanged && !nonTextChanged) return;
+
+    const delay = nonTextChanged ? 0 : 500;
     const timer = setTimeout(() => {
-      const prev = prevFormRef.current;
-      const hasChanges = prev.name !== form.name || prev.date !== form.date || prev.venue !== form.venue || prev.description !== form.description || prev.status !== form.status;
-      if (hasChanges && form.name) {
-        mutation.mutate(form, {
-          onSuccess: () => {
-            toast.success("保存しました");
-            prevFormRef.current = form;
-          }
-        });
-      }
-    }, 1000);
+      mutation.mutate(form, {
+        onSuccess: () => {
+          toast.success("保存しました");
+          prevFormRef.current = form;
+        }
+      });
+    }, delay);
     return () => clearTimeout(timer);
   }, [form]);
 

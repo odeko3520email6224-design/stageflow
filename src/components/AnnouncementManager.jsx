@@ -8,9 +8,9 @@ import {
 } from "lucide-react";
 
 const PRIORITY_STYLES = {
-  "通常": { badge: "bg-blue-100 text-blue-700 border-blue-200", icon: Bell },
-  "重要": { badge: "bg-amber-100 text-amber-700 border-amber-200", icon: AlertTriangle },
-  "緊急": { badge: "bg-red-100 text-red-700 border-red-200", icon: ShieldAlert },
+  "通常": { badge: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700", icon: Bell },
+  "重要": { badge: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700", icon: AlertTriangle },
+  "緊急": { badge: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700", icon: ShieldAlert },
 };
 
 function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
@@ -127,10 +127,10 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
           <div
             onClick={() => setForm((prev) => ({ ...prev, is_alert: !prev.is_alert }))}
             className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-              form.is_alert ? "bg-red-50 border-red-300" : "bg-muted border-border"
+              form.is_alert ? "bg-red-50 border-red-300 dark:bg-red-900/30 dark:border-red-700" : "bg-muted border-border"
             }`}
           >
-            <div className={`w-9 h-5 rounded-full flex items-center transition-all ${form.is_alert ? "bg-red-500" : "bg-slate-300"}`}>
+            <div className={`w-9 h-5 rounded-full flex items-center transition-all ${form.is_alert ? "bg-red-500" : "bg-slate-300 dark:bg-slate-600"}`}>
               <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform mx-0.5 ${form.is_alert ? "translate-x-4" : "translate-x-0"}`} />
             </div>
             <div>
@@ -300,8 +300,8 @@ function AnnouncementEditForm({ ann, staffList, onClose, onSaved }) {
             <label className="text-xs font-semibold text-muted-foreground mb-1 block">本文</label>
             <textarea className="w-full border border-input rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none" rows={3} value={form.body} onChange={(e) => setForm((prev) => ({ ...prev, body: e.target.value }))} />
           </div>
-          <div onClick={() => setForm((prev) => ({ ...prev, is_alert: !prev.is_alert }))} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer ${form.is_alert ? "bg-red-50 border-red-300" : "bg-muted border-border"}`}>
-            <div className={`w-9 h-5 rounded-full flex items-center transition-all ${form.is_alert ? "bg-red-500" : "bg-slate-300"}`}>
+          <div onClick={() => setForm((prev) => ({ ...prev, is_alert: !prev.is_alert }))} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer ${form.is_alert ? "bg-red-50 border-red-300 dark:bg-red-900/30 dark:border-red-700" : "bg-muted border-border"}`}>
+            <div className={`w-9 h-5 rounded-full flex items-center transition-all ${form.is_alert ? "bg-red-500" : "bg-slate-300 dark:bg-slate-600"}`}>
               <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform mx-0.5 ${form.is_alert ? "translate-x-4" : "translate-x-0"}`} />
             </div>
             <div><div className="text-xs font-semibold">アラートバナー表示</div></div>
@@ -419,11 +419,11 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
             </div>
           )}
           <div className="flex items-center gap-3 mt-1.5">
-            <span className="flex items-center gap-1 text-[10px] text-green-600">
+            <span className="flex items-center gap-1 text-[10px] text-green-700 dark:text-green-400">
               <CheckCircle2 className="w-3 h-3" />{readCount}名既読
             </span>
             {unreadCount > 0 && (
-              <span className="flex items-center gap-1 text-[10px] text-amber-600">
+              <span className="flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-400">
                 <Clock className="w-3 h-3" />{unreadCount}名未読
               </span>
             )}
@@ -436,7 +436,7 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
         <div className="flex gap-1 shrink-0">
           <button
             onClick={() => setShowConfirm(!showConfirm)}
-            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200 hover:bg-green-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700 dark:hover:bg-green-900/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title="確認を行う"
           >
             <CheckCircle2 className="w-3 h-3" />確認を行う
@@ -457,9 +457,9 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
 
       {/* Confirm read panel */}
       {showConfirm && (
-        <div className="px-3 pb-3 border-t border-border/60 pt-2.5 bg-green-50/50">
+      <div className="px-3 pb-3 border-t border-border/60 pt-2.5 bg-green-50/50 dark:bg-green-900/20">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold text-green-800">自分の名前をタップして確認済みにする</p>
+            <p className="text-xs font-semibold text-green-800 dark:text-green-300">自分の名前をタップして確認済みにする</p>
             <button onClick={() => setShowConfirm(false)} className="p-1 rounded hover:bg-muted text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="パネルを閉じる">
               <X className="w-3.5 h-3.5" />
             </button>
@@ -475,8 +475,8 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
                     disabled={alreadyRead || readMutation.isPending}
                     className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-all ${
                       alreadyRead
-                        ? "bg-green-100 text-green-700 border-green-200 cursor-default"
-                        : "bg-card border-border text-foreground hover:bg-green-50 hover:border-green-300 hover:text-green-700"
+                        ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700 cursor-default"
+                        : "bg-card border-border text-foreground hover:bg-green-50 hover:border-green-300 hover:text-green-700 dark:hover:bg-green-900/30 dark:hover:text-green-300"
                     }`}
                   >
                     {alreadyRead && <CheckCircle2 className="w-3 h-3" />}
@@ -514,7 +514,7 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
           </p>
           <div className="flex flex-wrap gap-1">
             {ann.read_by.map((name) => (
-              <span key={name} className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">{name}</span>
+              <span key={name} className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700">{name}</span>
             ))}
           </div>
         </div>
@@ -605,7 +605,7 @@ export default function AnnouncementManager({ eventId }) {
         <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1">
           <Megaphone className="w-4 h-4 text-primary" />連絡事項
           {urgentCount > 0 && (
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700">
               {urgentCount}件未読あり
             </span>
           )}
@@ -620,8 +620,8 @@ export default function AnnouncementManager({ eventId }) {
               }}
               className={`text-[11px] px-2 py-1 rounded-lg border font-medium transition-colors ${
                 notifPermission === "denied"
-                  ? "bg-red-50 border-red-200 text-red-700 cursor-not-allowed"
-                  : "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
+                  ? "bg-red-50 border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300 cursor-not-allowed"
+                  : "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900/50"
               }`}
             >
               {notifPermission === "denied" ? "通知ブロック中" : "通知を有効にする"}

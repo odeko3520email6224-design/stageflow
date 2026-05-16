@@ -38,22 +38,29 @@ export default function MapAreaFormModal({ area, eventId, onClose, onSaved }) {
     onSuccess: onSaved,
   });
 
-  // Auto-save on form changes (only for existing areas)
+  // Auto-save: text fields (name) → 500ms, others (type, x, y, width, height, color) → instant
   const prevFormRef = useRef(form);
+  const isTextChange = (prev, cur) => prev.name !== cur.name;
+  const isNonTextChange = (prev, cur) =>
+    prev.type !== cur.type || prev.x !== cur.x || prev.y !== cur.y ||
+    prev.width !== cur.width || prev.height !== cur.height || prev.color !== cur.color;
+
   useEffect(() => {
-    if (!area) return;
+    if (!area || !form.name) return;
+    const prev = prevFormRef.current;
+    const textChanged = isTextChange(prev, form);
+    const nonTextChanged = isNonTextChange(prev, form);
+    if (!textChanged && !nonTextChanged) return;
+
+    const delay = nonTextChanged ? 0 : 500;
     const timer = setTimeout(() => {
-      const prev = prevFormRef.current;
-      const hasChanges = prev.name !== form.name || prev.type !== form.type || prev.x !== form.x || prev.y !== form.y || prev.width !== form.width || prev.height !== form.height || prev.color !== form.color;
-      if (hasChanges && form.name) {
-        mutation.mutate(form, {
-          onSuccess: () => {
-            toast.success("保存しました");
-            prevFormRef.current = form;
-          }
-        });
-      }
-    }, 1000);
+      mutation.mutate(form, {
+        onSuccess: () => {
+          toast.success("保存しました");
+          prevFormRef.current = form;
+        }
+      });
+    }, delay);
     return () => clearTimeout(timer);
   }, [form]);
 
