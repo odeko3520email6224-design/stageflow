@@ -131,7 +131,7 @@ export default function EventDetail() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-2 py-2 pb-24 sm:pb-12 overflow-hidden">
+      <div className="max-w-6xl mx-auto px-2 py-2 pb-24 sm:pb-12">
         <motion.div
           key={tab}
           initial={{ opacity: 0 }}
