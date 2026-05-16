@@ -86,21 +86,16 @@ export default function Events() {
                 {currentUser.full_name && <div className="text-[10px] text-muted-foreground leading-none mt-0.5 truncate">{currentUser.email}</div>}
               </div>
               <div className="ml-1 flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                {currentUser.role === 'admin' &&
                 <button
                   onClick={() => {
                     if (confirm('このアカウントを削除しますか？ この操作は取り消せません。')) {
-                      base44.users.inviteUser(currentUser.email, 'user').then(() => {
-                        base44.auth.logout();
-                      });
+                      base44.auth.logout();
                     }
                   }}
                   className="p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none"
                   title="アカウント削除">
-                  
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                }
+                  <Trash2 className="w-3 h-3" />
+                </button>
                 <button
                   onClick={() => base44.auth.logout()}
                   className="p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none"
@@ -127,9 +122,9 @@ export default function Events() {
 
         <motion.div
           className="grid gap-2"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}>
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.25 }}>
           
             {events.map((event) =>
           <Link

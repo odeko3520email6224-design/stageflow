@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, ChevronDown, ChevronUp, Zap, X, BookOpen, Pencil } from "lucide-react";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { useUserRole } from "@/hooks/useUserRole";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -30,14 +31,15 @@ function SlotPositionSelector({ slot, selectedIds, positionTypes, onChange }) {
           </div>
         ))}
         {available.length > 0 && (
-          <div className="pt-1">
-            <select className="w-full text-xs border border-border rounded-lg px-2 py-1.5 bg-background h-8" value=""
-              onChange={(e) => { if (e.target.value) onChange([...selectedIds, e.target.value]); }}>
-              <option value="">＋ ポジションを追加...</option>
-              {available.map((pt) => <option key={pt.id} value={pt.id}>{pt.name}</option>)}
-            </select>
-          </div>
-        )}
+            <div className="pt-1">
+              <ResponsiveSelect
+                value=""
+                onValueChange={(v) => { if (v) onChange([...selectedIds, v]); }}
+                options={[{ value: "", label: "＋ ポジションを追加..." }, ...available.map((pt) => ({ value: pt.id, label: pt.name }))]}
+                placeholder="＋ ポジションを追加..."
+              />
+            </div>
+          )}
         {positionTypes.length === 0 && <p className="text-xs text-muted-foreground text-center py-2">ポジション設定から登録してください</p>}
       </div>
     </div>
