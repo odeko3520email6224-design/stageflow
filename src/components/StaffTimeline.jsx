@@ -35,6 +35,9 @@ export default function StaffTimeline({ eventId }) {
       if (!staffTimeline[name]) {
         staffTimeline[name] = { "開場中": [], "開演中": [], "終演後": [] };
       }
+      if (!staffTimeline[name][slot]) {
+        staffTimeline[name][slot] = [];
+      }
       staffTimeline[name][slot].push(pos.name || pos.role);
     });
   });
