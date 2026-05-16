@@ -68,7 +68,8 @@ export default function Events() {
         {/* Row 1: Title */}
         <div className="mb-1.5">
           <h1 className="text-lg font-bold text-foreground tracking-tight">イベント一覧</h1>
-          <p className="text-muted-foreground text-[10px]">イベント・コンサートの配置管理を行う</p>
+          <p className="text-muted-foreground text-[10px]">イベント・コンサートの配置管理を行うアプリケーションです
+</p>
         </div>
         {/* Row 2: New button + Account */}
         <div className="flex items-center justify-between gap-2">
@@ -76,8 +77,7 @@ export default function Events() {
             <Plus className="w-3.5 h-3.5" />
             新規
           </Button>
-          {currentUser &&
-            <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2 py-1 min-w-0 group">
+          {currentUser && <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2 py-1 min-w-0 group">
               <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                 <User className="w-3 h-3 text-primary" />
               </div>
