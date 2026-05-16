@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { AlertCircle, ClipboardList, Plus, Download, Users, User } from "lucide-react";
+import { AlertCircle, ClipboardList, Plus, Download, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PositionCard from "@/components/PositionCard";
 import PositionFormModal from "@/components/PositionFormModal";
@@ -20,10 +20,7 @@ export default function StaffDragDropManager({ eventId }) {
     queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
   });
 
-  const { data: positionTypes = [] } = useQuery({
-    queryKey: ["positionTypes"],
-    queryFn: () => base44.entities.PositionType.list(),
-  });
+
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
@@ -60,7 +57,7 @@ export default function StaffDragDropManager({ eventId }) {
   const [draggedStaff, setDraggedStaff] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [defaultSlot, setDefaultSlot] = useState("開場前");
+  const [defaultSlot, setDefaultSlot] = useState("開場中");
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Position.delete(id),
@@ -137,14 +134,14 @@ export default function StaffDragDropManager({ eventId }) {
   };
 
   const grouped = TIME_SLOTS.reduce((acc, slot) => {
-    acc[slot] = positions.filter((p) => (p.time_slot || "開場前") === slot);
+    acc[slot] = positions.filter((p) => (p.time_slot || "開場中") === slot);
     return acc;
   }, {});
 
   // 3つのスロット全てに配置されていないスタッフのみ未配置とする
   const unassigned = staffList.filter((s) => {
     const slotsWithAssignment = TIME_SLOTS.filter((slot) => {
-      return positions.some((p) => (p.time_slot || "開場前") === slot && (p.staff_names || []).includes(s.name));
+      return positions.some((p) => (p.time_slot || "開場中") === slot && (p.staff_names || []).includes(s.name));
     });
     return slotsWithAssignment.length < TIME_SLOTS.length;
   });
@@ -199,14 +196,6 @@ export default function StaffDragDropManager({ eventId }) {
                 ) : (
                   <div className="grid gap-1">
                     {grouped[slot].map((pos) => {
-                      const matchingPT = positionTypes.find((pt) => pt.name === pos.name);
-                      const slotRequiredCount = matchingPT
-                        ? (slot === "開場前"
-                            ? (matchingPT.required_count_before ?? matchingPT.required_count ?? 0)
-                            : slot === "開演中"
-                            ? (matchingPT.required_count_during ?? matchingPT.required_count ?? 0)
-                            : (matchingPT.required_count_after ?? matchingPT.required_count ?? 0))
-                        : 0;
                       return (
                        <PositionCard
                          key={pos.id}
@@ -225,7 +214,13 @@ export default function StaffDragDropManager({ eventId }) {
                          onDelete={(id) => { if (confirm("削除しますか？")) deleteMutation.mutate(id); }}
                          emptyLabel="スタッフをドラッグして配置"
                          staffList={staffList}
-                         requiredCount={slotRequiredCount}
+                         requiredCount={pos.required_count ?? 0}
+                         onRequiredCountChange={(v) => {
+                           queryClient.setQueryData(["positions", eventId], (old) =>
+                             old.map((p) => p.id === pos.id ? { ...p, required_count: v } : p)
+                           );
+                           base44.entities.Position.update(pos.id, { required_count: v });
+                         }}
                        />
                       );
                     })}
@@ -282,9 +277,9 @@ export default function StaffDragDropManager({ eventId }) {
             <p className="text-[11px] text-muted-foreground text-center py-3">スタッフが登録されていません</p>
           ) : (
             staffList.map((s) => {
-              const slotAssignments = ["開場前", "開演中", "終演後"].map((slot) => {
+              const slotAssignments = ["開場中", "開演中", "終演後"].map((slot) => {
                 const pos = positions.filter(
-                  (p) => (p.time_slot || "開場前") === slot && (p.staff_names || []).includes(s.name)
+                  (p) => (p.time_slot || "開場中") === slot && (p.staff_names || []).includes(s.name)
                 );
                 return { slot, positions: pos };
               }).filter((sa) => sa.positions.length > 0);

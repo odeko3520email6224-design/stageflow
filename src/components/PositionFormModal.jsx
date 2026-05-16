@@ -13,7 +13,7 @@ const PRESET_COLORS = [
   "#ef4444", "#8b5cf6", "#06b6d4", "#f97316",
 ];
 
-export default function PositionFormModal({ position, eventId, defaultTimeSlot = "開場前", onClose, onSaved }) {
+export default function PositionFormModal({ position, eventId, defaultTimeSlot = "開場中", onClose, onSaved }) {
   const [form, setForm] = useState({
     name: position?.name || "",
     role: position?.role || "受付",
@@ -131,7 +131,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
               value={form.time_slot}
               onValueChange={(v) => setForm({ ...form, time_slot: v })}
               options={[
-                { value: "開場前", label: "開場前" },
+                { value: "開場中", label: "開場中" },
                 { value: "開演中", label: "開演中" },
                 { value: "終演後", label: "終演後" },
               ]}

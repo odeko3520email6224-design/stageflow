@@ -26,14 +26,14 @@ export default function StaffTimeline({ eventId }) {
   const staffTimeline = {};
 
   staffList.forEach((s) => {
-    staffTimeline[s.name] = { "開場前": [], "開演中": [], "終演後": [] };
+    staffTimeline[s.name] = { "開場中": [], "開演中": [], "終演後": [] };
   });
 
   positions.forEach((pos) => {
-    const slot = pos.time_slot || "開場前";
+    const slot = pos.time_slot || "開場中";
     (pos.staff_names || []).forEach((name) => {
       if (!staffTimeline[name]) {
-        staffTimeline[name] = { "開場前": [], "開演中": [], "終演後": [] };
+        staffTimeline[name] = { "開場中": [], "開演中": [], "終演後": [] };
       }
       staffTimeline[name][slot].push(pos.name || pos.role);
     });

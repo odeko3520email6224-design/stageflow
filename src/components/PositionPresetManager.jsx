@@ -62,7 +62,7 @@ function PresetCard({ preset, eventId, event, onDelete, isAdmin, positionTypes }
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(preset.name);
   const [editDesc, setEditDesc] = useState(preset.description || "");
-  const [editSlots, setEditSlots] = useState(preset.slot_positions || { "開場前": [], "開演中": [], "終演後": [] });
+  const [editSlots, setEditSlots] = useState(preset.slot_positions || { "開場中": [], "開演中": [], "終演後": [] });
   const queryClient = useQueryClient();
 
   const isActive = event?.active_preset_id === preset.id;
@@ -87,7 +87,7 @@ function PresetCard({ preset, eventId, event, onDelete, isAdmin, positionTypes }
   const startEdit = () => {
     setEditName(preset.name);
     setEditDesc(preset.description || "");
-    setEditSlots(preset.slot_positions || { "開場前": [], "開演中": [], "終演後": [] });
+    setEditSlots(preset.slot_positions || { "開場中": [], "開演中": [], "終演後": [] });
     setEditing(true);
     setExpanded(false);
   };
@@ -102,12 +102,15 @@ function PresetCard({ preset, eventId, event, onDelete, isAdmin, positionTypes }
 
       // プリセットのポジションを生成（全スロット分を並列作成）
       const slotMap = preset.slot_positions || {};
+      const slotToField = { "開場中": "required_count_before", "開演中": "required_count_during", "終演後": "required_count_after" };
       const creates = [];
       for (const slot of TIME_SLOTS) {
         const ids = slotMap[slot] || [];
         for (const ptId of ids) {
           const pt = positionTypes.find((p) => p.id === ptId);
           if (pt) {
+            const field = slotToField[slot];
+            const reqCount = field ? (pt[field] ?? pt.required_count ?? 0) : 0;
             creates.push(base44.entities.Position.create({
               event_id: eventId,
               name: pt.name,
@@ -115,6 +118,7 @@ function PresetCard({ preset, eventId, event, onDelete, isAdmin, positionTypes }
               color: pt.color || "#6366f1",
               time_slot: slot,
               staff_names: [],
+              required_count: reqCount,
             }));
           }
         }
@@ -275,7 +279,7 @@ export default function PositionPresetManager({ eventId }) {
   const [presetName, setPresetName] = useState("");
   const [presetDesc, setPresetDesc] = useState("");
   // slot_positions: { "開場前": [ptId, ...], "開演中": [...], "終演後": [...] }
-  const [slotSelections, setSlotSelections] = useState({ "開場前": [], "開演中": [], "終演後": [] });
+  const [slotSelections, setSlotSelections] = useState({ "開場中": [], "開演中": [], "終演後": [] });
   const queryClient = useQueryClient();
   const { canEdit: isAdmin } = useUserRole();
 
@@ -302,7 +306,7 @@ export default function PositionPresetManager({ eventId }) {
       setCreating(false);
       setPresetName("");
       setPresetDesc("");
-      setSlotSelections({ "開場前": [], "開演中": [], "終演後": [] });
+      setSlotSelections({ "開場中": [], "開演中": [], "終演後": [] });
     },
   });
 

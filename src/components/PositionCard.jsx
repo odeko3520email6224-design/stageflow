@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Minus, Plus } from "lucide-react";
 import { TIME_SLOT_STYLES } from "@/lib/constants";
 
 export default function PositionCard({
@@ -15,6 +15,7 @@ export default function PositionCard({
   emptyLabel = "スタッフ未登録",
   staffList = [],
   requiredCount = 0,
+  onRequiredCountChange,
 }) {
   const staffNames = pos.staff_names || [];
   const assignedCount = staffNames.length;
@@ -41,8 +42,25 @@ export default function PositionCard({
       <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-border/60 bg-muted/20 select-none">
         <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: pos.color || "#6366f1" }} />
         <span className="text-xs font-semibold text-foreground">{pos.name || pos.role}</span>
-        {/* 人数バッジ */}
-        <span className="text-[10px] text-muted-foreground">{assignedCount}名{requiredCount > 0 ? `/${requiredCount}名` : ""}</span>
+        {/* 必要人数インライン編集 */}
+        {onRequiredCountChange && isAdmin ? (
+          <div className="flex items-center border border-border/60 rounded overflow-hidden bg-background ml-1">
+            <button type="button" onClick={() => onRequiredCountChange(Math.max(0, requiredCount - 1))}
+              className="w-4 h-4 flex items-center justify-center bg-muted hover:bg-muted/80 text-muted-foreground">
+              <Minus className="w-2 h-2" />
+            </button>
+            <span className="w-5 text-[10px] text-center leading-4">{requiredCount}</span>
+            <button type="button" onClick={() => onRequiredCountChange(requiredCount + 1)}
+              className="w-4 h-4 flex items-center justify-center bg-muted hover:bg-muted/80 text-muted-foreground">
+              <Plus className="w-2 h-2" />
+            </button>
+          </div>
+        ) : (
+          <span className="text-[10px] text-muted-foreground">{assignedCount}名{requiredCount > 0 ? `/${requiredCount}名` : ""}</span>
+        )}
+        {onRequiredCountChange && isAdmin && (
+          <span className="text-[10px] text-muted-foreground">{assignedCount}名配置</span>
+        )}
         {statusBadge && (
           <span className={`text-[10px] font-semibold px-1 py-0.5 rounded border ${statusBadge.cls}`}>
             {statusBadge.label}

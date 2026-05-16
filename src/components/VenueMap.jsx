@@ -13,15 +13,15 @@ const ROLE_COLORS = {
   "その他": "#94a3b8",
 };
 
-const TIME_SLOTS = ["開場前", "開演中", "終演後"];
+const TIME_SLOTS = ["開場中", "開演中", "終演後"];
 const TIME_SLOT_STYLES = {
-  "開場前": "bg-amber-50 text-amber-800 border-amber-300",
+  "開場中": "bg-amber-50 text-amber-800 border-amber-300",
   "開演中": "bg-blue-50 text-blue-800 border-blue-300",
   "終演後": "bg-slate-50 text-slate-700 border-slate-300",
 };
 
 function SidePanel({ positions, draggingPin, setDraggingPin, setMode, slotFilter, onSidePanelDragStart }) {
-  const filtered = positions.filter((p) => (p.time_slot || "開場前") === slotFilter);
+  const filtered = positions.filter((p) => (p.time_slot || "開場中") === slotFilter);
   const onMap = filtered.filter((p) => p.map_x != null && p.map_y != null);
   const notOnMap = filtered.filter((p) => p.map_x == null || p.map_y == null);
 
@@ -87,7 +87,7 @@ export default function VenueMap({ eventId }) {
   const [editingArea, setEditingArea] = useState(null);
   const [showAreaModal, setShowAreaModal] = useState(false);
   const [tooltip, setTooltip] = useState(null);
-  const [slotFilter, setSlotFilter] = useState("開場前");
+  const [slotFilter, setSlotFilter] = useState("開場中");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [scale, setScale] = useState(1);
   const longPressTimer = useRef(null);
@@ -283,7 +283,7 @@ export default function VenueMap({ eventId }) {
   // Filter pins by slot tab
   const filteredPositions = slotFilter === "all"
     ? positions
-    : positions.filter((p) => (p.time_slot || "開場前") === slotFilter);
+    : positions.filter((p) => (p.time_slot || "開場中") === slotFilter);
 
   const positionsOnMap = filteredPositions.filter((p) => p.map_x != null && p.map_y != null);
 

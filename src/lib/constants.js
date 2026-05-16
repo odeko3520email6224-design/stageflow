@@ -1,8 +1,8 @@
 // 時間帯の共通定数
-export const TIME_SLOTS = ["開場前", "開演中", "終演後"];
+export const TIME_SLOTS = ["開場中", "開演中", "終演後"];
 
 export const TIME_SLOT_STYLES = {
-  "開場前": {
+  "開場中": {
     header: "bg-amber-200 border-amber-400 text-amber-950 dark:bg-amber-800 dark:border-amber-500 dark:text-white",
     badge: "bg-amber-200 border-amber-400 text-amber-950 dark:bg-amber-800 dark:border-amber-500 dark:text-white",
     bg: "bg-amber-200 text-amber-950 border-amber-400 dark:bg-amber-800 dark:border-amber-500 dark:text-white",

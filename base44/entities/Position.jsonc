@@ -24,11 +24,11 @@
     "time_slot": {
       "type": "string",
       "enum": [
-        "\u958b\u5834\u524d",
+        "\u958b\u5834\u4e2d",
         "\u958b\u6f14\u4e2d",
         "\u7d42\u6f14\u5f8c"
       ],
-      "default": "\u958b\u5834\u524d",
+      "default": "\u958b\u5834\u4e2d",
       "description": "\u6642\u9593\u5e2f\u533a\u5206"
     },
     "staff_names": {
@@ -54,6 +54,11 @@
     "color": {
       "type": "string",
       "description": "\u8868\u793a\u8272"
+    },
+    "required_count": {
+      "type": "number",
+      "description": "\u5fc5\u8981\u4eba\u6570\uff08\u3053\u306e\u30a4\u30d9\u30f3\u30c8\u30fb\u3053\u306e\u30dd\u30b8\u30b7\u30e7\u30f3\u56fa\u6709\uff09",
+      "default": 0
     }
   },
   "required": [

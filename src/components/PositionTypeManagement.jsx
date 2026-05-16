@@ -105,7 +105,7 @@ export default function PositionTypeManagement({ eventId }) {
   };
 
   const SLOT_FIELDS = [
-    { slot: "開場前", field: "required_count_before", styleClass: TIME_SLOT_STYLES["開場前"].header },
+    { slot: "開場中", field: "required_count_before", styleClass: TIME_SLOT_STYLES["開場中"].header },
     { slot: "開演中", field: "required_count_during", styleClass: TIME_SLOT_STYLES["開演中"].header },
     { slot: "終演後", field: "required_count_after", styleClass: TIME_SLOT_STYLES["終演後"].header },
   ];
@@ -141,9 +141,9 @@ export default function PositionTypeManagement({ eventId }) {
           >
             {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
-          {/* 時間帯別必要人数 */}
+          {/* 時間帯別必要人数（プリセット適用時の初期値。各イベントの配置表から個別変更可能） */}
           <div className="flex gap-1">
-            <SlotCountControl label="開場前" value={reqBefore} onChange={setReqBefore} disabled={false} styleClass={TIME_SLOT_STYLES["開場前"].header} />
+            <SlotCountControl label="開場中" value={reqBefore} onChange={setReqBefore} disabled={false} styleClass={TIME_SLOT_STYLES["開場中"].header} />
             <SlotCountControl label="開演中" value={reqDuring} onChange={setReqDuring} disabled={false} styleClass={TIME_SLOT_STYLES["開演中"].header} />
             <SlotCountControl label="終演後" value={reqAfter} onChange={setReqAfter} disabled={false} styleClass={TIME_SLOT_STYLES["終演後"].header} />
           </div>
