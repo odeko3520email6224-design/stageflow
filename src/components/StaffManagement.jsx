@@ -140,7 +140,7 @@ export default function StaffManagement({ eventId }) {
       <div className="flex flex-col gap-2 mb-2">
         <div className="flex-1">
           <h2 className="text-sm font-bold flex items-center gap-1.5 mb-0.5"><UserCog className="w-4 h-4 text-primary" />スタッフ管理</h2>
-          <p className="text-[11px] text-muted-foreground">スタッフの追加、編集、削除などの管理が可能です。A-CAST点呼表からのスタッフ</p>
+          <p className="text-[11px] text-muted-foreground">スタッフの追加、編集、削除などの管理が可能です。A-CAST点呼表からのスタッフリストも</p>
         </div>
         <div className="text-sm font-medium text-foreground">登録スタッフ数：{staffList.length}名</div>
         <Button size="sm" variant="outline" className="gap-1 h-9 text-sm w-full" onClick={() => setShowScrapeModal(true)}>
