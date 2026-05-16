@@ -64,7 +64,7 @@ export default function PositionTypeManagement({ eventId }) {
 
   const handleAdd = () => {
     if (!name.trim()) return;
-    createMutation.mutate({ name: name.trim(), role, color, required_count: requiredCount });
+    createMutation.mutate({ event_id: eventId, name: name.trim(), role, color, required_count: requiredCount });
   };
 
   const handleKeyDown = (e) => {
