@@ -18,16 +18,21 @@ export default function StaffScrapeModal({ eventId, onClose }) {
     setResult(null);
     setError(null);
 
-    const res = await base44.functions.invoke("scrapeStaffNames", { url: url.trim(), eventId });
-    const data = res.data;
+    try {
+      const res = await base44.functions.invoke("scrapeStaffNames", { url: url.trim(), eventId });
+      const data = res.data;
 
-    if (data.error) {
-      setError(data.error);
-    } else {
-      setResult(data);
-      queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setResult(data);
+        queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
+      }
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || "取得中にエラーが発生しました");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
