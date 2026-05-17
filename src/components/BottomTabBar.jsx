@@ -1,4 +1,4 @@
-import { Users, Map, Clock, Megaphone, ClipboardList, Settings } from "lucide-react";
+import { Users, Map, Clock, Megaphone, ClipboardList, Settings, CheckSquare } from "lucide-react";
 
 const TABS = [
   { id: "staff", label: "スタッフ", icon: Users },
@@ -6,6 +6,7 @@ const TABS = [
   { id: "map", label: "マップ", icon: Map },
   { id: "timeline", label: "タイムライン", icon: Clock },
   { id: "notice", label: "連絡事項", icon: Megaphone },
+  { id: "tasks", label: "チェックリスト", icon: CheckSquare },
   { id: "admin", label: "管理", icon: Settings },
 ];
 

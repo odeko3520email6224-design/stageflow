@@ -1,0 +1,32 @@
+{
+  "name": "Task",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "\u30a4\u30d9\u30f3\u30c8ID"
+    },
+    "title": {
+      "type": "string",
+      "description": "\u30bf\u30b9\u30af\u540d"
+    },
+    "note": {
+      "type": "string",
+      "description": "\u5099\u8003"
+    },
+    "is_done": {
+      "type": "boolean",
+      "default": false,
+      "description": "\u5b8c\u4e86\u30d5\u30e9\u30b0"
+    },
+    "order": {
+      "type": "number",
+      "default": 0,
+      "description": "\u8868\u793a\u9806"
+    }
+  },
+  "required": [
+    "event_id",
+    "title"
+  ]
+}

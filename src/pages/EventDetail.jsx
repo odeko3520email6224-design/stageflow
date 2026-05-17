@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ChevronLeft, User, LogOut, Users, ClipboardList, MapPin, Clock, Bell, Settings } from "lucide-react";
+import { ChevronLeft, User, LogOut, Users, ClipboardList, MapPin, Clock, Bell, Settings, CheckSquare } from "lucide-react";
 import { motion } from "framer-motion";
 import VenueMap from "@/components/VenueMap";
 import StaffManagement from "@/components/StaffManagement";
 import PositionTypeManagement from "@/components/PositionTypeManagement";
 import StaffTimeline from "@/components/StaffTimeline";
 import AnnouncementManager from "@/components/AnnouncementManager";
+import TaskChecklist from "@/components/TaskChecklist";
 import AnnouncementAlert from "@/components/AnnouncementAlert";
 import StaffDragDropManager from "@/components/StaffDragDropManager";
 import BottomTabBar from "@/components/BottomTabBar";
@@ -111,6 +112,7 @@ export default function EventDetail() {
               { id: "map", label: "会場マップ", icon: MapPin },
               { id: "timeline", label: "タイムライン", icon: Clock },
               { id: "notice", label: "連絡事項", icon: Bell },
+              { id: "tasks", label: "チェックリスト", icon: CheckSquare },
               { id: "admin", label: "管理", icon: Settings },
             ].map(({ id, label, icon: Icon }) => (
               <button
@@ -145,6 +147,7 @@ export default function EventDetail() {
           {tab === "map" && <VenueMap eventId={eventId} />}
           {tab === "timeline" && <StaffTimeline eventId={eventId} />}
           {tab === "notice" && <AnnouncementManager eventId={eventId} />}
+          {tab === "tasks" && <TaskChecklist eventId={eventId} />}
         </motion.div>
       </div>
 
