@@ -7,6 +7,7 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Calendar, MapPin, ChevronRight, Trash2, Pencil, LogOut, User } from "lucide-react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { motion } from "framer-motion";
 import EventFormModal from "@/components/EventFormModal";
 import { format } from "date-fns";
@@ -49,13 +50,15 @@ export default function Events() {
     setShowModal(true);
   };
 
-  const handleDelete = (e, id) => {
+  const [confirmDeleteEvent, setConfirmDeleteEvent] = useState(null);
+
+  const handleDelete = (e, id, name) => {
     e.preventDefault();
-    if (confirm("このイベントを削除しますか？")) deleteMutation.mutate(id);
+    setConfirmDeleteEvent({ id, name });
   };
 
   return (
-    <div className="min-h-screen bg-background safe-area-top safe-area-bottom relative">
+    <div className="min-h-screen bg-background safe-area-top safe-area-bottom relative scrollbar-hide overflow-x-hidden">
       {/* Pull-to-refresh indicator */}
       {isPulling &&
       <div className="fixed top-0 left-0 right-0 flex justify-center pt-2 z-30">
@@ -87,14 +90,10 @@ export default function Events() {
               </div>
               <div className="ml-1 flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
-                  onClick={() => {
-                    if (confirm('このアカウントを削除しますか？ この操作は取り消せません。')) {
-                      base44.auth.logout();
-                    }
-                  }}
-                  className="p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none"
-                  title="アカウント削除">
-                  <Trash2 className="w-3 h-3" />
+                onClick={() => setConfirmDeleteEvent({ id: "__account__", name: "アカウント（ログアウトします）" })}
+                className="p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none"
+                title="アカウント削除">
+                <Trash2 className="w-3 h-3" />
                 </button>
                 <button
                   onClick={() => base44.auth.logout()}
@@ -164,8 +163,8 @@ export default function Events() {
                        <Pencil className="w-3 h-3" />
                      </button>
                      <button
-                  onClick={(e) => handleDelete(e, event.id)}
-                  disabled={!canEdit}
+                     onClick={(e) => handleDelete(e, event.id, event.name)}
+                     disabled={!canEdit}
                   className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30 disabled:pointer-events-none select-none">
                   
                        <Trash2 className="w-3 h-3" />
@@ -178,6 +177,25 @@ export default function Events() {
           </motion.div>
         }
       </div>
+
+      {confirmDeleteEvent && (
+        <ConfirmDialog
+          message={confirmDeleteEvent.id === "__account__"
+            ? "ログアウトしますか？"
+            : `「${confirmDeleteEvent.name}」を削除しますか？`}
+          confirmLabel={confirmDeleteEvent.id === "__account__" ? "ログアウト" : "削除"}
+          confirmVariant={confirmDeleteEvent.id === "__account__" ? "default" : "destructive"}
+          onConfirm={() => {
+            if (confirmDeleteEvent.id === "__account__") {
+              base44.auth.logout();
+            } else {
+              deleteMutation.mutate(confirmDeleteEvent.id);
+            }
+            setConfirmDeleteEvent(null);
+          }}
+          onCancel={() => setConfirmDeleteEvent(null)}
+        />
+      )}
 
       {showModal &&
       <EventFormModal

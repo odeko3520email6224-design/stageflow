@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { AlertCircle, ClipboardList, Plus, Download, Users, GripVertical } from "lucide-react";
@@ -26,6 +26,17 @@ export default function StaffDragDropManager({ eventId }) {
     queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
   });
 
+  const { data: event } = useQuery({
+    queryKey: ["event", eventId],
+    queryFn: () => base44.entities.Event.filter({ id: eventId }),
+    select: (d) => d[0],
+  });
+
+  const { data: presets = [] } = useQuery({
+    queryKey: ["positionPresets"],
+    queryFn: () => base44.entities.PositionPreset.list(),
+  });
+
   const updatePositionMutation = useMutation({
     mutationFn: ({ positionId, data }) => base44.entities.Position.update(positionId, data),
     onMutate: async ({ positionId, data }) => {
@@ -49,12 +60,6 @@ export default function StaffDragDropManager({ eventId }) {
   const [draggedStaff, setDraggedStaff] = useState(null);
   const [draggingPosId, setDraggingPosId] = useState(null);
   const [dragOverPosId, setDragOverPosId] = useState(null);
-
-  // Touch drag state
-  const touchDragStaffRef = useRef(null); // staff name being touch-dragged
-  const touchDragPosRef = useRef(null);   // position id being touch-reordered
-  const touchGhostRef = useRef(null);     // ghost element
-  const touchOverPosIdRef = useRef(null); // current hovered position id
 
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -105,109 +110,6 @@ export default function StaffDragDropManager({ eventId }) {
 
   const handleDropUnassigned = (e) => { e.preventDefault(); setDraggedStaff(null); };
 
-  // ---- Touch drag helpers ----
-  const createGhost = (label) => {
-    const el = document.createElement("div");
-    el.textContent = label;
-    el.style.cssText = "position:fixed;top:-100px;left:-100px;z-index:9999;padding:4px 10px;border-radius:8px;background:#3b4fc8;color:#fff;font-size:12px;font-weight:600;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.25);white-space:nowrap;";
-    document.body.appendChild(el);
-    return el;
-  };
-
-  const moveGhost = (ghost, clientX, clientY) => {
-    ghost.style.top = `${clientY - 20}px`;
-    ghost.style.left = `${clientX - 40}px`;
-  };
-
-  const getPosIdFromPoint = (clientX, clientY) => {
-    const els = document.elementsFromPoint(clientX, clientY);
-    for (const el of els) {
-      const posId = el.closest("[data-pos-id]")?.getAttribute("data-pos-id");
-      if (posId) return posId;
-    }
-    return null;
-  };
-
-  // Touch drag for staff chips
-  const handleStaffTouchStart = (e, staffName, fromPosId) => {
-    const touch = e.touches[0];
-    touchDragStaffRef.current = { staffName, fromPosId };
-    const ghost = createGhost(staffName);
-    moveGhost(ghost, touch.clientX, touch.clientY);
-    touchGhostRef.current = ghost;
-    if (fromPosId) removeStaffFromPosition(fromPosId, staffName);
-    setDraggedStaff(staffName);
-  };
-
-  const handleStaffTouchMove = (e) => {
-    if (!touchDragStaffRef.current) return;
-    e.preventDefault();
-    const touch = e.touches[0];
-    if (touchGhostRef.current) moveGhost(touchGhostRef.current, touch.clientX, touch.clientY);
-    const posId = getPosIdFromPoint(touch.clientX, touch.clientY);
-    touchOverPosIdRef.current = posId;
-    setDragOverPosId(posId || null);
-  };
-
-  const handleStaffTouchEnd = (e) => {
-    if (!touchDragStaffRef.current) return;
-    const touch = e.changedTouches[0];
-    if (touchGhostRef.current) { document.body.removeChild(touchGhostRef.current); touchGhostRef.current = null; }
-    const posId = getPosIdFromPoint(touch.clientX, touch.clientY);
-    if (posId) {
-      assignStaffToPosition(touchDragStaffRef.current.staffName, posId);
-    }
-    touchDragStaffRef.current = null;
-    touchOverPosIdRef.current = null;
-    setDraggedStaff(null);
-    setDragOverPosId(null);
-  };
-
-  // Touch drag for position reordering
-  const handlePosTouchStart = (e, posId) => {
-    const touch = e.touches[0];
-    touchDragPosRef.current = posId;
-    const ghost = createGhost("↕ 移動中");
-    moveGhost(ghost, touch.clientX, touch.clientY);
-    touchGhostRef.current = ghost;
-    setDraggingPosId(posId);
-  };
-
-  const handlePosTouchMove = (e) => {
-    if (!touchDragPosRef.current) return;
-    e.preventDefault();
-    const touch = e.touches[0];
-    if (touchGhostRef.current) moveGhost(touchGhostRef.current, touch.clientX, touch.clientY);
-    const posId = getPosIdFromPoint(touch.clientX, touch.clientY);
-    if (posId && posId !== touchDragPosRef.current) setDragOverPosId(posId);
-  };
-
-  const handlePosTouchEnd = (e, slot) => {
-    if (!touchDragPosRef.current) return;
-    if (touchGhostRef.current) { document.body.removeChild(touchGhostRef.current); touchGhostRef.current = null; }
-    const touch = e.changedTouches[0];
-    const targetPosId = getPosIdFromPoint(touch.clientX, touch.clientY);
-    if (targetPosId && targetPosId !== touchDragPosRef.current) {
-      const slotPositions = positions.filter((p) => (p.time_slot || "開場中") === slot)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      const fromIdx = slotPositions.findIndex((p) => p.id === touchDragPosRef.current);
-      const toIdx = slotPositions.findIndex((p) => p.id === targetPosId);
-      if (fromIdx !== -1 && toIdx !== -1) {
-        const reordered = [...slotPositions];
-        const [moved] = reordered.splice(fromIdx, 1);
-        reordered.splice(toIdx, 0, moved);
-        reordered.forEach((pos, idx) => { base44.entities.Position.update(pos.id, { order: idx }); });
-        queryClient.setQueryData(["positions", eventId], (old) => {
-          const others = old.filter((p) => (p.time_slot || "開場中") !== slot);
-          return [...others, ...reordered.map((pos, idx) => ({ ...pos, order: idx }))];
-        });
-      }
-    }
-    touchDragPosRef.current = null;
-    setDraggingPosId(null);
-    setDragOverPosId(null);
-  };
-
   const removeStaffFromPosition = (positionId, staffName) => {
     const position = positions.find((p) => p.id === positionId);
     if (!position) return;
@@ -217,7 +119,33 @@ export default function StaffDragDropManager({ eventId }) {
     });
   };
 
-  // Position reorder
+  // Position reorder - also sync to active preset
+  const syncOrderToPreset = (slot, reorderedPositions) => {
+    if (!event?.active_preset_id) return;
+    const activePreset = presets.find((p) => p.id === event.active_preset_id);
+    if (!activePreset) return;
+    const currentSlotPositions = activePreset.slot_positions || {};
+    // Map position names to positionType ids in new order
+    const { data: positionTypes } = queryClient.getQueryState(["positionTypes"]) || {};
+    if (!positionTypes) return;
+    const newSlotIds = reorderedPositions.map((pos) => {
+      const pt = positionTypes.find((t) => t.name === pos.name);
+      return pt?.id;
+    }).filter(Boolean);
+    if (newSlotIds.length > 0) {
+      base44.entities.PositionPreset.update(event.active_preset_id, {
+        slot_positions: { ...currentSlotPositions, [slot]: newSlotIds },
+      });
+      queryClient.setQueryData(["positionPresets"], (old) =>
+        (old || []).map((p) =>
+          p.id === event.active_preset_id
+            ? { ...p, slot_positions: { ...(p.slot_positions || {}), [slot]: newSlotIds } }
+            : p
+        )
+      );
+    }
+  };
+
   const handlePosDragStart = (e, posId) => { setDraggingPosId(posId); e.dataTransfer.effectAllowed = "move"; };
   const handlePosDragOver = (e, posId) => { e.preventDefault(); if (posId !== draggingPosId) setDragOverPosId(posId); };
   const handlePosDrop = (e, slot, targetPosId) => {
@@ -236,6 +164,7 @@ export default function StaffDragDropManager({ eventId }) {
       const others = old.filter((p) => (p.time_slot || "開場中") !== slot);
       return [...others, ...reordered.map((pos, idx) => ({ ...pos, order: idx }))];
     });
+    syncOrderToPreset(slot, reordered);
     setDraggingPosId(null); setDragOverPosId(null);
   };
 
@@ -254,19 +183,21 @@ export default function StaffDragDropManager({ eventId }) {
 
   return (
     <div>
-      <div className="flex flex-col gap-1.5 mb-3">
-        <div className="flex-1">
-          <h2 className="text-sm font-bold flex items-center gap-1.5 mb-0.5"><ClipboardList className="w-4 h-4 text-primary" />配置表</h2>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h2 className="text-sm font-bold flex items-center gap-1.5"><ClipboardList className="w-4 h-4 text-primary" />配置表</h2>
           <p className="text-[11px] text-muted-foreground">スタッフそれぞれの配置管理が可能です。</p>
+          {positions.length > 0 && (() => {
+            const totalAssigned = [...new Set(positions.flatMap((p) => p.staff_names || []))].length;
+            return <div className="text-sm font-medium text-foreground mt-0.5">全時間帯合計：{totalAssigned}名配置済み</div>;
+          })()}
         </div>
-        {positions.length > 0 && (() => {
-          const totalAssigned = [...new Set(positions.flatMap((p) => p.staff_names || []))].length;
-          return <div className="text-sm font-medium text-foreground">全時間帯合計：{totalAssigned}名配置済み</div>;
-        })()}
-        <PresetSelector eventId={eventId} />
-        <Button size="sm" variant="outline" className="gap-1 h-9 text-sm w-full" onClick={handleExportPDF} disabled={exportingPDF || positions.length === 0}>
-          <Download className="w-3.5 h-3.5" />{exportingPDF ? 'エクスポート中...' : 'PDF出力'}
-        </Button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <PresetSelector eventId={eventId} compact />
+          <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2" onClick={handleExportPDF} disabled={exportingPDF || positions.length === 0}>
+            <Download className="w-3 h-3" />{exportingPDF ? '...' : 'PDF'}
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-1.5">
@@ -303,10 +234,7 @@ export default function StaffDragDropManager({ eventId }) {
                           <div draggable
                             onDragStart={(e) => handlePosDragStart(e, pos.id)}
                             onDragEnd={() => { setDraggingPosId(null); setDragOverPosId(null); }}
-                            onTouchStart={(e) => handlePosTouchStart(e, pos.id)}
-                            onTouchMove={handlePosTouchMove}
-                            onTouchEnd={(e) => handlePosTouchEnd(e, slot)}
-                            className="mt-2 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-0.5 shrink-0 touch-none">
+                            className="mt-2 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-0.5 shrink-0">
                             <GripVertical className="w-3.5 h-3.5" />
                           </div>
                         )}
@@ -322,9 +250,6 @@ export default function StaffDragDropManager({ eventId }) {
                               handleStaffDragStart(e, name);
                               removeStaffFromPosition(posId, name);
                             }}
-                            onStaffTouchStart={handleStaffTouchStart}
-                            onStaffTouchMove={handleStaffTouchMove}
-                            onStaffTouchEnd={handleStaffTouchEnd}
                             onStaffRemove={removeStaffFromPosition}
                             onEdit={(p) => { setEditing(p); setShowModal(true); }}
                             onDelete={(id) => setConfirmDelete({ id, name: pos.name })}
@@ -363,10 +288,7 @@ export default function StaffDragDropManager({ eventId }) {
             {unassigned.map((s) => (
               <div key={s.id} draggable={true}
                 onDragStart={(e) => handleStaffDragStart(e, s.name)}
-                onTouchStart={(e) => handleStaffTouchStart(e, s.name, null)}
-                onTouchMove={handleStaffTouchMove}
-                onTouchEnd={handleStaffTouchEnd}
-                className={`flex items-center gap-2 px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 cursor-move hover:bg-amber-100 dark:hover:bg-amber-900/50 touch-none ${draggedStaff === s.name ? "opacity-50" : ""}`}>
+                className={`flex items-center gap-2 px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 cursor-move hover:bg-amber-100 dark:hover:bg-amber-900/50 ${draggedStaff === s.name ? "opacity-50" : ""}`}>
                 <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center text-amber-700 dark:text-amber-300 font-bold text-[10px] shrink-0">
                   {s.name.charAt(0)}
                 </div>

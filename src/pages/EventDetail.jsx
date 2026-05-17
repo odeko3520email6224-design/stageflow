@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { ChevronLeft, User, LogOut, Users, ClipboardList, MapPin, Clock, Bell, Settings, CheckSquare } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import VenueMap from "@/components/VenueMap";
 import StaffManagement from "@/components/StaffManagement";
 import PositionTypeManagement from "@/components/PositionTypeManagement";
@@ -19,12 +19,36 @@ import { ja } from "date-fns/locale";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTabNavigation } from "@/hooks/useTabNavigation";
 
+const TIMELINE_STORAGE_KEY = "stageflow_timeline_enabled";
+
+const tabVariants = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.2 } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.15 } },
+};
+
 export default function EventDetail() {
   const { eventId } = useParams();
   const [tab, setTab] = useTabNavigation("staff");
 
   const { isAdmin, canManageSettings } = useUserRole();
   const [currentUser, setCurrentUser] = useState(null);
+
+  // Timeline feature toggle (persisted in localStorage, default OFF)
+  const [showTimeline, setShowTimeline] = useState(() => {
+    try {
+      return localStorage.getItem(TIMELINE_STORAGE_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleTimeline = (val) => {
+    setShowTimeline(val);
+    try { localStorage.setItem(TIMELINE_STORAGE_KEY, String(val)); } catch {}
+    // If currently on timeline tab and disabling, switch to staff
+    if (!val && tab === "timeline") setTab("staff");
+  };
 
   useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -50,23 +74,28 @@ export default function EventDetail() {
 
   if (!event) return <div className="p-8 text-muted-foreground">イベントが見つかりません</div>;
 
-
+  const desktopTabs = [
+    { id: "staff", label: "スタッフ管理", icon: Users },
+    { id: "dragdrop", label: "配置表", icon: ClipboardList },
+    { id: "map", label: "会場マップ", icon: MapPin },
+    ...(showTimeline ? [{ id: "timeline", label: "タイムライン", icon: Clock }] : []),
+    { id: "notice", label: "連絡事項", icon: Bell },
+    { id: "tasks", label: "チェックリスト", icon: CheckSquare },
+    { id: "admin", label: "管理", icon: Settings },
+  ];
 
   return (
-    <div className="min-h-screen bg-background relative">
-      {/* Pull-to-refresh indicator */}
+    <div className="min-h-screen bg-background relative scrollbar-hide overflow-x-hidden">
       {isPulling && (
         <div className="fixed top-0 left-0 right-0 flex justify-center pt-2 z-30">
           <div className="w-6 h-6 border-3 border-primary/30 border-t-primary rounded-full animate-spin" style={{ opacity: pullDistance / 100 }} />
         </div>
       )}
 
-      {/* Alert Banner */}
       <AnnouncementAlert eventId={eventId} />
 
       {/* Top bar */}
-      <div className="bg-card border-b border-border sticky top-0 z-50 pt-4 safe-area-top">
-        {/* Row 1: back + event name + user */}
+      <div className="bg-card border-b border-border sticky top-0 z-50 safe-area-top">
         <div className="max-w-6xl mx-auto px-3 pb-2 pt-1 flex items-center gap-2">
           <Link to="/" className="relative z-[100] p-1.5 rounded-lg hover:bg-muted transition-colors shrink-0" aria-label="戻る">
             <ChevronLeft className="w-5 h-5" />
@@ -91,7 +120,7 @@ export default function EventDetail() {
               </div>
               <button
                 onClick={() => base44.auth.logout()}
-                className="ml-1 p-1 rounded text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="ml-1 p-1 rounded text-muted-foreground hover:text-destructive transition-colors"
                 title="ログアウト"
                 aria-label="ログアウト"
               >
@@ -100,60 +129,60 @@ export default function EventDetail() {
             </div>
           )}
         </div>
-      </div>
 
-      {/* Tab Navigation - always visible, sticky on desktop/tablet */}
-      <div className="hidden sm:block border-b border-border bg-card sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-3">
-          <div className="flex gap-5">
-            {[
-              { id: "staff", label: "スタッフ管理", icon: Users },
-              { id: "dragdrop", label: "配置表", icon: ClipboardList },
-              { id: "map", label: "会場マップ", icon: MapPin },
-              { id: "timeline", label: "タイムライン", icon: Clock },
-              { id: "notice", label: "連絡事項", icon: Bell },
-              { id: "tasks", label: "チェックリスト", icon: CheckSquare },
-              { id: "admin", label: "管理", icon: Settings },
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setTab(id)}
-                className={`flex items-center gap-1.5 py-2.5 text-xs font-medium border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 select-none will-change-auto ${
-                  tab === id
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-                aria-current={tab === id ? "page" : undefined}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {label}
-              </button>
-            ))}
+        {/* Desktop tab bar */}
+        <div className="hidden sm:block border-t border-border">
+          <div className="max-w-6xl mx-auto px-3">
+            <div className="flex gap-5 overflow-x-auto scrollbar-hide">
+              {desktopTabs.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setTab(id)}
+                  className={`flex items-center gap-1.5 py-2.5 text-xs font-medium border-b-2 whitespace-nowrap transition-colors focus-visible:outline-none select-none shrink-0 ${
+                    tab === id
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                  aria-current={tab === id ? "page" : undefined}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-2 py-2 pb-24 sm:pb-12">
-        <motion.div
-          key={tab}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2 }}
-        >
-          {tab === "staff" && <StaffManagement eventId={eventId} />}
-          {tab === "dragdrop" && <StaffDragDropManager eventId={eventId} />}
-          {tab === "admin" && <PositionTypeManagement eventId={eventId} />}
-          {tab === "map" && <VenueMap eventId={eventId} />}
-          {tab === "timeline" && <StaffTimeline eventId={eventId} />}
-          {tab === "notice" && <AnnouncementManager eventId={eventId} />}
-          {tab === "tasks" && <TaskChecklist eventId={eventId} />}
-        </motion.div>
+      <div className="max-w-6xl mx-auto px-2 py-2 pb-20 sm:pb-12">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={tab}
+            variants={tabVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            {tab === "staff" && <StaffManagement eventId={eventId} />}
+            {tab === "dragdrop" && <StaffDragDropManager eventId={eventId} />}
+            {tab === "admin" && (
+              <PositionTypeManagement
+                eventId={eventId}
+                showTimeline={showTimeline}
+                onToggleTimeline={handleToggleTimeline}
+              />
+            )}
+            {tab === "map" && <VenueMap eventId={eventId} />}
+            {tab === "timeline" && showTimeline && <StaffTimeline eventId={eventId} />}
+            {tab === "notice" && <AnnouncementManager eventId={eventId} />}
+            {tab === "tasks" && <TaskChecklist eventId={eventId} />}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Bottom Tab Navigation - Mobile Only */}
       <div className="sm:hidden">
-        <BottomTabBar activeTab={tab} onTabChange={setTab} />
+        <BottomTabBar activeTab={tab} onTabChange={setTab} showTimeline={showTimeline} />
       </div>
     </div>
   );

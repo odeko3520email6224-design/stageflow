@@ -52,7 +52,7 @@ export default function EventFormModal({ event, onClose, onSaved }) {
   }, [form]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold">{event ? "イベント編集" : "新規イベント"}</h2>

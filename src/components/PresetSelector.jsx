@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { BookOpen, ChevronDown, ChevronUp, Zap } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, Zap, X } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { TIME_SLOTS } from "@/lib/constants";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
-export default function PresetSelector({ eventId }) {
+export default function PresetSelector({ eventId, compact = false }) {
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(null);
   const queryClient = useQueryClient();
@@ -70,6 +70,76 @@ export default function PresetSelector({ eventId }) {
 
   if (!isAdmin) return null;
 
+  if (compact) {
+    return (
+      <div className="relative">
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex items-center gap-1 px-2 py-1 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors text-xs font-medium h-7"
+        >
+          <BookOpen className="w-3 h-3 text-primary" />
+          {activePreset
+            ? <span className="text-primary font-semibold max-w-[80px] truncate">{activePreset.name}</span>
+            : <span className="text-muted-foreground">プリセット</span>}
+          {open ? <ChevronUp className="w-3 h-3 text-muted-foreground" /> : <ChevronDown className="w-3 h-3 text-muted-foreground" />}
+        </button>
+
+        {open && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <div className="absolute right-0 top-8 z-50 w-56 border border-border rounded-xl bg-card shadow-lg overflow-hidden">
+              {presets.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">プリセットが登録されていません</p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {presets.map((preset) => {
+                    const isActive = event?.active_preset_id === preset.id;
+                    const totalSlots = Object.values(preset.slot_positions || {}).flat().length;
+                    return (
+                      <div key={preset.id} className={`flex items-center gap-2 px-3 py-2 ${isActive ? "bg-primary/5" : "hover:bg-muted/40"} transition-colors`}>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-semibold truncate">{preset.name}</span>
+                            {isActive && <span className="text-[9px] font-bold px-1 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">適用中</span>}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">計{totalSlots}ポジション</div>
+                        </div>
+                        {isActive ? (
+                          <Button size="sm" variant="outline" className="h-6 text-[11px] px-2 shrink-0"
+                            disabled={clearMutation.isPending} onClick={() => setConfirm({ type: 'clear' })}>
+                            解除
+                          </Button>
+                        ) : (
+                          <Button size="sm" className="h-6 text-[11px] px-2 gap-1 shrink-0"
+                            disabled={applyMutation.isPending} onClick={() => setConfirm({ type: 'apply', preset })}>
+                            <Zap className="w-2.5 h-2.5" />適用
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {confirm?.type === 'apply' && (
+          <ConfirmDialog message={`「${confirm.preset.name}」を適用しますか？\n現在のポジションは一度リセットされます。`}
+            confirmLabel="適用" confirmVariant="default"
+            onConfirm={() => { applyMutation.mutate(confirm.preset); setConfirm(null); }}
+            onCancel={() => setConfirm(null)} />
+        )}
+        {confirm?.type === 'clear' && (
+          <ConfirmDialog message="プリセットの適用を解除しますか？" confirmLabel="解除" confirmVariant="default"
+            onConfirm={() => { clearMutation.mutate(); setConfirm(null); }}
+            onCancel={() => setConfirm(null)} />
+        )}
+      </div>
+    );
+  }
+
+  // Full mode (original)
   return (
     <div className="mb-1">
       <button onClick={() => setOpen(!open)}

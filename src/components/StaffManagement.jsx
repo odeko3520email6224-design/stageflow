@@ -44,7 +44,7 @@ function EditModal({ staff, onClose, onSaved }) {
   }, [localName, localNote]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-base">スタッフ編集</h3>
@@ -144,14 +144,14 @@ export default function StaffManagement({ eventId }) {
 
   return (
     <div>
-      <div className="flex flex-col gap-1.5 mb-3">
-        <div className="flex-1">
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex-1 min-w-0">
           <h2 className="text-sm font-bold flex items-center gap-1.5 mb-0.5"><UserCog className="w-4 h-4 text-primary" />スタッフ管理</h2>
-          <p className="text-[11px] text-muted-foreground">スタッフの追加、編集、削除などの管理が可能です。A-CAST点呼表からのスタッフリスト取得も可能です。</p>
+          <p className="text-[11px] text-muted-foreground">スタッフの追加・編集・削除が可能です。</p>
+          <div className="text-xs font-medium text-foreground mt-0.5">登録スタッフ数：{staffList.length}名</div>
         </div>
-        <div className="text-sm font-medium text-foreground">登録スタッフ数：{staffList.length}名</div>
-        <Button size="sm" variant="outline" className="gap-1 h-9 text-sm w-full" onClick={() => setShowScrapeModal(true)}>
-          <Download className="w-3.5 h-3.5" />A-CAST点呼表から取得
+        <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2 shrink-0" onClick={() => setShowScrapeModal(true)}>
+          <Download className="w-3 h-3" />A-CAST取得
         </Button>
       </div>
 

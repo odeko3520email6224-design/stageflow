@@ -88,7 +88,14 @@
     @apply select-auto;
   }
 
-  /* Hide scrollbars globally while preserving scrolling */
+  /* Hide scrollbars globally */
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+  }
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;

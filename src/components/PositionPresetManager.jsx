@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, ChevronDown, ChevronUp, Zap, X, BookOpen, Pencil } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Zap, X, BookOpen, Pencil, GripVertical } from "lucide-react";
 import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { useUserRole } from "@/hooks/useUserRole";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
@@ -12,7 +12,27 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 function SlotPositionSelector({ slot, selectedIds, positionTypes, onChange }) {
   const style = TIME_SLOT_STYLES[slot];
   const available = positionTypes.filter((pt) => !selectedIds.includes(pt.id));
-  const selected = positionTypes.filter((pt) => selectedIds.includes(pt.id));
+  const selected = positionTypes.filter((pt) => selectedIds.includes(pt.id))
+    .sort((a, b) => selectedIds.indexOf(a.id) - selectedIds.indexOf(b.id));
+
+  const [draggingId, setDraggingId] = useState(null);
+  const [dragOverId, setDragOverId] = useState(null);
+
+  const handleDragStart = (e, id) => { setDraggingId(id); e.dataTransfer.effectAllowed = "move"; };
+  const handleDragOver = (e, id) => { e.preventDefault(); if (id !== draggingId) setDragOverId(id); };
+  const handleDrop = (e, targetId) => {
+    e.preventDefault();
+    if (!draggingId || draggingId === targetId) { setDraggingId(null); setDragOverId(null); return; }
+    const fromIdx = selectedIds.indexOf(draggingId);
+    const toIdx = selectedIds.indexOf(targetId);
+    if (fromIdx === -1 || toIdx === -1) { setDraggingId(null); setDragOverId(null); return; }
+    const reordered = [...selectedIds];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+    onChange(reordered);
+    setDraggingId(null); setDragOverId(null);
+  };
+
   return (
     <div className="border rounded-xl overflow-hidden mb-3">
       <div className={`flex items-center justify-between px-3 py-2 border-b ${style.header}`}>
@@ -21,7 +41,17 @@ function SlotPositionSelector({ slot, selectedIds, positionTypes, onChange }) {
       </div>
       <div className="bg-card p-2 space-y-1">
         {selected.map((pt) => (
-          <div key={pt.id} className="flex items-center gap-2 px-2 py-1 rounded-lg bg-muted/30 border border-border/50">
+          <div key={pt.id}
+            className={`flex items-center gap-2 px-2 py-1 rounded-lg bg-muted/30 border border-border/50 ${draggingId === pt.id ? "opacity-40" : ""} ${dragOverId === pt.id ? "ring-2 ring-primary" : ""}`}
+            onDragOver={(e) => handleDragOver(e, pt.id)}
+            onDrop={(e) => handleDrop(e, pt.id)}
+          >
+            <div draggable
+              onDragStart={(e) => handleDragStart(e, pt.id)}
+              onDragEnd={() => { setDraggingId(null); setDragOverId(null); }}
+              className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0">
+              <GripVertical className="w-3 h-3" />
+            </div>
             <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: pt.color || "#6366f1" }} />
             <span className="text-xs flex-1">{pt.name}</span>
             <button onClick={() => onChange(selectedIds.filter((id) => id !== pt.id))}
@@ -31,15 +61,15 @@ function SlotPositionSelector({ slot, selectedIds, positionTypes, onChange }) {
           </div>
         ))}
         {available.length > 0 && (
-            <div className="pt-1">
-              <ResponsiveSelect
-                value=""
-                onValueChange={(v) => { if (v) onChange([...selectedIds, v]); }}
-                options={[{ value: "", label: "＋ ポジションを追加..." }, ...available.map((pt) => ({ value: pt.id, label: pt.name }))]}
-                placeholder="＋ ポジションを追加..."
-              />
-            </div>
-          )}
+          <div className="pt-1">
+            <ResponsiveSelect
+              value=""
+              onValueChange={(v) => { if (v) onChange([...selectedIds, v]); }}
+              options={[{ value: "", label: "＋ ポジションを追加..." }, ...available.map((pt) => ({ value: pt.id, label: pt.name }))]}
+              placeholder="＋ ポジションを追加..."
+            />
+          </div>
+        )}
         {positionTypes.length === 0 && <p className="text-xs text-muted-foreground text-center py-2">ポジション設定から登録してください</p>}
       </div>
     </div>
@@ -134,7 +164,7 @@ function PresetCard({ preset, eventId, event, onDelete, isAdmin, positionTypes }
           <p className="text-xs font-semibold text-muted-foreground mb-2">プリセットを編集</p>
           <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="プリセット名" className="h-8 text-sm" />
           <Input value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder="説明（任意）" className="h-8 text-sm" />
-          <p className="text-xs font-medium pt-1">タイムスロットごとのポジション</p>
+          <p className="text-xs font-medium pt-1">タイムスロットごとのポジション（ドラッグで並び替え可）</p>
           {TIME_SLOTS.map((slot) => (
             <SlotPositionSelector key={slot} slot={slot} selectedIds={editSlots[slot] || []} positionTypes={positionTypes}
               onChange={(ids) => setEditSlots((prev) => ({ ...prev, [slot]: ids }))} />
@@ -152,14 +182,16 @@ function PresetCard({ preset, eventId, event, onDelete, isAdmin, positionTypes }
       {expanded && !editing && (
         <div className="border-t border-border px-4 py-3 space-y-2">
           {TIME_SLOTS.map((slot) => {
-            const pts = positionTypes.filter((pt) => (slotMap[slot] || []).includes(pt.id));
+            const ids = slotMap[slot] || [];
+            const pts = ids.map((id) => positionTypes.find((pt) => pt.id === id)).filter(Boolean);
             if (pts.length === 0) return null;
             return (
               <div key={slot}>
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${TIME_SLOT_STYLES[slot].badge}`}>{slot}</span>
                 <div className="mt-1 space-y-1 pl-2">
-                  {pts.map((pt) => (
+                  {pts.map((pt, i) => (
                     <div key={pt.id} className="flex items-center gap-2 text-xs">
+                      <span className="text-[10px] text-muted-foreground w-4">{i + 1}.</span>
                       <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: pt.color || "#6366f1" }} />
                       <span>{pt.name}</span>
                     </div>
@@ -222,7 +254,7 @@ export default function PositionPresetManager({ eventId }) {
             <Input value={presetName} onChange={(e) => setPresetName(e.target.value)} placeholder="プリセット名（例：ホールA標準配置）" className="h-8 text-sm" />
             <Input value={presetDesc} onChange={(e) => setPresetDesc(e.target.value)} placeholder="説明（任意）" className="h-8 text-sm" />
           </div>
-          <p className="text-xs font-medium mb-2">タイムスロットごとのポジション</p>
+          <p className="text-xs font-medium mb-2">タイムスロットごとのポジション（ドラッグで並び替え可）</p>
           {positionTypes.length === 0 && <p className="text-xs text-amber-600 mb-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">先に「ポジション設定」からポジションを登録してください</p>}
           {TIME_SLOTS.map((slot) => (
             <SlotPositionSelector key={slot} slot={slot} selectedIds={slotSelections[slot]} positionTypes={positionTypes}

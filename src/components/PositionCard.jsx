@@ -3,7 +3,6 @@ import { Pencil, Trash2, Minus, Plus } from "lucide-react";
 export default function PositionCard({
   pos, isAdmin, draggable = false, draggedStaff = null,
   onEdit, onDelete, onDragOver, onDrop, onStaffDragStart, onStaffRemove,
-  onStaffTouchStart, onStaffTouchMove, onStaffTouchEnd,
   emptyLabel = "スタッフ未登録", staffList = [],
   requiredCount = 0, onRequiredCountChange, occupiedInSlot = [],
 }) {
@@ -53,10 +52,7 @@ export default function PositionCard({
             <div key={draggable ? `${pos.id}-${name}` : i}
               draggable={draggable && isAdmin}
               onDragStart={draggable && isAdmin && onStaffDragStart ? (e) => onStaffDragStart(e, name, pos.id) : undefined}
-              onTouchStart={draggable && isAdmin && onStaffTouchStart ? (e) => onStaffTouchStart(e, name, pos.id) : undefined}
-              onTouchMove={draggable && isAdmin && onStaffTouchMove ? onStaffTouchMove : undefined}
-              onTouchEnd={draggable && isAdmin && onStaffTouchEnd ? onStaffTouchEnd : undefined}
-              className={["flex items-center justify-between gap-2 px-2 py-1 select-none touch-none",
+              className={["flex items-center justify-between gap-2 px-2 py-1 select-none",
                 draggable && isAdmin ? "cursor-move hover:bg-muted/50" : "",
                 draggable && draggedStaff === name ? "opacity-50" : ""].join(" ")}>
               <div className="flex-1 min-w-0">
