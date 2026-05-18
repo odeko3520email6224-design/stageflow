@@ -85,6 +85,7 @@ export default function VenueMap({ eventId }) {
   const [pdfError, setPdfError] = useState("");
   const [pdfSize, setPdfSize] = useState(null);
   const [exportingPDF, setExportingPDF] = useState(false);
+  const [localPdfUrl, setLocalPdfUrl] = useState("");
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
@@ -104,13 +105,14 @@ export default function VenueMap({ eventId }) {
 
   const filteredPositions = positions.filter((p) => (p.time_slot || TIME_SLOTS[0]) === slotFilter);
   const positionsOnMap = filteredPositions.filter((p) => p.map_x != null && p.map_y != null);
-  const hasPDF = Boolean(event?.map_pdf_url);
+  const effectivePdfUrl = localPdfUrl || event?.map_pdf_url || event?.map_image_url || "";
+  const hasPDF = Boolean(effectivePdfUrl);
 
   useEffect(() => {
     let cancelled = false;
     const renderPDF = async () => {
       const canvas = canvasRef.current;
-      if (!canvas || !event?.map_pdf_url) {
+      if (!canvas || !effectivePdfUrl) {
         setPdfSize(null);
         setPdfError("");
         return;
@@ -124,7 +126,7 @@ export default function VenueMap({ eventId }) {
           "pdfjs-dist/build/pdf.worker.min.mjs",
           import.meta.url
         ).href;
-        const pdf = await pdfjsLib.getDocument({ url: event.map_pdf_url }).promise;
+        const pdf = await pdfjsLib.getDocument({ url: effectivePdfUrl }).promise;
         const page = await pdf.getPage(1);
         const viewport = page.getViewport({ scale: 2 });
         const context = canvas.getContext("2d");
@@ -149,7 +151,7 @@ export default function VenueMap({ eventId }) {
     return () => {
       cancelled = true;
     };
-  }, [event?.map_pdf_url]);
+  }, [effectivePdfUrl]);
 
   const getMapCoords = useCallback((clientX, clientY) => {
     const rect = mapRef.current.getBoundingClientRect();
@@ -201,7 +203,7 @@ export default function VenueMap({ eventId }) {
   const handlePDFUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.type !== "application/pdf") {
+    if (file.type && file.type !== "application/pdf") {
       alert("PDFファイルを選択してください。");
       e.target.value = "";
       return;
@@ -210,9 +212,10 @@ export default function VenueMap({ eventId }) {
     setUploadingPDF(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setLocalPdfUrl(file_url);
       await base44.entities.Event.update(eventId, {
         map_pdf_url: file_url,
-        map_image_url: null,
+        map_image_url: file_url,
       });
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
     } finally {
@@ -223,7 +226,8 @@ export default function VenueMap({ eventId }) {
 
   const handlePDFRemove = async () => {
     if (!confirm("会場マップPDFを削除しますか？ピンの座標は残ります。")) return;
-    await base44.entities.Event.update(eventId, { map_pdf_url: null });
+    setLocalPdfUrl("");
+    await base44.entities.Event.update(eventId, { map_pdf_url: null, map_image_url: null });
     queryClient.invalidateQueries({ queryKey: ["event", eventId] });
   };
 
