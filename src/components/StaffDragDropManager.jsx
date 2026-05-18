@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { AlertCircle, ClipboardList, Plus, Download, Users, GripVertical, Trash2, UserCheck } from "lucide-react";
+import { AlertCircle, ClipboardList, Plus, Download, Users, GripVertical, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PositionCard from "@/components/PositionCard";
 import PositionFormModal from "@/components/PositionFormModal";
@@ -66,7 +66,6 @@ export default function StaffDragDropManager({ eventId }) {
   const [defaultSlot, setDefaultSlot] = useState("開場中");
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(null); // slot name
-  const [showBulkAssign, setShowBulkAssign] = useState(null); // slot name
 
   // 一括削除: スロット内の全ポジションを削除
   const handleBulkDelete = async (slot) => {
@@ -74,25 +73,6 @@ export default function StaffDragDropManager({ eventId }) {
     await Promise.all(slotPositions.map((p) => base44.entities.Position.delete(p.id)));
     queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
     setConfirmBulkDelete(null);
-  };
-
-  // 一括スタッフ割り当て: スロット内の全ポジションにスタッフを均等配分
-  const handleBulkAssign = (slot, selectedStaffNames) => {
-    const slotPositions = grouped[slot];
-    if (!slotPositions.length || !selectedStaffNames.length) return;
-    // スタッフを均等にポジションへ分配（1ポジションずつ順に割り当て）
-    const updates = slotPositions.map((pos) => ({
-      positionId: pos.id,
-      staff_names: [],
-    }));
-    selectedStaffNames.forEach((name, idx) => {
-      updates[idx % updates.length].staff_names.push(name);
-    });
-    updates.forEach(({ positionId, staff_names }) => {
-      base44.entities.Position.update(positionId, { staff_names });
-    });
-    queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
-    setShowBulkAssign(null);
   };
 
   const deleteMutation = useMutation({
@@ -245,11 +225,6 @@ export default function StaffDragDropManager({ eventId }) {
                 </div>
                 {isAdmin && (
                   <div className="flex items-center gap-1">
-                    <button onClick={() => setShowBulkAssign(slot)}
-                      title="一括スタッフ割り当て"
-                      className="text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-white/60 dark:bg-white/10 hover:bg-white/90 dark:hover:bg-white/20 text-current transition-colors font-medium select-none">
-                      <UserCheck className="w-2.5 h-2.5" />一括登録
-                    </button>
                     <button onClick={() => openAdd(slot)}
                       title="ポジションを追加"
                       className="text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-white/60 dark:bg-white/10 hover:bg-white/90 dark:hover:bg-white/20 text-current transition-colors font-medium select-none">
@@ -411,77 +386,6 @@ export default function StaffDragDropManager({ eventId }) {
           onCancel={() => setConfirmBulkDelete(null)}
         />
       )}
-      {showBulkAssign && (
-        <BulkAssignModal
-          slot={showBulkAssign}
-          staffList={staffList}
-          slotPositions={grouped[showBulkAssign] || []}
-          onAssign={handleBulkAssign}
-          onClose={() => setShowBulkAssign(null)}
-        />
-      )}
-    </div>
-  );
-}
-
-function BulkAssignModal({ slot, staffList, slotPositions, onAssign, onClose }) {
-  const [selected, setSelected] = useState([]);
-
-  const toggle = (name) => {
-    setSelected((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
-    );
-  };
-
-  const handleSubmit = () => {
-    onAssign(slot, selected);
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-card border border-border rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm p-4 max-h-[80vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold text-sm">「{slot}」一括スタッフ登録</h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-muted text-muted-foreground">
-            ✕
-          </button>
-        </div>
-        <p className="text-xs text-muted-foreground mb-3">
-          選択したスタッフを{slotPositions.length}件のポジションに均等に割り当てます。
-          既存の配置は上書きされます。
-        </p>
-        <div className="flex gap-2 mb-2">
-          <button onClick={() => setSelected(staffList.map((s) => s.name))}
-            className="text-xs px-2 py-1 rounded border border-border bg-muted hover:bg-muted/80">全選択</button>
-          <button onClick={() => setSelected([])}
-            className="text-xs px-2 py-1 rounded border border-border bg-muted hover:bg-muted/80">全解除</button>
-        </div>
-        <div className="border border-border rounded-xl overflow-hidden max-h-52 overflow-y-auto mb-4">
-          {staffList.map((s) => {
-            const isSelected = selected.includes(s.name);
-            return (
-              <button key={s.id} onClick={() => toggle(s.name)}
-                className={`w-full flex items-center gap-3 px-3 py-2 text-sm text-left border-b border-border/50 last:border-b-0 transition-colors ${isSelected ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/50"}`}>
-                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${isSelected ? "bg-primary border-primary" : "border-border"}`}>
-                  {isSelected && <span className="text-[8px] text-primary-foreground font-bold">✓</span>}
-                </div>
-                {s.name}
-                {s.note && <span className="text-xs text-muted-foreground ml-auto">({s.note})</span>}
-              </button>
-            );
-          })}
-        </div>
-        {selected.length > 0 && (
-          <p className="text-xs text-muted-foreground mb-3">{selected.length}名選択中</p>
-        )}
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={onClose}>キャンセル</Button>
-          <Button className="flex-1" disabled={selected.length === 0} onClick={handleSubmit}>
-            一括登録
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }
