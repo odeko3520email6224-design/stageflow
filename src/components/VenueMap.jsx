@@ -15,6 +15,34 @@ const ROLE_COLORS = {
 const TIME_SLOTS = ["開場中", "開演中", "終演後"];
 const PIN_RADIUS_MM = 2.8;
 
+async function renderPDFFileToImageFile(file) {
+  const pdfjsLib = await import("pdfjs-dist");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/build/pdf.worker.min.mjs",
+    import.meta.url
+  ).href;
+
+  const data = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data }).promise;
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale: 2 });
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  await page.render({ canvasContext: context, viewport }).promise;
+
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob((result) => {
+      if (result) resolve(result);
+      else reject(new Error("PDF preview image creation failed"));
+    }, "image/jpeg", 0.92);
+  });
+
+  const baseName = file.name.replace(/\.pdf$/i, "") || "venue-map";
+  return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
+}
+
 function getPinColor(pos) {
   return pos.color || ROLE_COLORS[pos.role] || "#6366f1";
 }
@@ -86,6 +114,7 @@ export default function VenueMap({ eventId }) {
   const [pdfSize, setPdfSize] = useState(null);
   const [exportingPDF, setExportingPDF] = useState(false);
   const [localPdfUrl, setLocalPdfUrl] = useState("");
+  const [localMapImageUrl, setLocalMapImageUrl] = useState("");
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
@@ -105,14 +134,16 @@ export default function VenueMap({ eventId }) {
 
   const filteredPositions = positions.filter((p) => (p.time_slot || TIME_SLOTS[0]) === slotFilter);
   const positionsOnMap = filteredPositions.filter((p) => p.map_x != null && p.map_y != null);
-  const effectivePdfUrl = localPdfUrl || event?.map_pdf_url || event?.map_image_url || "";
-  const hasPDF = Boolean(effectivePdfUrl);
+  const storedMapImageUrl = event?.map_image_url && event.map_image_url !== event?.map_pdf_url ? event.map_image_url : "";
+  const effectivePdfUrl = localPdfUrl || event?.map_pdf_url || "";
+  const effectiveMapImageUrl = localMapImageUrl || storedMapImageUrl;
+  const hasPDF = Boolean(effectiveMapImageUrl || effectivePdfUrl);
 
   useEffect(() => {
     let cancelled = false;
-    const renderPDF = async () => {
+    const renderMap = async () => {
       const canvas = canvasRef.current;
-      if (!canvas || !effectivePdfUrl) {
+      if (!canvas || (!effectiveMapImageUrl && !effectivePdfUrl)) {
         setPdfSize(null);
         setPdfError("");
         return;
@@ -121,25 +152,38 @@ export default function VenueMap({ eventId }) {
       setLoadingPDF(true);
       setPdfError("");
       try {
-        const pdfjsLib = await import("pdfjs-dist");
-        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-          "pdfjs-dist/build/pdf.worker.min.mjs",
-          import.meta.url
-        ).href;
-        const pdf = await pdfjsLib.getDocument({ url: effectivePdfUrl }).promise;
-        const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 2 });
         const context = canvas.getContext("2d");
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        await page.render({ canvasContext: context, viewport }).promise;
+        if (effectiveMapImageUrl) {
+          const image = await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = effectiveMapImageUrl;
+          });
+          canvas.width = image.naturalWidth;
+          canvas.height = image.naturalHeight;
+          context.drawImage(image, 0, 0);
+        } else {
+          const pdfjsLib = await import("pdfjs-dist");
+          pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+            "pdfjs-dist/build/pdf.worker.min.mjs",
+            import.meta.url
+          ).href;
+          const pdf = await pdfjsLib.getDocument({ url: effectivePdfUrl }).promise;
+          const page = await pdf.getPage(1);
+          const viewport = page.getViewport({ scale: 2 });
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          await page.render({ canvasContext: context, viewport }).promise;
+        }
         if (!cancelled) {
-          setPdfSize({ width: viewport.width, height: viewport.height });
+          setPdfSize({ width: canvas.width, height: canvas.height });
         }
       } catch (error) {
-        console.error("PDF render error:", error);
+        console.error("Venue map render error:", error);
         if (!cancelled) {
-          setPdfError("PDFを表示できませんでした。ファイルを確認してください。");
+          setPdfError("会場マップを表示できませんでした。PDFをもう一度読み込んでください。");
           setPdfSize(null);
         }
       } finally {
@@ -147,11 +191,11 @@ export default function VenueMap({ eventId }) {
       }
     };
 
-    renderPDF();
+    renderMap();
     return () => {
       cancelled = true;
     };
-  }, [effectivePdfUrl]);
+  }, [effectiveMapImageUrl, effectivePdfUrl]);
 
   const getMapCoords = useCallback((clientX, clientY) => {
     const rect = mapRef.current.getBoundingClientRect();
@@ -211,13 +255,22 @@ export default function VenueMap({ eventId }) {
 
     setUploadingPDF(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setLocalPdfUrl(file_url);
+      setPdfError("");
+      const previewFile = await renderPDFFileToImageFile(file);
+      const [{ file_url: pdfUrl }, { file_url: imageUrl }] = await Promise.all([
+        base44.integrations.Core.UploadFile({ file }),
+        base44.integrations.Core.UploadFile({ file: previewFile }),
+      ]);
+      setLocalPdfUrl(pdfUrl);
+      setLocalMapImageUrl(imageUrl);
       await base44.entities.Event.update(eventId, {
-        map_pdf_url: file_url,
-        map_image_url: file_url,
+        map_pdf_url: pdfUrl,
+        map_image_url: imageUrl,
       });
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+    } catch (error) {
+      console.error("PDF upload error:", error);
+      alert("PDFの読み込みに失敗しました: " + error.message);
     } finally {
       setUploadingPDF(false);
       e.target.value = "";
@@ -227,6 +280,7 @@ export default function VenueMap({ eventId }) {
   const handlePDFRemove = async () => {
     if (!confirm("会場マップPDFを削除しますか？ピンの座標は残ります。")) return;
     setLocalPdfUrl("");
+    setLocalMapImageUrl("");
     await base44.entities.Event.update(eventId, { map_pdf_url: null, map_image_url: null });
     queryClient.invalidateQueries({ queryKey: ["event", eventId] });
   };
