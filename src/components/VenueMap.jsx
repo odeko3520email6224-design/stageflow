@@ -1,10 +1,13 @@
-import { useState, useRef, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Pencil, X, Move, Info, Map, MapPin, ImagePlus, Loader2 } from "lucide-react";
-import MapAreaFormModal from "@/components/MapAreaFormModal";
+import { AlertCircle, Download, FileText, Loader2, Map, MapPin, Move, Upload, X } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 const ROLE_COLORS = {
   "受付": "#3b82f6",
@@ -14,64 +17,56 @@ const ROLE_COLORS = {
 };
 
 const TIME_SLOTS = ["開場中", "開演中", "終演後"];
-const TIME_SLOT_STYLES = {
-  "開場中": "bg-amber-50 text-amber-800 border-amber-300",
-  "開演中": "bg-blue-50 text-blue-800 border-blue-300",
-  "終演後": "bg-slate-50 text-slate-700 border-slate-300",
-};
+const PIN_RADIUS_MM = 2.8;
 
-function SidePanel({ positions, draggingPin, setDraggingPin, setMode, slotFilter, onSidePanelDragStart }) {
-  const filtered = positions.filter((p) => (p.time_slot || "開場中") === slotFilter);
-  const onMap = filtered.filter((p) => p.map_x != null && p.map_y != null);
-  const notOnMap = filtered.filter((p) => p.map_x == null || p.map_y == null);
+function getPinColor(pos) {
+  return pos.color || ROLE_COLORS[pos.role] || "#6366f1";
+}
+
+function getStaffLabel(pos) {
+  return (pos.staff_names || []).join("・");
+}
+
+function UnplacedPanel({ positions, draggingPin, onSelectPin, onDragStart, disabled }) {
+  const notOnMap = positions.filter((p) => p.map_x == null || p.map_y == null);
 
   return (
-    <div className="w-full lg:w-48 flex-shrink-0 space-y-3">
-      {/* Unplaced positions */}
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3" />未配置ポジション</p>
-        {notOnMap.length === 0 ? (
-          <div className="text-xs text-muted-foreground bg-muted rounded-lg p-2 text-center">全て配置済みです</div>
-        ) : (
-          <div className="space-y-1">
-            {notOnMap.map((pos) => (
-              <button
-                key={pos.id}
-                draggable
-                onDragStart={(e) => onSidePanelDragStart(e, pos)}
-                onClick={() => { setDraggingPin(pos); setMode("move-pin"); }}
-                className={`w-full flex items-center gap-2 bg-card border rounded-lg px-2 py-1.5 text-left transition-all hover:border-primary/50 cursor-grab active:cursor-grabbing ${draggingPin?.id === pos.id ? "border-primary bg-primary/5" : "border-border"}`}
-              >
-                <div className="w-4 h-4 rounded-full border-2 border-white shadow flex-shrink-0" style={{ backgroundColor: pos.color || ROLE_COLORS[pos.role] || "#6366f1" }} />
-                <div className="min-w-0">
-                  <div className="text-xs font-medium truncate">{pos.name}</div>
-                  {(pos.staff_names || []).length > 0 && (
-                    <div className="text-[10px] text-muted-foreground truncate">{pos.staff_names.join("・")}</div>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+    <div className="w-full lg:w-56 shrink-0">
+      <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold text-muted-foreground">
+        <MapPin className="w-3.5 h-3.5" />
+        未配置ポジション
       </div>
-
-      {/* Placed positions */}
-      {onMap.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1"><Map className="w-3 h-3" />配置済み</p>
-          <div className="space-y-1">
-            {onMap.map((pos) => (
-              <div key={pos.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-muted/40 border border-border">
-                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: pos.color || ROLE_COLORS[pos.role] || "#6366f1" }} />
-                <div className="min-w-0">
-                  <div className="text-xs font-medium truncate">{pos.name}</div>
-                  {(pos.staff_names || []).length > 0 && (
-                    <div className="text-[10px] text-muted-foreground truncate">{pos.staff_names.join("・")}</div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+      {notOnMap.length === 0 ? (
+        <div className="rounded-lg border border-border bg-muted/40 p-3 text-center text-xs text-muted-foreground">
+          すべて配置済みです
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {notOnMap.map((pos) => (
+            <button
+              key={pos.id}
+              draggable={!disabled}
+              onDragStart={(e) => onDragStart(e, pos)}
+              onClick={() => onSelectPin(pos)}
+              disabled={disabled}
+              className={`w-full flex items-center gap-2 rounded-lg border px-2 py-2 text-left transition-colors ${
+                draggingPin?.id === pos.id
+                  ? "border-primary bg-primary/10"
+                  : "border-border bg-card hover:border-primary/50"
+              } ${disabled ? "opacity-60 cursor-default" : "cursor-grab active:cursor-grabbing"}`}
+            >
+              <span
+                className="w-4 h-4 rounded-full border-2 border-white shadow shrink-0"
+                style={{ backgroundColor: getPinColor(pos) }}
+              />
+              <span className="min-w-0">
+                <span className="block text-xs font-medium truncate">{pos.name}</span>
+                {getStaffLabel(pos) && (
+                  <span className="block text-[10px] text-muted-foreground truncate">{getStaffLabel(pos)}</span>
+                )}
+              </span>
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -80,31 +75,24 @@ function SidePanel({ positions, draggingPin, setDraggingPin, setMode, slotFilter
 
 export default function VenueMap({ eventId }) {
   const queryClient = useQueryClient();
-  const mapRef = useRef(null);
+  const { canEdit } = useUserRole();
   const fileInputRef = useRef(null);
-  const [mode, setMode] = useState("view");
-  const [draggingPin, setDraggingPin] = useState(null);
-  const [editingArea, setEditingArea] = useState(null);
-  const [showAreaModal, setShowAreaModal] = useState(false);
-  const [tooltip, setTooltip] = useState(null);
-  const [slotFilter, setSlotFilter] = useState("開場中");
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [scale, setScale] = useState(1);
-  const longPressTimer = useRef(null);
-  const lastDistanceRef = useRef(null);
-  // Drag state for pins already on the map
-  const dragPinRef = useRef(null); // { id, startX, startY }
-  const isDraggingOnMap = useRef(false);
+  const mapRef = useRef(null);
+  const canvasRef = useRef(null);
+  const dragPinRef = useRef(null);
 
+  const [slotFilter, setSlotFilter] = useState(TIME_SLOTS[0]);
+  const [draggingPin, setDraggingPin] = useState(null);
+  const [tooltip, setTooltip] = useState(null);
+  const [uploadingPDF, setUploadingPDF] = useState(false);
+  const [loadingPDF, setLoadingPDF] = useState(false);
+  const [pdfError, setPdfError] = useState("");
+  const [pdfSize, setPdfSize] = useState(null);
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
     queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
-  });
-
-  const { data: areas = [] } = useQuery({
-    queryKey: ["mapareas", eventId],
-    queryFn: () => base44.entities.MapArea.filter({ event_id: eventId }, "order"),
   });
 
   const { data: event } = useQuery({
@@ -118,227 +106,231 @@ export default function VenueMap({ eventId }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positions", eventId] }),
   });
 
-  const deleteArea = useMutation({
-    mutationFn: (id) => base44.entities.MapArea.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["mapareas", eventId] }),
-  });
+  const filteredPositions = positions.filter((p) => (p.time_slot || TIME_SLOTS[0]) === slotFilter);
+  const positionsOnMap = filteredPositions.filter((p) => p.map_x != null && p.map_y != null);
+  const hasPDF = Boolean(event?.map_pdf_url);
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingImage(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    await base44.entities.Event.update(eventId, { map_image_url: file_url });
-    queryClient.invalidateQueries({ queryKey: ["event", eventId] });
-    setUploadingImage(false);
-    e.target.value = "";
-  };
+  useEffect(() => {
+    let cancelled = false;
+    const renderPDF = async () => {
+      const canvas = canvasRef.current;
+      if (!canvas || !event?.map_pdf_url) {
+        setPdfSize(null);
+        setPdfError("");
+        return;
+      }
 
-  const handleImageRemove = async () => {
-    if (!confirm("背景画像を削除しますか？")) return;
-    await base44.entities.Event.update(eventId, { map_image_url: null });
-    queryClient.invalidateQueries({ queryKey: ["event", eventId] });
-  };
+      setLoadingPDF(true);
+      setPdfError("");
+      try {
+        const pdf = await pdfjsLib.getDocument({ url: event.map_pdf_url }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 2 });
+        const context = canvas.getContext("2d");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: context, viewport }).promise;
+        if (!cancelled) {
+          setPdfSize({ width: viewport.width, height: viewport.height });
+        }
+      } catch (error) {
+        console.error("PDF render error:", error);
+        if (!cancelled) {
+          setPdfError("PDFを表示できませんでした。ファイルを確認してください。");
+          setPdfSize(null);
+        }
+      } finally {
+        if (!cancelled) setLoadingPDF(false);
+      }
+    };
 
-  const getMapCoords = useCallback((e) => {
+    renderPDF();
+    return () => {
+      cancelled = true;
+    };
+  }, [event?.map_pdf_url]);
+
+  const getMapCoords = useCallback((clientX, clientY) => {
     const rect = mapRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    return { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
+    const x = ((clientX - rect.left) / rect.width) * 100;
+    const y = ((clientY - rect.top) / rect.height) * 100;
+    return {
+      x: Math.max(0, Math.min(100, x)),
+      y: Math.max(0, Math.min(100, y)),
+    };
   }, []);
 
-  const handleMapClick = (e) => {
-    if (mode !== "move-pin" || !draggingPin) return;
-    const { x, y } = getMapCoords(e);
-    updatePosition.mutate({ id: draggingPin.id, data: { map_x: x, map_y: y } });
+  const placePin = (pos, x, y) => {
+    updatePosition.mutate({ id: pos.id, data: { map_x: x, map_y: y } });
     setDraggingPin(null);
-    setMode("view");
-  };
-
-  const handlePinClick = (e, pos) => {
-    e.stopPropagation();
-    if (mode === "view") {
-      setTooltip(tooltip?.id === pos.id ? null : pos);
-    } else if (mode === "move-pin") {
-      setDraggingPin(pos);
-    }
-  };
-
-  // Long-press to enter move mode on mobile
-  const handlePinTouchStart = (e, pos) => {
-    longPressTimer.current = setTimeout(() => {
-      e.preventDefault();
-      setTooltip(null);
-      setDraggingPin(pos);
-      setMode("move-pin");
-    }, 500);
-  };
-
-  const handlePinTouchEnd = () => {
-    clearTimeout(longPressTimer.current);
-  };
-
-  // Touch tap on map to place pin
-  const handleMapTouchEnd = (e) => {
-    if (mode !== "move-pin" || !draggingPin) return;
-    const touch = e.changedTouches[0];
-    const rect = mapRef.current.getBoundingClientRect();
-    const x = ((touch.clientX - rect.left) / rect.width) * 100;
-    const y = ((touch.clientY - rect.top) / rect.height) * 100;
-    updatePosition.mutate({
-      id: draggingPin.id,
-      data: { map_x: Math.max(0, Math.min(100, x)), map_y: Math.max(0, Math.min(100, y)) },
-    });
-    setDraggingPin(null);
-    setMode("view");
-  };
-
-  // Pinch zoom
-  const handleTouchMove = (e) => {
-    if (e.touches.length !== 2) {
-      lastDistanceRef.current = null;
-      return;
-    }
-    const touch1 = e.touches[0];
-    const touch2 = e.touches[1];
-    const currentDistance = Math.hypot(
-      touch2.clientX - touch1.clientX,
-      touch2.clientY - touch1.clientY
-    );
-
-    if (lastDistanceRef.current !== null) {
-      const delta = currentDistance - lastDistanceRef.current;
-      const newScale = Math.max(1, Math.min(3, scale + delta * 0.01));
-      setScale(newScale);
-    }
-    lastDistanceRef.current = currentDistance;
-  };
-
-  const handleTouchEnd = (e) => {
-    if (e.touches.length < 2) {
-      lastDistanceRef.current = null;
-    }
-  };
-
-  // Drag handlers for pins already on the map
-  const handlePinDragStart = (e, pos) => {
-    e.stopPropagation();
-    isDraggingOnMap.current = false;
-    dragPinRef.current = pos;
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", pos.id);
     setTooltip(null);
   };
 
-  const handleMapDragOver = (e) => {
-    e.preventDefault();
-    isDraggingOnMap.current = true;
-    e.dataTransfer.dropEffect = "move";
+  const handleMapClick = (e) => {
+    if (!canEdit || !draggingPin || !hasPDF) return;
+    const { x, y } = getMapCoords(e.clientX, e.clientY);
+    placePin(draggingPin, x, y);
   };
 
   const handleMapDrop = (e) => {
     e.preventDefault();
-    if (!dragPinRef.current) return;
-    const rect = mapRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    updatePosition.mutate({
-      id: dragPinRef.current.id,
-      data: { map_x: Math.max(0, Math.min(100, x)), map_y: Math.max(0, Math.min(100, y)) },
-    });
+    if (!canEdit || !dragPinRef.current || !hasPDF) return;
+    const { x, y } = getMapCoords(e.clientX, e.clientY);
+    placePin(dragPinRef.current, x, y);
     dragPinRef.current = null;
-    isDraggingOnMap.current = false;
   };
 
-  // Touch drag handlers for pins on map (mobile)
-  const pinTouchDragRef = useRef(null);
-
-  const handlePinTouchStartOnMap = (e, pos) => {
-    longPressTimer.current = setTimeout(() => {
-      pinTouchDragRef.current = pos;
-      setTooltip(null);
-    }, 300);
+  const handlePinDragStart = (e, pos) => {
+    if (!canEdit) return;
+    e.stopPropagation();
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", pos.id);
+    dragPinRef.current = pos;
+    setDraggingPin(pos);
+    setTooltip(null);
   };
 
-  const handleMapTouchMoveForDrag = (e) => {
-    if (!pinTouchDragRef.current) return;
-    e.preventDefault();
-    // visual feedback handled by drop on touchEnd
-  };
-
-  const handleMapTouchEndForDrag = (e) => {
-    clearTimeout(longPressTimer.current);
-    if (!pinTouchDragRef.current) return;
+  const handleTouchEnd = (e) => {
+    if (!canEdit || !draggingPin || !hasPDF) return;
     const touch = e.changedTouches[0];
-    const rect = mapRef.current.getBoundingClientRect();
-    const x = ((touch.clientX - rect.left) / rect.width) * 100;
-    const y = ((touch.clientY - rect.top) / rect.height) * 100;
-    updatePosition.mutate({
-      id: pinTouchDragRef.current.id,
-      data: { map_x: Math.max(0, Math.min(100, x)), map_y: Math.max(0, Math.min(100, y)) },
-    });
-    pinTouchDragRef.current = null;
+    const { x, y } = getMapCoords(touch.clientX, touch.clientY);
+    placePin(draggingPin, x, y);
   };
 
-  // Filter pins by slot tab
-  const filteredPositions = slotFilter === "all"
-    ? positions
-    : positions.filter((p) => (p.time_slot || "開場中") === slotFilter);
+  const handlePDFUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      alert("PDFファイルを選択してください。");
+      e.target.value = "";
+      return;
+    }
 
-  const positionsOnMap = filteredPositions.filter((p) => p.map_x != null && p.map_y != null);
+    setUploadingPDF(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      await base44.entities.Event.update(eventId, {
+        map_pdf_url: file_url,
+        map_image_url: null,
+      });
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+    } finally {
+      setUploadingPDF(false);
+      e.target.value = "";
+    }
+  };
+
+  const handlePDFRemove = async () => {
+    if (!confirm("会場マップPDFを削除しますか？ピンの座標は残ります。")) return;
+    await base44.entities.Event.update(eventId, { map_pdf_url: null });
+    queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+  };
+
+  const handleExportPDF = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !pdfSize) {
+      alert("PDFの読み込み完了後に出力してください。");
+      return;
+    }
+
+    setExportingPDF(true);
+    try {
+      const { jsPDF } = await import("jspdf");
+      const isLandscape = canvas.width > canvas.height;
+      const doc = new jsPDF(isLandscape ? "l" : "p", "mm", "a4");
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const scale = Math.min(pageW / canvas.width, pageH / canvas.height);
+      const imgW = canvas.width * scale;
+      const imgH = canvas.height * scale;
+      const offsetX = (pageW - imgW) / 2;
+      const offsetY = (pageH - imgH) / 2;
+
+      doc.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", offsetX, offsetY, imgW, imgH);
+
+      positionsOnMap.forEach((pos) => {
+        const x = offsetX + (Number(pos.map_x) / 100) * imgW;
+        const y = offsetY + (Number(pos.map_y) / 100) * imgH;
+        const color = getPinColor(pos);
+        const r = PIN_RADIUS_MM;
+        const label = getStaffLabel(pos) ? `${pos.name} / ${getStaffLabel(pos)}` : pos.name;
+
+        doc.setFillColor(color);
+        doc.setDrawColor("#ffffff");
+        doc.setLineWidth(0.6);
+        doc.circle(x, y, r, "FD");
+        doc.setFontSize(8);
+        doc.setTextColor("#111827");
+        doc.setFillColor("#ffffff");
+        doc.roundedRect(x + r + 1, y - 3.5, Math.min(58, doc.getTextWidth(label) + 4), 7, 1.5, 1.5, "F");
+        doc.text(label, x + r + 3, y + 1.7, { maxWidth: 54 });
+      });
+
+      const safeName = (event?.name || "venue-map").replace(/[\\/:*?"<>|]/g, "_");
+      doc.save(`${safeName}_会場マップ_${slotFilter}.pdf`);
+    } catch (error) {
+      console.error("Venue map PDF export error:", error);
+      alert("PDF出力に失敗しました: " + error.message);
+    } finally {
+      setExportingPDF(false);
+    }
+  };
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
-        <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1"><Map className="w-4 h-4 text-primary" />会場マップ</h2>
-        <div className="flex gap-1.5 flex-wrap justify-end sm:ml-auto shrink-0">
-          <Button
-            size="sm"
-            variant={mode === "move-pin" ? "default" : "outline"}
-            onClick={() => setMode(mode === "move-pin" ? "view" : "move-pin")}
-
-            className="gap-1 h-7 text-xs"
-          >
-            <Move className="w-3 h-3" />
-            {mode === "move-pin" ? "配置中..." : "ピン移動"}
-          </Button>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center mb-3">
+        <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1">
+          <Map className="w-4 h-4 text-primary" />
+          会場マップ
+        </h2>
+        <div className="flex gap-1.5 flex-wrap justify-end sm:ml-auto">
+          {canEdit && (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingPDF}
+                className="gap-1 h-7 text-xs"
+              >
+                {uploadingPDF ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                PDF読込
+              </Button>
+              <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={handlePDFUpload} />
+            </>
+          )}
           <Button
             size="sm"
             variant="outline"
-            onClick={() => { setEditingArea(null); setShowAreaModal(true); }}
-
+            onClick={handleExportPDF}
+            disabled={!hasPDF || loadingPDF || exportingPDF || positionsOnMap.length === 0}
             className="gap-1 h-7 text-xs"
           >
-            <Plus className="w-3 h-3" />エリア追加
+            {exportingPDF ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+            PDF出力
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploadingImage}
-            className="gap-1 h-7 text-xs"
-          >
-            {uploadingImage ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImagePlus className="w-3 h-3" />}
-            背景画像
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/svg+xml,image/gif,image/webp"
-            className="hidden"
-            onChange={handleImageUpload}
-          />
+          {canEdit && hasPDF && (
+            <Button size="sm" variant="outline" onClick={handlePDFRemove} className="gap-1 h-7 text-xs">
+              <X className="w-3 h-3" />
+              PDF削除
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Slot filter tabs */}
       <div className="flex gap-0 border-b border-border mb-3">
         {TIME_SLOTS.map((slot) => (
           <button
             key={slot}
-            onClick={() => { setSlotFilter(slot); setTooltip(null); }}
-            className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-all ${
-              slotFilter === slot ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              setSlotFilter(slot);
+              setTooltip(null);
+              setDraggingPin(null);
+            }}
+            className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
+              slotFilter === slot
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
             {slot}
@@ -346,184 +338,153 @@ export default function VenueMap({ eventId }) {
         ))}
       </div>
 
-      {mode === "move-pin" && (
-        <div className="mb-2 text-xs text-primary bg-primary/10 rounded-lg px-3 py-1.5 flex items-center gap-2">
-          <Info className="w-3.5 h-3.5 shrink-0" />
-          {draggingPin ? `「${draggingPin.name}」をマップ上でタップ/クリックして配置` : "ピンを長押し（スマホ）またはリストから選択してマップ上に配置"}
-          <button onClick={() => { setMode("view"); setDraggingPin(null); }} className="ml-auto">
+      {draggingPin && (
+        <div className="mb-2 rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary flex items-center gap-2">
+          <Move className="w-3.5 h-3.5 shrink-0" />
+          「{draggingPin.name}」をPDF上の配置したい場所にクリック、またはドラッグしてください。
+          <button className="ml-auto" onClick={() => setDraggingPin(null)}>
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      {/* Mobile: horizontal scroll wrapper / Desktop: flex row */}
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Map Canvas */}
-          <div className="flex-1 -mx-4 lg:mx-0 overflow-x-auto lg:overflow-visible scrollbar-hide">
-            <div className="px-4 lg:px-0" style={{ minWidth: 320 }}>
+        <div className="flex-1 -mx-4 lg:mx-0 overflow-x-auto lg:overflow-visible">
+          <div className="px-4 lg:px-0" style={{ minWidth: 320 }}>
             <div
               ref={mapRef}
               onClick={handleMapClick}
-              onTouchEnd={(e) => { handleMapTouchEnd(e); handleMapTouchEndForDrag(e); }}
-              onTouchMove={(e) => { handleTouchMove(e); handleMapTouchMoveForDrag(e); }}
-              onTouchCancel={(e) => { handleTouchEnd(e); pinTouchDragRef.current = null; }}
-              onDragOver={handleMapDragOver}
+              onTouchEnd={handleTouchEnd}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+              }}
               onDrop={handleMapDrop}
-              className={`relative border-2 ${mode === "move-pin" ? "border-primary cursor-crosshair" : "border-border cursor-default"} rounded-xl overflow-hidden ${event?.map_image_url ? "bg-black" : "bg-slate-100"}`}
-              style={{ aspectRatio: "16/9", minHeight: 200, touchAction: "pinch-zoom" }}
-          >
-            {/* Background image */}
-            {event?.map_image_url && (
-              <>
-                <img
-                  src={event.map_image_url}
-                  alt="会場マップ"
-                  className="absolute inset-0 w-full h-full object-contain pointer-events-none transition-transform"
-                  style={{ transform: `scale(${scale})` }}
-                  draggable={false}
-                />
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleImageRemove(); }}
-                  className="absolute top-2 left-2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                  title="背景画像を削除"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </>
-            )}
-            {/* Areas */}
-            {areas.map((area) => (
-              <div key={area.id} className="absolute group" style={{
-                left: `${area.x ?? 5}%`,
-                top: `${area.y ?? 5}%`,
-                width: `${area.width ?? 20}%`,
-                height: `${area.height ?? 15}%`,
-                backgroundColor: area.color || "#e2e8f0",
-                borderRadius: area.type === "circle" ? "50%" : "8px",
-                border: "2px solid rgba(0,0,0,0.1)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 1,
-              }}>
-                <span className="text-xs font-semibold text-slate-600 select-none px-1 text-center leading-tight">{area.name}</span>
-                <div className="absolute top-1 right-1 flex gap-1 z-10">
-                  <button onClick={(e) => { e.stopPropagation(); setEditingArea(area); setShowAreaModal(true); }} className="bg-white rounded p-0.5 shadow text-slate-500 hover:text-primary">
-                    <Pencil className="w-3 h-3" />
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); if (confirm("削除しますか？")) deleteArea.mutate(area.id); }} className="bg-white rounded p-0.5 shadow text-slate-500 hover:text-destructive">
-                    <Trash2 className="w-3 h-3" />
-                  </button>
+              className={`relative overflow-hidden rounded-lg border-2 bg-white ${
+                draggingPin ? "border-primary cursor-crosshair" : "border-border"
+              }`}
+              style={{
+                aspectRatio: pdfSize ? `${pdfSize.width} / ${pdfSize.height}` : "210 / 297",
+                minHeight: 360,
+              }}
+            >
+              <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+
+              {(loadingPDF || uploadingPDF) && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/80 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  PDFを読み込んでいます
                 </div>
-              </div>
-            ))}
+              )}
 
-            {/* Position Pins */}
-            {positionsOnMap.map((pos) => {
-              const isActive = tooltip?.id === pos.id;
-              return (
-                <div
-                  key={pos.id}
-                  className="absolute z-20"
-                  style={{ left: `${pos.map_x}%`, top: `${pos.map_y}%`, transform: "translate(-50%, -50%)" }}
-                >
-                  <button
-                    draggable
-                    onDragStart={(e) => handlePinDragStart(e, pos)}
-                    onClick={(e) => { if (isDraggingOnMap.current) { isDraggingOnMap.current = false; return; } handlePinClick(e, pos); }}
-                    onTouchStart={(e) => { handlePinTouchStart(e, pos); handlePinTouchStartOnMap(e, pos); }}
-                    onTouchEnd={(e) => { handlePinTouchEnd(); }}
-                    onTouchMove={handlePinTouchEnd}
-                    className="flex flex-col items-center group select-none cursor-grab active:cursor-grabbing"
-                  >
-                    <div
-                      className="w-5 h-5 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-[9px] font-bold transition-transform group-hover:scale-110 select-none"
-                      style={{ backgroundColor: pos.color || ROLE_COLORS[pos.role] || "#6366f1" }}
-                    >
-                      {(pos.name || pos.role)?.[0] || "?"}
-                    </div>
-                    <div className="bg-white/90 backdrop-blur text-foreground text-[9px] font-medium px-1 py-0.5 rounded shadow mt-0.5 max-w-[80px] text-center leading-tight select-none pointer-events-none">
-                      <div className="font-semibold truncate">{pos.name || pos.role}</div>
-                      {(pos.staff_names || []).length > 0 && (
-                        <div className="text-muted-foreground break-all">{pos.staff_names.join("・")}</div>
-                      )}
-                    </div>
-                  </button>
-
-                  {/* Tooltip - positioned to avoid overflow */}
-                  {isActive && (
-                    <div
-                      className="absolute z-40 bg-card border border-border rounded-xl shadow-xl p-2.5 w-40 select-none"
-                      style={{
-                        left: pos.map_x > 60 ? "auto" : "50%",
-                        right: pos.map_x > 60 ? "110%" : "auto",
-                        transform: pos.map_x > 60 ? "none" : "translateX(-50%)",
-                        top: pos.map_y > 70 ? "auto" : "100%",
-                        bottom: pos.map_y > 70 ? "110%" : "auto",
-                        marginTop: pos.map_y <= 70 ? "4px" : "0",
-                        userSelect: "none",
-                        WebkitUserSelect: "none",
-                      }}
-                    >
-                      <button onClick={() => setTooltip(null)} className="absolute top-1.5 right-1.5 text-muted-foreground hover:text-foreground">
-                        <X className="w-3 h-3" />
-                      </button>
-                      <div className="font-semibold text-xs mb-1 pr-4">{pos.name || pos.role}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {(pos.staff_names || []).length > 0
-                          ? <span>担当: {pos.staff_names.join("、")}</span>
-                          : <span>担当者未設定</span>
-                        }
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm("このピンをマップから外しますか？")) {
-                            updatePosition.mutate({ id: pos.id, data: { map_x: null, map_y: null } });
-                            setTooltip(null);
-                          }
-                        }}
-                        className="mt-2 text-xs text-destructive hover:underline"
-                      >
-                        マップから外す
-                      </button>
-                    </div>
+              {!hasPDF && !loadingPDF && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center text-muted-foreground">
+                  <FileText className="w-10 h-10 opacity-40" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">A4サイズのPDFを読み込んでください</p>
+                    <p className="text-xs mt-1">読み込んだPDF上にポジションのピンを配置できます。</p>
+                  </div>
+                  {canEdit && (
+                    <Button size="sm" onClick={() => fileInputRef.current?.click()} className="gap-1">
+                      <Upload className="w-3.5 h-3.5" />
+                      PDF読込
+                    </Button>
                   )}
                 </div>
-              );
-            })}
+              )}
 
-            {areas.length === 0 && positionsOnMap.length === 0 && !event?.map_image_url && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground text-xs text-center px-4 gap-2">
-                <ImagePlus className="w-8 h-8 opacity-20" />
-                <span>「背景画像」で会場図を設定し、「エリア追加」やピンで配置してください</span>
-              </div>
-            )}
+              {pdfError && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/90 px-6 text-center text-sm text-destructive">
+                  <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
+                  {pdfError}
+                </div>
+              )}
+
+              {positionsOnMap.map((pos) => {
+                const isActive = tooltip?.id === pos.id;
+                return (
+                  <div
+                    key={pos.id}
+                    className="absolute z-20"
+                    style={{
+                      left: `${pos.map_x}%`,
+                      top: `${pos.map_y}%`,
+                      transform: "translate(-50%, -50%)",
+                    }}
+                  >
+                    <button
+                      draggable={canEdit}
+                      onDragStart={(e) => handlePinDragStart(e, pos)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTooltip(isActive ? null : pos);
+                      }}
+                      className={`flex flex-col items-center select-none ${canEdit ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"}`}
+                    >
+                      <span
+                        className="w-5 h-5 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-[9px] font-bold"
+                        style={{ backgroundColor: getPinColor(pos) }}
+                      >
+                        {(pos.name || "?").charAt(0)}
+                      </span>
+                      <span className="mt-0.5 max-w-[96px] rounded bg-white/95 px-1 py-0.5 text-center text-[9px] font-medium leading-tight shadow pointer-events-none">
+                        <span className="block truncate">{pos.name}</span>
+                        {getStaffLabel(pos) && <span className="block truncate text-muted-foreground">{getStaffLabel(pos)}</span>}
+                      </span>
+                    </button>
+
+                    {isActive && (
+                      <div
+                        className="absolute z-40 w-44 rounded-lg border border-border bg-card p-2.5 shadow-xl"
+                        style={{
+                          left: Number(pos.map_x) > 60 ? "auto" : "50%",
+                          right: Number(pos.map_x) > 60 ? "110%" : "auto",
+                          top: Number(pos.map_y) > 70 ? "auto" : "100%",
+                          bottom: Number(pos.map_y) > 70 ? "110%" : "auto",
+                          transform: Number(pos.map_x) > 60 ? "none" : "translateX(-50%)",
+                          marginTop: Number(pos.map_y) <= 70 ? 4 : 0,
+                        }}
+                      >
+                        <button onClick={() => setTooltip(null)} className="absolute right-1.5 top-1.5 text-muted-foreground hover:text-foreground">
+                          <X className="w-3 h-3" />
+                        </button>
+                        <div className="pr-4 text-xs font-semibold">{pos.name}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {getStaffLabel(pos) || "担当スタッフ未設定"}
+                        </div>
+                        {canEdit && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updatePosition.mutate({ id: pos.id, data: { map_x: null, map_y: null } });
+                              setTooltip(null);
+                            }}
+                            className="mt-2 text-xs text-destructive hover:underline"
+                          >
+                            マップから外す
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          </div>{/* minWidth wrapper */}
         </div>
 
-        {/* Side panel */}
-        <SidePanel
-          positions={positions}
+        <UnplacedPanel
+          positions={filteredPositions}
           draggingPin={draggingPin}
-          setDraggingPin={setDraggingPin}
-          setMode={setMode}
-          slotFilter={slotFilter}
-          onSidePanelDragStart={(e, pos) => { dragPinRef.current = pos; e.dataTransfer.effectAllowed = "move"; }}
+          disabled={!canEdit || !hasPDF}
+          onSelectPin={(pos) => {
+            if (!canEdit || !hasPDF) return;
+            setDraggingPin(pos);
+            setTooltip(null);
+          }}
+          onDragStart={(e, pos) => handlePinDragStart(e, pos)}
         />
       </div>
-
-      {showAreaModal && (
-        <MapAreaFormModal
-          area={editingArea}
-          eventId={eventId}
-          onClose={() => setShowAreaModal(false)}
-          onSaved={() => {
-            queryClient.invalidateQueries({ queryKey: ["mapareas", eventId] });
-          }}
-        />
-      )}
     </div>
   );
 }
