@@ -67,7 +67,21 @@ export default function EventFormModal({ event, onClose, onSaved }) {
           </div>
           <div>
             <Label>開催日</Label>
-            <Input className="mt-1" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+            <Input
+              className="mt-1"
+              type="date"
+              value={form.date}
+              min="2000-01-01"
+              max="2099-12-31"
+              onChange={(e) => {
+                const val = e.target.value;
+                if (!val) { setForm({ ...form, date: "" }); return; }
+                const year = parseInt(val.split("-")[0], 10);
+                if (year >= 2000 && year <= 2099) {
+                  setForm({ ...form, date: val });
+                }
+              }}
+            />
           </div>
           <div>
             <Label>会場名</Label>

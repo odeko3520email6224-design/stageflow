@@ -129,12 +129,12 @@ export default function StaffManagement({ eventId }) {
   };
 
   // Build map: staffName -> assigned positions (sorted by slot order)
-  const SLOT_ORDER = ["開場前", "開演中", "終演後"];
+  const SLOT_ORDER = ["開場中", "開演中", "終演後"];
   const assignedMap = {};
   positions.forEach((pos) => {
     (pos.staff_names || []).forEach((sName) => {
       if (!assignedMap[sName]) assignedMap[sName] = [];
-      assignedMap[sName].push({ posName: pos.name || pos.role, slot: pos.time_slot || "開場前" });
+      assignedMap[sName].push({ posName: pos.name || pos.role, slot: pos.time_slot || "開場中" });
     });
   });
   // Sort each staff's assignments by slot order
