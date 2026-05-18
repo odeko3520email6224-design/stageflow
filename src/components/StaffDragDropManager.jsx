@@ -213,10 +213,12 @@ export default function StaffDragDropManager({ eventId }) {
                   <span className="text-[10px] opacity-70">{slotPositions.length}件</span>
                   <span className="text-[10px] opacity-70 flex items-center gap-0.5"><Users className="w-2.5 h-2.5" />{slotStaffCount}名</span>
                 </div>
-                <button onClick={() => openAdd(slot)}
-                  className="text-[11px] flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-white/60 dark:bg-white/10 hover:bg-white/90 dark:hover:bg-white/20 text-current transition-colors font-medium select-none">
-                  <Plus className="w-2.5 h-2.5" />追加
-                </button>
+                {isAdmin && (
+                  <button onClick={() => openAdd(slot)}
+                    className="text-[11px] flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-white/60 dark:bg-white/10 hover:bg-white/90 dark:hover:bg-white/20 text-current transition-colors font-medium select-none">
+                    <Plus className="w-2.5 h-2.5" />追加
+                  </button>
+                )}
               </div>
               <div className="bg-card p-1.5">
                 {slotPositions.length === 0 ? (
@@ -284,11 +286,11 @@ export default function StaffDragDropManager({ eventId }) {
             <span className="font-bold text-xs">未配置スタッフ</span>
             <span className="text-[10px] opacity-70">{unassigned.length}名</span>
           </div>
-          <div className="bg-card p-1.5 grid gap-1 min-h-[32px]" onDragOver={handleDragOver} onDrop={handleDropUnassigned}>
+          <div className="bg-card p-1.5 grid gap-1 min-h-[32px]" onDragOver={isAdmin ? handleDragOver : undefined} onDrop={isAdmin ? handleDropUnassigned : undefined}>
             {unassigned.map((s) => (
-              <div key={s.id} draggable={true}
-                onDragStart={(e) => handleStaffDragStart(e, s.name)}
-                className={`flex items-center gap-2 px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 cursor-move hover:bg-amber-100 dark:hover:bg-amber-900/50 ${draggedStaff === s.name ? "opacity-50" : ""}`}>
+              <div key={s.id} draggable={isAdmin}
+                onDragStart={isAdmin ? (e) => handleStaffDragStart(e, s.name) : undefined}
+                className={`flex items-center gap-2 px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 ${isAdmin ? "cursor-move hover:bg-amber-100 dark:hover:bg-amber-900/50" : "cursor-default"} ${draggedStaff === s.name ? "opacity-50" : ""}`}>
                 <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center text-amber-700 dark:text-amber-300 font-bold text-[10px] shrink-0">
                   {s.name.charAt(0)}
                 </div>
