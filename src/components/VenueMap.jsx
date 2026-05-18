@@ -13,7 +13,7 @@ const ROLE_COLORS = {
 };
 
 const TIME_SLOTS = ["開場中", "開演中", "終演後"];
-const PIN_RADIUS_MM = 2.8;
+const PIN_RADIUS_PX = 11;
 
 async function renderPDFFileToImageFile(file) {
   const pdfjsLib = await import("pdfjs-dist");
@@ -30,7 +30,7 @@ async function renderPDFFileToImageFile(file) {
   const context = canvas.getContext("2d");
   canvas.width = viewport.width;
   canvas.height = viewport.height;
-  await page.render({ canvasContext: context, viewport }).promise;
+  await page.render({ canvas, canvasContext: context, viewport }).promise;
 
   const blob = await new Promise((resolve, reject) => {
     canvas.toBlob((result) => {
@@ -49,6 +49,17 @@ function getPinColor(pos) {
 
 function getStaffLabel(pos) {
   return (pos.staff_names || []).join("・");
+}
+
+function drawRoundedRect(ctx, x, y, width, height, radius) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
 }
 
 function UnplacedPanel({ positions, draggingPin, onSelectPin, onDragStart, disabled }) {
@@ -175,7 +186,7 @@ export default function VenueMap({ eventId }) {
           const viewport = page.getViewport({ scale: 2 });
           canvas.width = viewport.width;
           canvas.height = viewport.height;
-          await page.render({ canvasContext: context, viewport }).promise;
+          await page.render({ canvas, canvasContext: context, viewport }).promise;
         }
         if (!cancelled) {
           setPdfSize({ width: canvas.width, height: canvas.height });
@@ -244,11 +255,13 @@ export default function VenueMap({ eventId }) {
     placePin(draggingPin, x, y);
   };
 
-  const handlePDFUpload = async (e) => {
+  const handleMapFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.type && file.type !== "application/pdf") {
-      alert("PDFファイルを選択してください。");
+    const isPDF = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    const isImage = file.type.startsWith("image/") || /\.(png|jpe?g|webp)$/i.test(file.name);
+    if (!isPDF && !isImage) {
+      alert("PDFまたは画像ファイルを選択してください。");
       e.target.value = "";
       return;
     }
@@ -256,11 +269,12 @@ export default function VenueMap({ eventId }) {
     setUploadingPDF(true);
     try {
       setPdfError("");
-      const previewFile = await renderPDFFileToImageFile(file);
-      const [{ file_url: pdfUrl }, { file_url: imageUrl }] = await Promise.all([
-        base44.integrations.Core.UploadFile({ file }),
-        base44.integrations.Core.UploadFile({ file: previewFile }),
-      ]);
+      const previewFile = isPDF ? await renderPDFFileToImageFile(file) : file;
+      const uploadTasks = [base44.integrations.Core.UploadFile({ file: previewFile })];
+      if (isPDF) uploadTasks.unshift(base44.integrations.Core.UploadFile({ file }));
+      const results = await Promise.all(uploadTasks);
+      const pdfUrl = isPDF ? results[0].file_url : null;
+      const imageUrl = isPDF ? results[1].file_url : results[0].file_url;
       setLocalPdfUrl(pdfUrl);
       setLocalMapImageUrl(imageUrl);
       await base44.entities.Event.update(eventId, {
@@ -269,8 +283,8 @@ export default function VenueMap({ eventId }) {
       });
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
     } catch (error) {
-      console.error("PDF upload error:", error);
-      alert("PDFの読み込みに失敗しました: " + error.message);
+      console.error("Map file upload error:", error);
+      alert("ファイルの読み込みに失敗しました: " + error.message);
     } finally {
       setUploadingPDF(false);
       e.target.value = "";
@@ -294,36 +308,61 @@ export default function VenueMap({ eventId }) {
 
     setExportingPDF(true);
     try {
+      const exportCanvas = document.createElement("canvas");
+      exportCanvas.width = canvas.width;
+      exportCanvas.height = canvas.height;
+      const ctx = exportCanvas.getContext("2d");
+      ctx.drawImage(canvas, 0, 0);
+
+      positionsOnMap.forEach((pos) => {
+        const x = (Number(pos.map_x) / 100) * exportCanvas.width;
+        const y = (Number(pos.map_y) / 100) * exportCanvas.height;
+        const color = getPinColor(pos);
+        const label = getStaffLabel(pos) ? `${pos.name} / ${getStaffLabel(pos)}` : pos.name;
+        const fontSize = Math.max(18, Math.round(exportCanvas.width * 0.014));
+        ctx.font = `600 ${fontSize}px "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif`;
+        const paddingX = Math.round(fontSize * 0.45);
+        const labelHeight = Math.round(fontSize * 1.55);
+        const labelWidth = Math.min(
+          Math.round(exportCanvas.width * 0.42),
+          Math.ceil(ctx.measureText(label).width + paddingX * 2)
+        );
+        const labelX = Math.min(x + PIN_RADIUS_PX + 8, exportCanvas.width - labelWidth - 8);
+        const labelY = Math.max(8, Math.min(y - labelHeight / 2, exportCanvas.height - labelHeight - 8));
+
+        ctx.save();
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.94)";
+        ctx.strokeStyle = "rgba(17, 24, 39, 0.18)";
+        ctx.lineWidth = 2;
+        drawRoundedRect(ctx, labelX, labelY, labelWidth, labelHeight, 8);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#111827";
+        ctx.fillText(label, labelX + paddingX, labelY + labelHeight / 2, labelWidth - paddingX * 2);
+
+        ctx.beginPath();
+        ctx.arc(x, y, PIN_RADIUS_PX, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+        ctx.restore();
+      });
+
       const { jsPDF } = await import("jspdf");
-      const isLandscape = canvas.width > canvas.height;
+      const isLandscape = exportCanvas.width > exportCanvas.height;
       const doc = new jsPDF(isLandscape ? "l" : "p", "mm", "a4");
       const pageW = doc.internal.pageSize.getWidth();
       const pageH = doc.internal.pageSize.getHeight();
-      const scale = Math.min(pageW / canvas.width, pageH / canvas.height);
-      const imgW = canvas.width * scale;
-      const imgH = canvas.height * scale;
+      const scale = Math.min(pageW / exportCanvas.width, pageH / exportCanvas.height);
+      const imgW = exportCanvas.width * scale;
+      const imgH = exportCanvas.height * scale;
       const offsetX = (pageW - imgW) / 2;
       const offsetY = (pageH - imgH) / 2;
 
-      doc.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", offsetX, offsetY, imgW, imgH);
-
-      positionsOnMap.forEach((pos) => {
-        const x = offsetX + (Number(pos.map_x) / 100) * imgW;
-        const y = offsetY + (Number(pos.map_y) / 100) * imgH;
-        const color = getPinColor(pos);
-        const r = PIN_RADIUS_MM;
-        const label = getStaffLabel(pos) ? `${pos.name} / ${getStaffLabel(pos)}` : pos.name;
-
-        doc.setFillColor(color);
-        doc.setDrawColor("#ffffff");
-        doc.setLineWidth(0.6);
-        doc.circle(x, y, r, "FD");
-        doc.setFontSize(8);
-        doc.setTextColor("#111827");
-        doc.setFillColor("#ffffff");
-        doc.roundedRect(x + r + 1, y - 3.5, Math.min(58, doc.getTextWidth(label) + 4), 7, 1.5, 1.5, "F");
-        doc.text(label, x + r + 3, y + 1.7, { maxWidth: 54 });
-      });
+      doc.addImage(exportCanvas.toDataURL("image/jpeg", 0.95), "JPEG", offsetX, offsetY, imgW, imgH);
 
       const safeName = (event?.name || "venue-map").replace(/[\\/:*?"<>|]/g, "_");
       doc.save(`${safeName}_会場マップ_${slotFilter}.pdf`);
@@ -353,9 +392,15 @@ export default function VenueMap({ eventId }) {
                 className="gap-1 h-7 text-xs"
               >
                 {uploadingPDF ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-                PDF読込
+                PDF/画像読込
               </Button>
-              <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={handlePDFUpload} />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf,image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={handleMapFileUpload}
+              />
             </>
           )}
           <Button
@@ -409,7 +454,7 @@ export default function VenueMap({ eventId }) {
 
       <div className="flex flex-col lg:flex-row gap-4">
         <div className="flex-1 -mx-4 lg:mx-0 overflow-x-auto lg:overflow-visible">
-          <div className="px-4 lg:px-0" style={{ minWidth: 320 }}>
+          <div className="px-4 lg:px-0 lg:max-w-[560px] lg:mx-auto" style={{ minWidth: 320 }}>
             <div
               ref={mapRef}
               onClick={handleMapClick}
@@ -424,7 +469,7 @@ export default function VenueMap({ eventId }) {
               }`}
               style={{
                 aspectRatio: pdfSize ? `${pdfSize.width} / ${pdfSize.height}` : "210 / 297",
-                minHeight: 360,
+                minHeight: 280,
               }}
             >
               <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
@@ -440,13 +485,13 @@ export default function VenueMap({ eventId }) {
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center text-muted-foreground">
                   <FileText className="w-10 h-10 opacity-40" />
                   <div>
-                    <p className="text-sm font-medium text-foreground">A4サイズのPDFを読み込んでください</p>
-                    <p className="text-xs mt-1">読み込んだPDF上にポジションのピンを配置できます。</p>
+                    <p className="text-sm font-medium text-foreground">A4サイズのPDFまたは画像を読み込んでください</p>
+                    <p className="text-xs mt-1">読み込んだマップ上にポジションのピンを配置できます。</p>
                   </div>
                   {canEdit && (
                     <Button size="sm" onClick={() => fileInputRef.current?.click()} className="gap-1">
                       <Upload className="w-3.5 h-3.5" />
-                      PDF読込
+                      PDF/画像読込
                     </Button>
                   )}
                 </div>
