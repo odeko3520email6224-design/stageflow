@@ -10,8 +10,14 @@ const ALL_TABS = [
   { id: "admin", label: "管理", icon: Settings },
 ];
 
-export default function BottomTabBar({ activeTab, onTabChange, showTimeline = false }) {
-  const TABS = ALL_TABS.filter((t) => t.id !== "timeline" || showTimeline);
+export default function BottomTabBar({ activeTab, onTabChange, showTimeline = false, isPrivileged = true }) {
+  // userロール: 配置表・タイムライン・連絡事項・チェックリストのみ
+  const USER_VISIBLE = ["dragdrop", "timeline", "notice", "tasks"];
+  const TABS = ALL_TABS.filter((t) => {
+    if (t.id === "timeline" && !showTimeline) return false;
+    if (!isPrivileged && !USER_VISIBLE.includes(t.id)) return false;
+    return true;
+  });
 
   const handleTabClick = (tabId) => {
     if (activeTab === tabId) {

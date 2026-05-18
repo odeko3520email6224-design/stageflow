@@ -31,7 +31,8 @@ export default function EventDetail() {
   const { eventId } = useParams();
   const [tab, setTab] = useTabNavigation("staff");
 
-  const { isAdmin, canManageSettings } = useUserRole();
+  const { isAdmin, isChief, canEdit, canManageSettings, role } = useUserRole();
+  const isPrivileged = isAdmin || isChief;
   const [currentUser, setCurrentUser] = useState(null);
 
   // Timeline feature toggle (persisted in localStorage, default OFF)
@@ -74,14 +75,15 @@ export default function EventDetail() {
 
   if (!event) return <div className="p-8 text-muted-foreground">イベントが見つかりません</div>;
 
+  // userロールは閲覧専用タブのみ表示
   const desktopTabs = [
-    { id: "staff", label: "スタッフ管理", icon: Users },
+    ...(isPrivileged ? [{ id: "staff", label: "スタッフ管理", icon: Users }] : []),
     { id: "dragdrop", label: "配置表", icon: ClipboardList },
-    { id: "map", label: "会場マップ", icon: MapPin },
+    ...(isPrivileged ? [{ id: "map", label: "会場マップ", icon: MapPin }] : []),
     ...(showTimeline ? [{ id: "timeline", label: "タイムライン", icon: Clock }] : []),
     { id: "notice", label: "連絡事項", icon: Bell },
     { id: "tasks", label: "チェックリスト", icon: CheckSquare },
-    { id: "admin", label: "管理", icon: Settings },
+    ...(isPrivileged ? [{ id: "admin", label: "管理", icon: Settings }] : []),
   ];
 
   return (
@@ -182,7 +184,7 @@ export default function EventDetail() {
 
       {/* Bottom Tab Navigation - Mobile Only */}
       <div className="sm:hidden">
-        <BottomTabBar activeTab={tab} onTabChange={setTab} showTimeline={showTimeline} />
+        <BottomTabBar activeTab={tab} onTabChange={setTab} showTimeline={showTimeline} isPrivileged={isPrivileged} />
       </div>
     </div>
   );

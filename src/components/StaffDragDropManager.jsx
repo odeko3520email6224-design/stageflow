@@ -14,7 +14,7 @@ import PresetSelector from "@/components/PresetSelector";
 export default function StaffDragDropManager({ eventId }) {
   const queryClient = useQueryClient();
   const { canEdit } = useUserRole();
-  const isAdmin = canEdit;
+  const isAdmin = canEdit; // admin or chief
 
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
@@ -200,7 +200,7 @@ export default function StaffDragDropManager({ eventId }) {
         </div>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
         {TIME_SLOTS.map((slot) => {
           const style = TIME_SLOT_STYLES[slot];
           const slotPositions = grouped[slot];

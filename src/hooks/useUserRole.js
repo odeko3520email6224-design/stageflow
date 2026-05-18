@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 
 /**
- * Returns the current user's role: "admin" | "chief" | "user" | null (loading)
- * 全てのロールで読み取り・編集が可能です
+ * Returns the current user's role and permission flags.
+ * admin / chief = full access
+ * user = read-only (view only)
  */
 export function useUserRole() {
   const [role, setRole] = useState(null); // null = loading
@@ -14,11 +15,16 @@ export function useUserRole() {
     }).catch(() => setRole("user"));
   }, []);
 
+  const isAdmin = role === "admin";
+  const isChief = role === "chief";
+  const canEdit = isAdmin || isChief;
+  const canManageSettings = isAdmin || isChief;
+
   return {
     role,
-    isAdmin: role === "admin",
-    isChief: role === "chief",
-    canEdit: true,
-    canManageSettings: true,
+    isAdmin,
+    isChief,
+    canEdit,
+    canManageSettings,
   };
 }

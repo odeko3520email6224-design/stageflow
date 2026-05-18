@@ -1,28 +1,32 @@
 import React from 'react';
+import { base44 } from '@/api/base44Client';
+import { ShieldAlert, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const UserNotRegisteredError = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-white to-slate-50">
-      <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg border border-slate-100">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-full bg-orange-100">
-            <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-4">Access Restricted</h1>
-          <p className="text-slate-600 mb-8">
-            You are not registered to use this application. Please contact the app administrator to request access.
-          </p>
-          <div className="p-4 bg-slate-50 rounded-md text-sm text-slate-600">
-            <p>If you believe this is an error, you can:</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Verify you are logged in with the correct account</li>
-              <li>Contact the app administrator for access</li>
-              <li>Try logging out and back in again</li>
-            </ul>
-          </div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background px-4">
+      <div className="max-w-md w-full bg-card border border-border rounded-2xl shadow-lg p-8 text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 mb-5 rounded-full bg-amber-100 dark:bg-amber-900/30">
+          <ShieldAlert className="w-8 h-8 text-amber-600 dark:text-amber-400" />
         </div>
+        <h1 className="text-xl font-bold text-foreground mb-3">アクセスを確認中です</h1>
+        <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+          このアプリのご利用には管理者による承認が必要です。<br />
+          アカウントが承認されるまでお待ちください。
+        </p>
+        <div className="bg-muted rounded-xl p-4 text-xs text-muted-foreground text-left space-y-1.5 mb-6">
+          <p className="font-medium text-foreground">お心当たりがある場合：</p>
+          <ul className="list-disc list-inside space-y-1">
+            <li>正しいアカウントでログインしているか確認してください</li>
+            <li>管理者にアクセス許可を依頼してください</li>
+            <li>一度ログアウトして再度ログインをお試しください</li>
+          </ul>
+        </div>
+        <Button variant="outline" className="gap-2 w-full" onClick={() => base44.auth.logout()}>
+          <LogOut className="w-4 h-4" />
+          ログアウト
+        </Button>
       </div>
     </div>
   );

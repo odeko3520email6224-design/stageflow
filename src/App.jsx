@@ -1,11 +1,12 @@
 import { Toaster } from "@/components/ui/sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { ThemeProvider } from '@/lib/ThemeProvider';
+import { useUserRole } from '@/hooks/useUserRole';
 // Add page imports here
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
@@ -33,11 +34,19 @@ const AuthenticatedApp = () => {
     }
   }
 
+  // userロールはイベント詳細へのアクセスを制限
+  const PrivilegedRoute = ({ children }) => {
+    const { role } = useUserRole();
+    if (role === null) return null; // loading
+    if (role === "user") return <Navigate to="/" replace />;
+    return children;
+  };
+
   // Render the main app
   return (
     <Routes>
       <Route path="/" element={<Events />} />
-      <Route path="/events/:eventId" element={<EventDetail />} />
+      <Route path="/events/:eventId" element={<PrivilegedRoute><EventDetail /></PrivilegedRoute>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
