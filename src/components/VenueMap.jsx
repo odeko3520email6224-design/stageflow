@@ -4,7 +4,6 @@ import { base44 } from "@/api/base44Client";
 import { fetchPublicEventData, publicEventDataKey } from "@/api/publicEventData";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Download, FileText, Loader2, Map, MapPin, Move, Upload, X } from "lucide-react";
-import { useUserRole } from "@/hooks/useUserRole";
 
 const ROLE_COLORS = {
   "受付": "#3b82f6",
@@ -111,7 +110,7 @@ function UnplacedPanel({ positions, draggingPin, onSelectPin, onDragStart, disab
 
 export default function VenueMap({ eventId }) {
   const queryClient = useQueryClient();
-  const { canEdit } = useUserRole();
+  const canEdit = false;
   const fileInputRef = useRef(null);
   const mapRef = useRef(null);
   const canvasRef = useRef(null);

@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { base44 } from "@/api/base44Client";
-import { fetchPublicEventData, publicEventDataKey } from "@/api/publicEventData";
+import { fetchPublicEventData, publicEventAction, publicEventDataKey } from "@/api/publicEventData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Users, AlertCircle, Pencil, X, UserCog, Download, ShieldCheck } from "lucide-react";
@@ -20,10 +19,11 @@ function EditModal({ staff, onClose, onSaved }) {
   const prevDataRef = useRef({ name: staff.name, note: staff.note || "" });
 
   const updateMutation = useMutation({
-    mutationFn: (data) => base44.entities.Staff.update(staff.id, data),
+    mutationFn: (data) => publicEventAction("updateStaff", { id: staff.id, data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", staff.event_id] });
       queryClient.invalidateQueries({ queryKey: ["positions", staff.event_id] });
+      queryClient.invalidateQueries({ queryKey: publicEventDataKey(staff.event_id) });
       onSaved();
     }
   });
@@ -98,7 +98,7 @@ export default function StaffManagement({ eventId }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Staff.create(data),
+    mutationFn: (data) => publicEventAction("createStaff", { data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
       queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
@@ -108,20 +108,7 @@ export default function StaffManagement({ eventId }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      const staffToDelete = staffList.find((s) => s.id === id);
-      await base44.entities.Staff.delete(id);
-      if (staffToDelete) {
-        const affected = positions.filter((p) => (p.staff_names || []).includes(staffToDelete.name));
-        await Promise.all(
-          affected.map((p) =>
-          base44.entities.Position.update(p.id, {
-            staff_names: p.staff_names.filter((n) => n !== staffToDelete.name)
-          })
-          )
-        );
-      }
-    },
+    mutationFn: (id) => publicEventAction("deleteStaff", { id, eventId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
@@ -130,7 +117,7 @@ export default function StaffManagement({ eventId }) {
   });
 
   const updateChiefMutation = useMutation({
-    mutationFn: (chief_staff_name) => base44.entities.Event.update(eventId, { chief_staff_name }),
+    mutationFn: (chief_staff_name) => publicEventAction("updateChief", { eventId, chief_staff_name }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
       queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });

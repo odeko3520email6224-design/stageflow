@@ -7,15 +7,13 @@ import { Button } from "@/components/ui/button";
 import PositionCard from "@/components/PositionCard";
 import PositionFormModal from "@/components/PositionFormModal";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { useUserRole } from "@/hooks/useUserRole";
 import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import PresetSelector from "@/components/PresetSelector";
 
 export default function StaffDragDropManager({ eventId }) {
   const queryClient = useQueryClient();
-  const { canEdit } = useUserRole();
-  const isAdmin = canEdit; // admin or chief
+  const isAdmin = false;
 
   const { data: staffList = [] } = useQuery({
     queryKey: publicEventDataKey(eventId),
@@ -296,8 +294,8 @@ export default function StaffDragDropManager({ eventId }) {
                       <div key={pos.id}
                         data-pos-id={pos.id}
                         className={`flex items-start gap-1 ${draggingPosId === pos.id ? "opacity-40" : ""} ${dragOverPosId === pos.id ? "ring-2 ring-primary rounded-lg" : ""}`}
-                        onDragOver={(e) => handlePosDragOver(e, pos.id)}
-                        onDrop={(e) => handlePosDrop(e, slot, pos.id)}
+                        onDragOver={isAdmin ? (e) => handlePosDragOver(e, pos.id) : undefined}
+                        onDrop={isAdmin ? (e) => handlePosDrop(e, slot, pos.id) : undefined}
                       >
                         {isAdmin && (
                           <div draggable
@@ -311,26 +309,26 @@ export default function StaffDragDropManager({ eventId }) {
                           <PositionCard
                             pos={pos}
                             isAdmin={isAdmin}
-                            draggable={true}
+                            draggable={isAdmin}
                             draggedStaff={draggedStaff}
-                            onDragOver={handleDragOver}
-                            onDrop={(e) => handleDropOnPosition(e, pos.id)}
-                            onStaffDragStart={(e, name, posId) => {
+                            onDragOver={isAdmin ? handleDragOver : undefined}
+                            onDrop={isAdmin ? (e) => handleDropOnPosition(e, pos.id) : undefined}
+                            onStaffDragStart={isAdmin ? (e, name, posId) => {
                               handleStaffDragStart(e, name);
                               removeStaffFromPosition(posId, name);
-                            }}
-                            onStaffRemove={removeStaffFromPosition}
-                            onEdit={(p) => { setEditing(p); setShowModal(true); }}
-                            onDelete={(id) => setConfirmDelete({ id, name: pos.name })}
+                            } : undefined}
+                            onStaffRemove={isAdmin ? removeStaffFromPosition : undefined}
+                            onEdit={isAdmin ? (p) => { setEditing(p); setShowModal(true); } : undefined}
+                            onDelete={isAdmin ? (id) => setConfirmDelete({ id, name: pos.name }) : undefined}
                             emptyLabel="スタッフをドラッグして配置"
                             staffList={staffList}
                             requiredCount={pos.required_count ?? 0}
-                            onRequiredCountChange={(v) => {
+                            onRequiredCountChange={isAdmin ? (v) => {
                               queryClient.setQueryData(["positions", eventId], (old) =>
                                 old.map((p) => p.id === pos.id ? { ...p, required_count: v } : p)
                               );
                               base44.entities.Position.update(pos.id, { required_count: v });
-                            }}
+                            } : undefined}
                             occupiedInSlot={[...new Set(
                               slotPositions.filter((p) => p.id !== pos.id).flatMap((p) => p.staff_names || [])
                             )]}

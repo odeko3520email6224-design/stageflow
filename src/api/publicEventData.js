@@ -7,3 +7,9 @@ export async function fetchPublicEventData(eventId) {
   if (response.data?.error) throw new Error(response.data.error);
   return response.data || {};
 }
+
+export async function publicEventAction(action, payload = {}) {
+  const response = await base44.functions.invoke("publicEvents", { action, ...payload });
+  if (response.data?.error) throw new Error(response.data.error);
+  return response.data || {};
+}

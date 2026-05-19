@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { fetchPublicEventData, publicEventDataKey } from "@/api/publicEventData";
-import { useUserRole } from "@/hooks/useUserRole";
+import { fetchPublicEventData, publicEventAction, publicEventDataKey } from "@/api/publicEventData";
 import { Button } from "@/components/ui/button";
 import {
   Bell, Plus, Trash2, Users, CheckCircle2, Clock, AlertTriangle,
@@ -27,7 +26,7 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
   const [uploading, setUploading] = useState(false);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Announcement.create(data),
+    mutationFn: (data) => publicEventAction("createAnnouncement", { data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements", eventId] });
       queryClient.invalidateQueries({ queryKey: ["announcements-alert", eventId] });
@@ -237,7 +236,7 @@ function AnnouncementEditForm({ ann, staffList, onClose, onSaved }) {
   const [uploading, setUploading] = useState(false);
 
   const updateMutation = useMutation({
-    mutationFn: (data) => base44.entities.Announcement.update(ann.id, data),
+    mutationFn: (data) => publicEventAction("updateAnnouncement", { id: ann.id, data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements", ann.event_id] });
       queryClient.invalidateQueries({ queryKey: ["announcements-alert", ann.event_id] });
@@ -374,8 +373,9 @@ function AnnouncementCard({ ann, staffList, onDelete, canEdit }) {
   const unreadCount = Math.max(0, totalTargets - readCount);
 
   const readMutation = useMutation({
-    mutationFn: (name) => base44.entities.Announcement.update(ann.id, {
-      read_by: [...new Set([...(ann.read_by || []), name])],
+    mutationFn: (name) => publicEventAction("updateAnnouncement", {
+      id: ann.id,
+      data: { read_by: [...new Set([...(ann.read_by || []), name])] },
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements", ann.event_id] });
@@ -556,7 +556,7 @@ export default function AnnouncementManager({ eventId }) {
   const [notifPermission, setNotifPermission] = useState(
     typeof Notification !== "undefined" ? Notification.permission : "denied"
   );
-  const { canEdit } = useUserRole();
+  const canEdit = true;
   const queryClient = useQueryClient();
   const prevIdsRef = useRef(new Set());
 
@@ -608,7 +608,7 @@ export default function AnnouncementManager({ eventId }) {
   }, [announcements]);
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Announcement.delete(id),
+    mutationFn: (id) => publicEventAction("deleteAnnouncement", { id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements", eventId] });
       queryClient.invalidateQueries({ queryKey: ["announcements-alert", eventId] });
