@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { fetchPublicEventData, publicEventDataKey } from "@/api/publicEventData";
 import { AlertCircle, ClipboardList, Plus, Download, Users, GripVertical, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PositionCard from "@/components/PositionCard";
@@ -17,30 +18,33 @@ export default function StaffDragDropManager({ eventId }) {
   const isAdmin = canEdit; // admin or chief
 
   const { data: staffList = [] } = useQuery({
-    queryKey: ["staff", eventId],
-    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+    queryKey: publicEventDataKey(eventId),
+    queryFn: () => fetchPublicEventData(eventId),
+    select: (data) => data.staff || [],
   });
 
   const { data: positions = [] } = useQuery({
-    queryKey: ["positions", eventId],
-    queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
+    queryKey: publicEventDataKey(eventId),
+    queryFn: () => fetchPublicEventData(eventId),
+    select: (data) => data.positions || [],
   });
 
   const { data: event } = useQuery({
-    queryKey: ["event", eventId],
-    queryFn: () => base44.entities.Event.filter({ id: eventId }),
-    select: (d) => d[0],
+    queryKey: publicEventDataKey(eventId),
+    queryFn: () => fetchPublicEventData(eventId),
+    select: (data) => data.event,
   });
 
   const { data: presets = [] } = useQuery({
-    queryKey: ["positionPresets"],
-    queryFn: () => base44.entities.PositionPreset.list(),
+    queryKey: publicEventDataKey(eventId),
+    queryFn: () => fetchPublicEventData(eventId),
+    select: (data) => data.positionPresets || [],
   });
 
   const { data: positionTypes = [] } = useQuery({
-    queryKey: ["positionTypes"],
-    queryFn: () => base44.entities.PositionType.list(),
-    select: (d) => [...d].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    queryKey: publicEventDataKey(eventId),
+    queryFn: () => fetchPublicEventData(eventId),
+    select: (data) => [...(data.positionTypes || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   });
 
   const updatePositionMutation = useMutation({
@@ -58,6 +62,7 @@ export default function StaffDragDropManager({ eventId }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+      queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
     },
   });
 
@@ -78,6 +83,7 @@ export default function StaffDragDropManager({ eventId }) {
     const slotPositions = positions.filter((p) => (p.time_slot || "開場中") === slot);
     await Promise.all(slotPositions.map((p) => base44.entities.Position.delete(p.id)));
     queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+    queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
     setConfirmBulkDelete(null);
   };
 
@@ -105,6 +111,7 @@ export default function StaffDragDropManager({ eventId }) {
       })
     ));
     queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+    queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
   };
 
   const deleteMutation = useMutation({
@@ -118,7 +125,10 @@ export default function StaffDragDropManager({ eventId }) {
     onError: (err, id, context) => {
       queryClient.setQueryData(["positions", eventId], context.previousPositions);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positions", eventId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+      queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
+    },
   });
 
   const openAdd = (slot) => { setDefaultSlot(slot); setEditing(null); setShowModal(true); };
@@ -167,7 +177,6 @@ export default function StaffDragDropManager({ eventId }) {
     if (!activePreset) return;
     const currentSlotPositions = activePreset.slot_positions || {};
     // Map position names to positionType ids in new order
-    const { data: positionTypes } = queryClient.getQueryState(["positionTypes"]) || {};
     if (!positionTypes) return;
     const newSlotIds = reorderedPositions.map((pos) => {
       const pt = positionTypes.find((t) => t.name === pos.name);
@@ -234,7 +243,7 @@ export default function StaffDragDropManager({ eventId }) {
           })()}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <PresetSelector eventId={eventId} compact />
+          {isAdmin && <PresetSelector eventId={eventId} compact />}
           <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2" onClick={handleExportPDF} disabled={exportingPDF || positions.length === 0}>
             <Download className="w-3 h-3" />{exportingPDF ? '...' : 'PDF'}
           </Button>

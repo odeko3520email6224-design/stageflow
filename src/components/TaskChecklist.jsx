@@ -4,7 +4,6 @@ import { base44 } from "@/api/base44Client";
 import { CheckSquare, Square, Plus, Trash2, Pencil, Check, X, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useUserRole } from "@/hooks/useUserRole";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function TaskChecklist({ eventId }) {

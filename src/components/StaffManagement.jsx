@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
+import { fetchPublicEventData, publicEventDataKey } from "@/api/publicEventData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Users, AlertCircle, Pencil, X, UserCog, Download, ShieldCheck } from "lucide-react";
@@ -79,25 +80,28 @@ export default function StaffManagement({ eventId }) {
 
 
   const { data: staffList = [], isLoading } = useQuery({
-    queryKey: ["staff", eventId],
-    queryFn: () => base44.entities.Staff.filter({ event_id: eventId })
+    queryKey: publicEventDataKey(eventId),
+    queryFn: () => fetchPublicEventData(eventId),
+    select: (data) => data.staff || [],
   });
 
   const { data: positions = [] } = useQuery({
-    queryKey: ["positions", eventId],
-    queryFn: () => base44.entities.Position.filter({ event_id: eventId })
+    queryKey: publicEventDataKey(eventId),
+    queryFn: () => fetchPublicEventData(eventId),
+    select: (data) => data.positions || [],
   });
 
   const { data: event } = useQuery({
-    queryKey: ["event", eventId],
-    queryFn: () => base44.entities.Event.filter({ id: eventId }),
-    select: (d) => d[0],
+    queryKey: publicEventDataKey(eventId),
+    queryFn: () => fetchPublicEventData(eventId),
+    select: (data) => data.event,
   });
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Staff.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
+      queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
       setName("");
       setNote("");
     }
@@ -121,6 +125,7 @@ export default function StaffManagement({ eventId }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+      queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
     }
   });
 
@@ -128,6 +133,7 @@ export default function StaffManagement({ eventId }) {
     mutationFn: (chief_staff_name) => base44.entities.Event.update(eventId, { chief_staff_name }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
     },
   });
 
