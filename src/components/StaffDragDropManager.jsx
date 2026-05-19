@@ -7,13 +7,15 @@ import { Button } from "@/components/ui/button";
 import PositionCard from "@/components/PositionCard";
 import PositionFormModal from "@/components/PositionFormModal";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { useUserRole } from "@/hooks/useUserRole";
 import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import PresetSelector from "@/components/PresetSelector";
 
 export default function StaffDragDropManager({ eventId }) {
   const queryClient = useQueryClient();
-  const isAdmin = false;
+  const { canEdit } = useUserRole();
+  const isAdmin = canEdit;
 
   const { data: staffList = [] } = useQuery({
     queryKey: publicEventDataKey(eventId),
