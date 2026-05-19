@@ -23,6 +23,7 @@ Deno.serve(async (req) => {
         staff,
         positions,
         announcements,
+        tasks,
         positionTypes,
         positionPresets,
       ] = await Promise.all([
@@ -30,6 +31,7 @@ Deno.serve(async (req) => {
         base44.asServiceRole.entities.Staff.filter({ event_id: body.eventId }),
         base44.asServiceRole.entities.Position.filter({ event_id: body.eventId }),
         base44.asServiceRole.entities.Announcement.filter({ event_id: body.eventId }),
+        base44.asServiceRole.entities.Task.filter({ event_id: body.eventId }, 'order'),
         base44.asServiceRole.entities.PositionType.list(),
         base44.asServiceRole.entities.PositionPreset.list(),
       ]);
@@ -39,6 +41,7 @@ Deno.serve(async (req) => {
         staff,
         positions,
         announcements,
+        tasks,
         positionTypes,
         positionPresets,
       });
@@ -104,10 +107,44 @@ Deno.serve(async (req) => {
       if (!body.eventId) {
         return Response.json({ error: 'eventId required' }, { status: 400 });
       }
+      try {
+        await base44.auth.me();
+      } catch {
+        return Response.json({ error: 'login required' }, { status: 401 });
+      }
       const event = await base44.asServiceRole.entities.Event.update(body.eventId, {
         chief_staff_name: body.chief_staff_name || '',
       });
       return Response.json({ event });
+    }
+
+    if (action === 'listTasks') {
+      if (!body.eventId) {
+        return Response.json({ error: 'eventId required' }, { status: 400 });
+      }
+      const tasks = await base44.asServiceRole.entities.Task.filter({ event_id: body.eventId }, 'order');
+      return Response.json({ tasks });
+    }
+
+    if (action === 'createTask') {
+      const task = await base44.asServiceRole.entities.Task.create(body.data);
+      return Response.json({ task });
+    }
+
+    if (action === 'updateTask') {
+      if (!body.id) {
+        return Response.json({ error: 'id required' }, { status: 400 });
+      }
+      const task = await base44.asServiceRole.entities.Task.update(body.id, body.data);
+      return Response.json({ task });
+    }
+
+    if (action === 'deleteTask') {
+      if (!body.id) {
+        return Response.json({ error: 'id required' }, { status: 400 });
+      }
+      await base44.asServiceRole.entities.Task.delete(body.id);
+      return Response.json({ ok: true });
     }
 
     const events = await base44.asServiceRole.entities.Event.list('-created_date');

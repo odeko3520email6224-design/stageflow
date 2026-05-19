@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { base44 } from "@/api/base44Client";
 import { fetchPublicEventData, publicEventAction, publicEventDataKey } from "@/api/publicEventData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,8 +77,22 @@ export default function StaffManagement({ eventId }) {
   const [editingStaff, setEditingStaff] = useState(null);
   const [showScrapeModal, setShowScrapeModal] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    let mounted = true;
+    base44.auth.me()
+      .then(() => {
+        if (mounted) setIsLoggedIn(true);
+      })
+      .catch(() => {
+        if (mounted) setIsLoggedIn(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const { data: staffList = [], isLoading } = useQuery({
     queryKey: publicEventDataKey(eventId),
@@ -192,9 +207,12 @@ export default function StaffManagement({ eventId }) {
             <label className="text-[10px] font-medium text-muted-foreground">チーフ</label>
             <select
               value={event?.chief_staff_name || ""}
-              onChange={(e) => updateChiefMutation.mutate(e.target.value)}
+              onChange={(e) => {
+                if (!isLoggedIn) return;
+                updateChiefMutation.mutate(e.target.value);
+              }}
               className="mt-1 h-8 w-full rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              disabled={staffList.length === 0 || updateChiefMutation.isPending}
+              disabled={!isLoggedIn || staffList.length === 0 || updateChiefMutation.isPending}
             >
               <option value="">未選択</option>
               {staffList.map((staff) => (

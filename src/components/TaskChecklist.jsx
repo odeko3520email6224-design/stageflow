@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { publicEventAction } from "@/api/publicEventData";
 import { CheckSquare, Square, Plus, Trash2, Pencil, Check, X, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,21 +20,21 @@ export default function TaskChecklist({ eventId }) {
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ["tasks", eventId],
-    queryFn: () => base44.entities.Task.filter({ event_id: eventId }, "order"),
+    queryFn: () => publicEventAction("listTasks", { eventId }).then((data) => data.tasks || []),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Task.create(data),
+    mutationFn: (data) => publicEventAction("createTask", { data }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks", eventId] }),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    mutationFn: ({ id, data }) => publicEventAction("updateTask", { id, data }),
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks", eventId] });
       const prev = queryClient.getQueryData(["tasks", eventId]);
       queryClient.setQueryData(["tasks", eventId], (old) =>
-        old.map((t) => (t.id === id ? { ...t, ...data } : t))
+        (old || []).map((t) => (t.id === id ? { ...t, ...data } : t))
       );
       return { prev };
     },
@@ -43,7 +43,7 @@ export default function TaskChecklist({ eventId }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Task.delete(id),
+    mutationFn: (id) => publicEventAction("deleteTask", { id }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks", eventId] }),
   });
 

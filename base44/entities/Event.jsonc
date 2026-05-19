@@ -36,6 +36,10 @@
     "active_preset_id": {
       "type": "string",
       "description": "\u9069\u7528\u4e2d\u306e\u30dd\u30b8\u30b7\u30e7\u30f3\u30d7\u30ea\u30bb\u30c3\u30c8ID"
+    },
+    "chief_staff_name": {
+      "type": "string",
+      "description": "\u30c1\u30fc\u30d5\u30b9\u30bf\u30c3\u30d5\u540d"
     }
   },
   "required": [
