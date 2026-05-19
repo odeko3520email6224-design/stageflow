@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchPublicEventData, publicEventDataKey } from "@/api/publicEventData";
+import { base44 } from "@/api/base44Client";
 import { AlertTriangle, X, Bell, ShieldAlert } from "lucide-react";
 
 const PRIORITY_STYLES = {
@@ -13,15 +13,13 @@ export default function AnnouncementAlert({ eventId }) {
   const [dismissed, setDismissed] = useState(new Set());
 
   const { data: staffList = [] } = useQuery({
-    queryKey: publicEventDataKey(eventId),
-    queryFn: () => fetchPublicEventData(eventId),
-    select: (data) => data.staff || [],
+    queryKey: ["staff", eventId],
+    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
   });
 
   const { data: announcements = [] } = useQuery({
-    queryKey: publicEventDataKey(eventId),
-    queryFn: () => fetchPublicEventData(eventId),
-    select: (data) => (data.announcements || []).filter((a) => a.is_alert),
+    queryKey: ["announcements-alert", eventId],
+    queryFn: () => base44.entities.Announcement.filter({ event_id: eventId, is_alert: true }),
     refetchInterval: 15000,
   });
 

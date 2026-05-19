@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { fetchPublicEventData, publicEventDataKey } from "@/api/publicEventData";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Download, FileText, Loader2, Map, MapPin, Move, Upload, X } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -129,23 +128,19 @@ export default function VenueMap({ eventId }) {
   const [localMapImageUrl, setLocalMapImageUrl] = useState("");
 
   const { data: positions = [] } = useQuery({
-    queryKey: publicEventDataKey(eventId),
-    queryFn: () => fetchPublicEventData(eventId),
-    select: (data) => data.positions || [],
+    queryKey: ["positions", eventId],
+    queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
   });
 
   const { data: event } = useQuery({
-    queryKey: publicEventDataKey(eventId),
-    queryFn: () => fetchPublicEventData(eventId),
-    select: (data) => data.event,
+    queryKey: ["event", eventId],
+    queryFn: () => base44.entities.Event.filter({ id: eventId }),
+    select: (d) => d[0],
   });
 
   const updatePosition = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Position.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
-      queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positions", eventId] }),
   });
 
   const filteredPositions = positions.filter((p) => (p.time_slot || TIME_SLOTS[0]) === slotFilter);
@@ -287,7 +282,6 @@ export default function VenueMap({ eventId }) {
         map_image_url: imageUrl,
       });
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
-      queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
     } catch (error) {
       console.error("Map file upload error:", error);
       alert("ファイルの読み込みに失敗しました: " + error.message);
@@ -303,7 +297,6 @@ export default function VenueMap({ eventId }) {
     setLocalMapImageUrl("");
     await base44.entities.Event.update(eventId, { map_pdf_url: null, map_image_url: null });
     queryClient.invalidateQueries({ queryKey: ["event", eventId] });
-    queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
   };
 
   const handleExportPDF = async () => {

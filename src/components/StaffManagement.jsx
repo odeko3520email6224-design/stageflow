@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { fetchPublicEventData, publicEventAction, publicEventDataKey } from "@/api/publicEventData";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Users, AlertCircle, Pencil, X, UserCog, Download, ShieldCheck } from "lucide-react";
@@ -19,11 +19,10 @@ function EditModal({ staff, onClose, onSaved }) {
   const prevDataRef = useRef({ name: staff.name, note: staff.note || "" });
 
   const updateMutation = useMutation({
-    mutationFn: (data) => publicEventAction("updateStaff", { id: staff.id, data }),
+    mutationFn: (data) => base44.entities.Staff.update(staff.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", staff.event_id] });
       queryClient.invalidateQueries({ queryKey: ["positions", staff.event_id] });
-      queryClient.invalidateQueries({ queryKey: publicEventDataKey(staff.event_id) });
       onSaved();
     }
   });
@@ -70,7 +69,7 @@ function EditModal({ staff, onClose, onSaved }) {
 
 }
 
-export default function StaffManagement({ eventId, isLoggedIn = false }) {
+export default function StaffManagement({ eventId }) {
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
   const [editingStaff, setEditingStaff] = useState(null);
@@ -78,64 +77,57 @@ export default function StaffManagement({ eventId, isLoggedIn = false }) {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const queryClient = useQueryClient();
 
+
   const { data: staffList = [], isLoading } = useQuery({
-    queryKey: publicEventDataKey(eventId),
-    queryFn: () => fetchPublicEventData(eventId),
-    select: (data) => data.staff || [],
+    queryKey: ["staff", eventId],
+    queryFn: () => base44.entities.Staff.filter({ event_id: eventId })
   });
 
   const { data: positions = [] } = useQuery({
-    queryKey: publicEventDataKey(eventId),
-    queryFn: () => fetchPublicEventData(eventId),
-    select: (data) => data.positions || [],
+    queryKey: ["positions", eventId],
+    queryFn: () => base44.entities.Position.filter({ event_id: eventId })
   });
 
   const { data: event } = useQuery({
-    queryKey: publicEventDataKey(eventId),
-    queryFn: () => fetchPublicEventData(eventId),
-    select: (data) => data.event,
+    queryKey: ["event", eventId],
+    queryFn: () => base44.entities.Event.filter({ id: eventId }),
+    select: (d) => d[0],
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => publicEventAction("createStaff", { data }),
+    mutationFn: (data) => base44.entities.Staff.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
-      queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
       setName("");
       setNote("");
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => publicEventAction("deleteStaff", { id, eventId }),
+    mutationFn: async (id) => {
+      const staffToDelete = staffList.find((s) => s.id === id);
+      await base44.entities.Staff.delete(id);
+      if (staffToDelete) {
+        const affected = positions.filter((p) => (p.staff_names || []).includes(staffToDelete.name));
+        await Promise.all(
+          affected.map((p) =>
+          base44.entities.Position.update(p.id, {
+            staff_names: p.staff_names.filter((n) => n !== staffToDelete.name)
+          })
+          )
+        );
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
-      queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
     }
   });
 
   const updateChiefMutation = useMutation({
-    mutationFn: (chief_staff_name) => publicEventAction("updateChief", { eventId, chief_staff_name }),
-    onMutate: async (chief_staff_name) => {
-      await queryClient.cancelQueries({ queryKey: publicEventDataKey(eventId) });
-      const previousData = queryClient.getQueryData(publicEventDataKey(eventId));
-      queryClient.setQueryData(publicEventDataKey(eventId), (old) => ({
-        ...(old || {}),
-        event: {
-          ...(old?.event || {}),
-          chief_staff_name,
-        },
-      }));
-      return { previousData };
-    },
-    onError: (_, __, context) => {
-      queryClient.setQueryData(publicEventDataKey(eventId), context?.previousData);
-      toast.error("チーフの保存に失敗しました");
-    },
+    mutationFn: (chief_staff_name) => base44.entities.Event.update(eventId, { chief_staff_name }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
-      queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
     },
   });
 
@@ -207,12 +199,9 @@ export default function StaffManagement({ eventId, isLoggedIn = false }) {
             <label className="text-[10px] font-medium text-muted-foreground">チーフ</label>
             <select
               value={event?.chief_staff_name || ""}
-              onChange={(e) => {
-                if (!isLoggedIn) return;
-                updateChiefMutation.mutate(e.target.value);
-              }}
+              onChange={(e) => updateChiefMutation.mutate(e.target.value)}
               className="mt-1 h-8 w-full rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              disabled={!isLoggedIn || staffList.length === 0 || updateChiefMutation.isPending}
+              disabled={staffList.length === 0 || updateChiefMutation.isPending}
             >
               <option value="">未選択</option>
               {staffList.map((staff) => (

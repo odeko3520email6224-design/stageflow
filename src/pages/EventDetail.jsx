@@ -18,7 +18,6 @@ import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTabNavigation } from "@/hooks/useTabNavigation";
-import { useAuth } from "@/lib/AuthContext";
 
 const TIMELINE_STORAGE_KEY = "stageflow_timeline_enabled";
 
@@ -34,10 +33,7 @@ export default function EventDetail() {
 
   const { isAdmin, isChief, canEdit, canManageSettings, role } = useUserRole();
   const isPrivileged = isAdmin || isChief;
-  const { isAuthenticated, authChecked, authError } = useAuth();
   const [currentUser, setCurrentUser] = useState(null);
-  const userIsLoggedIn = isAuthenticated || Boolean(currentUser);
-  const showLoggedOutBanner = Boolean(authError) || (authChecked && !userIsLoggedIn);
 
   // Timeline feature toggle (persisted in localStorage, default OFF)
   const [showTimeline, setShowTimeline] = useState(() => {
@@ -61,11 +57,8 @@ export default function EventDetail() {
 
   const { data: event, isLoading, refetch: refetchEvent } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: async () => {
-      const response = await base44.functions.invoke("publicEvents", { action: "get", eventId });
-      if (response.data?.error) throw new Error(response.data.error);
-      return response.data?.event;
-    },
+    queryFn: () => base44.entities.Event.filter({ id: eventId }),
+    select: (d) => d[0],
   });
 
   const { isPulling, pullDistance } = usePullToRefresh(async () => {
@@ -84,9 +77,9 @@ export default function EventDetail() {
 
   // userロールは閲覧専用タブのみ表示
   const desktopTabs = [
-    { id: "staff", label: "スタッフ管理", icon: Users },
+    ...(isPrivileged ? [{ id: "staff", label: "スタッフ管理", icon: Users }] : []),
     { id: "dragdrop", label: "配置表", icon: ClipboardList },
-    { id: "map", label: "会場マップ", icon: MapPin },
+    ...(isPrivileged ? [{ id: "map", label: "会場マップ", icon: MapPin }] : []),
     ...(showTimeline ? [{ id: "timeline", label: "タイムライン", icon: Clock }] : []),
     { id: "notice", label: "連絡事項", icon: Bell },
     { id: "tasks", label: "チェックリスト", icon: CheckSquare },
@@ -102,18 +95,6 @@ export default function EventDetail() {
       )}
 
       <AnnouncementAlert eventId={eventId} />
-
-      {showLoggedOutBanner && (
-        <div className="border-b border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">
-          <div className="max-w-6xl mx-auto px-3 py-2 text-xs leading-relaxed">
-            <div className="font-bold">未ログインにつき、機能制限中</div>
-            <div>・各種編集、管理機能を禁止</div>
-            <div>・不正アクセス管理を有効化</div>
-            <div>※不用意にこのURLを共有しないでください</div>
-            <div className="pl-3">すべてのアクセスは記録、管理されています</div>
-          </div>
-        </div>
-      )}
 
       {/* Top bar */}
       <div className="bg-card border-b border-border sticky top-0 z-50 safe-area-top">
@@ -184,7 +165,7 @@ export default function EventDetail() {
             animate="animate"
             exit="exit"
           >
-            {tab === "staff" && <StaffManagement eventId={eventId} isLoggedIn={userIsLoggedIn} />}
+            {tab === "staff" && <StaffManagement eventId={eventId} />}
             {tab === "dragdrop" && <StaffDragDropManager eventId={eventId} />}
             {tab === "admin" && (
               <PositionTypeManagement

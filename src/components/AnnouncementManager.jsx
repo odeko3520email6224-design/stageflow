@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { fetchPublicEventData, publicEventAction, publicEventDataKey } from "@/api/publicEventData";
 import { Button } from "@/components/ui/button";
 import {
   Bell, Plus, Trash2, Users, CheckCircle2, Clock, AlertTriangle,
@@ -26,11 +25,10 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
   const [uploading, setUploading] = useState(false);
 
   const createMutation = useMutation({
-    mutationFn: (data) => publicEventAction("createAnnouncement", { data }),
+    mutationFn: (data) => base44.entities.Announcement.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements", eventId] });
       queryClient.invalidateQueries({ queryKey: ["announcements-alert", eventId] });
-      queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
       onSaved();
     },
   });
@@ -236,11 +234,10 @@ function AnnouncementEditForm({ ann, staffList, onClose, onSaved }) {
   const [uploading, setUploading] = useState(false);
 
   const updateMutation = useMutation({
-    mutationFn: (data) => publicEventAction("updateAnnouncement", { id: ann.id, data }),
+    mutationFn: (data) => base44.entities.Announcement.update(ann.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements", ann.event_id] });
       queryClient.invalidateQueries({ queryKey: ["announcements-alert", ann.event_id] });
-      queryClient.invalidateQueries({ queryKey: publicEventDataKey(ann.event_id) });
       onSaved();
     },
   });
@@ -358,7 +355,7 @@ function AnnouncementEditForm({ ann, staffList, onClose, onSaved }) {
   );
 }
 
-function AnnouncementCard({ ann, staffList, onDelete, canEdit }) {
+function AnnouncementCard({ ann, staffList, onDelete }) {
   const [expanded, setExpanded] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -373,14 +370,12 @@ function AnnouncementCard({ ann, staffList, onDelete, canEdit }) {
   const unreadCount = Math.max(0, totalTargets - readCount);
 
   const readMutation = useMutation({
-    mutationFn: (name) => publicEventAction("updateAnnouncement", {
-      id: ann.id,
-      data: { read_by: [...new Set([...(ann.read_by || []), name])] },
+    mutationFn: (name) => base44.entities.Announcement.update(ann.id, {
+      read_by: [...new Set([...(ann.read_by || []), name])],
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements", ann.event_id] });
       queryClient.invalidateQueries({ queryKey: ["announcements-alert", ann.event_id] });
-      queryClient.invalidateQueries({ queryKey: publicEventDataKey(ann.event_id) });
       setShowConfirm(false);
       setConfirmName("");
     },
@@ -448,21 +443,17 @@ function AnnouncementCard({ ann, staffList, onDelete, canEdit }) {
           >
             <CheckCircle2 className="w-3 h-3" />確認を行う
           </button>
-          {canEdit && (
-            <button onClick={() => setShowEdit(true)} className="p-1 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="編集">
-              <Pencil className="w-3.5 h-3.5" />
-            </button>
-          )}
+          <button onClick={() => setShowEdit(true)} className="p-1 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="編集">
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
           {ann.body && (
             <button onClick={() => setExpanded(!expanded)} className="p-1 rounded hover:bg-muted text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title={expanded ? "閉じる" : "詳細を表示"}>
               {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
           )}
-          {canEdit && (
-            <button onClick={() => setShowDeleteConfirm(true)} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="削除">
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
+          <button onClick={() => setShowDeleteConfirm(true)} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="削除">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
@@ -556,7 +547,6 @@ export default function AnnouncementManager({ eventId }) {
   const [notifPermission, setNotifPermission] = useState(
     typeof Notification !== "undefined" ? Notification.permission : "denied"
   );
-  const canEdit = true;
   const queryClient = useQueryClient();
   const prevIdsRef = useRef(new Set());
 
@@ -574,15 +564,14 @@ export default function AnnouncementManager({ eventId }) {
   }, []);
 
   const { data: staffList = [] } = useQuery({
-    queryKey: publicEventDataKey(eventId),
-    queryFn: () => fetchPublicEventData(eventId),
-    select: (data) => data.staff || [],
+    queryKey: ["staff", eventId],
+    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
   });
 
   const { data: announcements = [], isLoading } = useQuery({
-    queryKey: publicEventDataKey(eventId),
-    queryFn: () => fetchPublicEventData(eventId),
-    select: (data) => [...(data.announcements || [])].sort((a, b) => new Date(b.created_date) - new Date(a.created_date)),
+    queryKey: ["announcements", eventId],
+    queryFn: () => base44.entities.Announcement.filter({ event_id: eventId }),
+    select: (d) => d.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)),
     refetchInterval: 15000, // poll every 15s for new announcements
   });
 
@@ -608,11 +597,10 @@ export default function AnnouncementManager({ eventId }) {
   }, [announcements]);
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => publicEventAction("deleteAnnouncement", { id }),
+    mutationFn: (id) => base44.entities.Announcement.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements", eventId] });
       queryClient.invalidateQueries({ queryKey: ["announcements-alert", eventId] });
-      queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
     },
   });
 
@@ -649,11 +637,9 @@ export default function AnnouncementManager({ eventId }) {
               {notifPermission === "denied" ? "通知ブロック中" : "通知を有効にする"}
             </button>
           )}
-          {canEdit && (
-            <Button size="sm" onClick={() => setShowForm(true)} className="gap-1 h-7 text-xs">
-              <Plus className="w-3 h-3" />新規作成
-            </Button>
-          )}
+          <Button size="sm" onClick={() => setShowForm(true)} className="gap-1 h-7 text-xs">
+            <Plus className="w-3 h-3" />新規作成
+          </Button>
         </div>
       </div>
 
@@ -674,7 +660,6 @@ export default function AnnouncementManager({ eventId }) {
               key={ann.id}
               ann={ann}
               staffList={staffList}
-              canEdit={canEdit}
               onDelete={(id) => deleteMutation.mutate(id)}
             />
           ))}

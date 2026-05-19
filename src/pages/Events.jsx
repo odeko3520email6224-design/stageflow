@@ -27,11 +27,7 @@ export default function Events() {
 
   const { data: events = [], isLoading, refetch } = useQuery({
     queryKey: ["events"],
-    queryFn: async () => {
-      const response = await base44.functions.invoke("publicEvents", { action: "list" });
-      if (response.data?.error) throw new Error(response.data.error);
-      return response.data?.events || [];
-    }
+    queryFn: () => base44.entities.Event.list("-created_date")
   });
 
   const { isPulling, pullDistance } = usePullToRefresh(async () => {

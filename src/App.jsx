@@ -12,7 +12,6 @@ import EventDetail from "./pages/EventDetail";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
-  const isPublicRoute = window.location.pathname === "/" || window.location.pathname.startsWith("/events/");
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -25,15 +24,6 @@ const AuthenticatedApp = () => {
 
   // Handle authentication errors
   if (authError) {
-    if (isPublicRoute) {
-      return (
-        <Routes>
-          <Route path="/" element={<Events />} />
-          <Route path="/events/:eventId" element={<EventDetail />} />
-          <Route path="*" element={<PageNotFound />} />
-        </Routes>
-      );
-    }
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {

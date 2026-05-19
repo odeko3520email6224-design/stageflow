@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { fetchPublicEventData, publicEventDataKey } from "@/api/publicEventData";
 import { AlertCircle, ClipboardList, Plus, Download, Users, GripVertical, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PositionCard from "@/components/PositionCard";
@@ -15,36 +14,33 @@ import PresetSelector from "@/components/PresetSelector";
 export default function StaffDragDropManager({ eventId }) {
   const queryClient = useQueryClient();
   const { canEdit } = useUserRole();
-  const isAdmin = canEdit;
+  const isAdmin = canEdit; // admin or chief
 
   const { data: staffList = [] } = useQuery({
-    queryKey: publicEventDataKey(eventId),
-    queryFn: () => fetchPublicEventData(eventId),
-    select: (data) => data.staff || [],
+    queryKey: ["staff", eventId],
+    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
   });
 
   const { data: positions = [] } = useQuery({
-    queryKey: publicEventDataKey(eventId),
-    queryFn: () => fetchPublicEventData(eventId),
-    select: (data) => data.positions || [],
+    queryKey: ["positions", eventId],
+    queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
   });
 
   const { data: event } = useQuery({
-    queryKey: publicEventDataKey(eventId),
-    queryFn: () => fetchPublicEventData(eventId),
-    select: (data) => data.event,
+    queryKey: ["event", eventId],
+    queryFn: () => base44.entities.Event.filter({ id: eventId }),
+    select: (d) => d[0],
   });
 
   const { data: presets = [] } = useQuery({
-    queryKey: publicEventDataKey(eventId),
-    queryFn: () => fetchPublicEventData(eventId),
-    select: (data) => data.positionPresets || [],
+    queryKey: ["positionPresets"],
+    queryFn: () => base44.entities.PositionPreset.list(),
   });
 
   const { data: positionTypes = [] } = useQuery({
-    queryKey: publicEventDataKey(eventId),
-    queryFn: () => fetchPublicEventData(eventId),
-    select: (data) => [...(data.positionTypes || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    queryKey: ["positionTypes"],
+    queryFn: () => base44.entities.PositionType.list(),
+    select: (d) => [...d].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   });
 
   const updatePositionMutation = useMutation({
@@ -62,7 +58,6 @@ export default function StaffDragDropManager({ eventId }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
-      queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
     },
   });
 
@@ -83,7 +78,6 @@ export default function StaffDragDropManager({ eventId }) {
     const slotPositions = positions.filter((p) => (p.time_slot || "開場中") === slot);
     await Promise.all(slotPositions.map((p) => base44.entities.Position.delete(p.id)));
     queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
-    queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
     setConfirmBulkDelete(null);
   };
 
@@ -111,7 +105,6 @@ export default function StaffDragDropManager({ eventId }) {
       })
     ));
     queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
-    queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
   };
 
   const deleteMutation = useMutation({
@@ -125,10 +118,7 @@ export default function StaffDragDropManager({ eventId }) {
     onError: (err, id, context) => {
       queryClient.setQueryData(["positions", eventId], context.previousPositions);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
-      queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positions", eventId] }),
   });
 
   const openAdd = (slot) => { setDefaultSlot(slot); setEditing(null); setShowModal(true); };
@@ -177,6 +167,7 @@ export default function StaffDragDropManager({ eventId }) {
     if (!activePreset) return;
     const currentSlotPositions = activePreset.slot_positions || {};
     // Map position names to positionType ids in new order
+    const { data: positionTypes } = queryClient.getQueryState(["positionTypes"]) || {};
     if (!positionTypes) return;
     const newSlotIds = reorderedPositions.map((pos) => {
       const pt = positionTypes.find((t) => t.name === pos.name);
@@ -243,7 +234,7 @@ export default function StaffDragDropManager({ eventId }) {
           })()}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {isAdmin && <PresetSelector eventId={eventId} compact />}
+          <PresetSelector eventId={eventId} compact />
           <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2" onClick={handleExportPDF} disabled={exportingPDF || positions.length === 0}>
             <Download className="w-3 h-3" />{exportingPDF ? '...' : 'PDF'}
           </Button>
@@ -296,8 +287,8 @@ export default function StaffDragDropManager({ eventId }) {
                       <div key={pos.id}
                         data-pos-id={pos.id}
                         className={`flex items-start gap-1 ${draggingPosId === pos.id ? "opacity-40" : ""} ${dragOverPosId === pos.id ? "ring-2 ring-primary rounded-lg" : ""}`}
-                        onDragOver={isAdmin ? (e) => handlePosDragOver(e, pos.id) : undefined}
-                        onDrop={isAdmin ? (e) => handlePosDrop(e, slot, pos.id) : undefined}
+                        onDragOver={(e) => handlePosDragOver(e, pos.id)}
+                        onDrop={(e) => handlePosDrop(e, slot, pos.id)}
                       >
                         {isAdmin && (
                           <div draggable
@@ -311,26 +302,26 @@ export default function StaffDragDropManager({ eventId }) {
                           <PositionCard
                             pos={pos}
                             isAdmin={isAdmin}
-                            draggable={isAdmin}
+                            draggable={true}
                             draggedStaff={draggedStaff}
-                            onDragOver={isAdmin ? handleDragOver : undefined}
-                            onDrop={isAdmin ? (e) => handleDropOnPosition(e, pos.id) : undefined}
-                            onStaffDragStart={isAdmin ? (e, name, posId) => {
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleDropOnPosition(e, pos.id)}
+                            onStaffDragStart={(e, name, posId) => {
                               handleStaffDragStart(e, name);
                               removeStaffFromPosition(posId, name);
-                            } : undefined}
-                            onStaffRemove={isAdmin ? removeStaffFromPosition : undefined}
-                            onEdit={isAdmin ? (p) => { setEditing(p); setShowModal(true); } : undefined}
-                            onDelete={isAdmin ? (id) => setConfirmDelete({ id, name: pos.name }) : undefined}
+                            }}
+                            onStaffRemove={removeStaffFromPosition}
+                            onEdit={(p) => { setEditing(p); setShowModal(true); }}
+                            onDelete={(id) => setConfirmDelete({ id, name: pos.name })}
                             emptyLabel="スタッフをドラッグして配置"
                             staffList={staffList}
                             requiredCount={pos.required_count ?? 0}
-                            onRequiredCountChange={isAdmin ? (v) => {
+                            onRequiredCountChange={(v) => {
                               queryClient.setQueryData(["positions", eventId], (old) =>
                                 old.map((p) => p.id === pos.id ? { ...p, required_count: v } : p)
                               );
                               base44.entities.Position.update(pos.id, { required_count: v });
-                            } : undefined}
+                            }}
                             occupiedInSlot={[...new Set(
                               slotPositions.filter((p) => p.id !== pos.id).flatMap((p) => p.staff_names || [])
                             )]}
