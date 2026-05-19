@@ -5,7 +5,6 @@ import { Link } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Plus, Calendar, MapPin, ChevronRight, Trash2, Pencil, LogOut, User } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { motion } from "framer-motion";
@@ -28,7 +27,11 @@ export default function Events() {
 
   const { data: events = [], isLoading, refetch } = useQuery({
     queryKey: ["events"],
-    queryFn: () => base44.entities.Event.list("-created_date")
+    queryFn: async () => {
+      const response = await base44.functions.invoke("publicEvents", { action: "list" });
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data?.events || [];
+    }
   });
 
   const { isPulling, pullDistance } = usePullToRefresh(async () => {

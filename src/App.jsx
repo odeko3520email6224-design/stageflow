@@ -25,7 +25,7 @@ const AuthenticatedApp = () => {
 
   // Handle authentication errors
   if (authError) {
-    if (isPublicRoute && (authError.type === 'auth_required' || authError.type === 'user_not_registered')) {
+    if (isPublicRoute) {
       return (
         <Routes>
           <Route path="/" element={<Events />} />

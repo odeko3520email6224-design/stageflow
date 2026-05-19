@@ -57,8 +57,11 @@ export default function EventDetail() {
 
   const { data: event, isLoading, refetch: refetchEvent } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => base44.entities.Event.filter({ id: eventId }),
-    select: (d) => d[0],
+    queryFn: async () => {
+      const response = await base44.functions.invoke("publicEvents", { action: "get", eventId });
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data?.event;
+    },
   });
 
   const { isPulling, pullDistance } = usePullToRefresh(async () => {
