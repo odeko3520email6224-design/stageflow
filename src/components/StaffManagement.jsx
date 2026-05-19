@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { base44 } from "@/api/base44Client";
 import { fetchPublicEventData, publicEventAction, publicEventDataKey } from "@/api/publicEventData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,28 +70,13 @@ function EditModal({ staff, onClose, onSaved }) {
 
 }
 
-export default function StaffManagement({ eventId }) {
+export default function StaffManagement({ eventId, isLoggedIn = false }) {
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
   const [editingStaff, setEditingStaff] = useState(null);
   const [showScrapeModal, setShowScrapeModal] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    let mounted = true;
-    base44.auth.me()
-      .then(() => {
-        if (mounted) setIsLoggedIn(true);
-      })
-      .catch(() => {
-        if (mounted) setIsLoggedIn(false);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const { data: staffList = [], isLoading } = useQuery({
     queryKey: publicEventDataKey(eventId),
@@ -133,6 +117,22 @@ export default function StaffManagement({ eventId }) {
 
   const updateChiefMutation = useMutation({
     mutationFn: (chief_staff_name) => publicEventAction("updateChief", { eventId, chief_staff_name }),
+    onMutate: async (chief_staff_name) => {
+      await queryClient.cancelQueries({ queryKey: publicEventDataKey(eventId) });
+      const previousData = queryClient.getQueryData(publicEventDataKey(eventId));
+      queryClient.setQueryData(publicEventDataKey(eventId), (old) => ({
+        ...(old || {}),
+        event: {
+          ...(old?.event || {}),
+          chief_staff_name,
+        },
+      }));
+      return { previousData };
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(publicEventDataKey(eventId), context?.previousData);
+      toast.error("チーフの保存に失敗しました");
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
       queryClient.invalidateQueries({ queryKey: publicEventDataKey(eventId) });
