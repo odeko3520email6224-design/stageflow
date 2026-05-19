@@ -4,9 +4,8 @@ import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Users, AlertCircle, Pencil, X, Check, UserCog, Download } from "lucide-react";
+import { Plus, Trash2, Users, AlertCircle, Pencil, X, UserCog, Download, ShieldCheck } from "lucide-react";
 import StaffScrapeModal from "@/components/StaffScrapeModal";
-import { useUserRole } from "@/hooks/useUserRole";
 import { TIME_SLOT_STYLES } from "@/lib/constants";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
@@ -89,6 +88,12 @@ export default function StaffManagement({ eventId }) {
     queryFn: () => base44.entities.Position.filter({ event_id: eventId })
   });
 
+  const { data: event } = useQuery({
+    queryKey: ["event", eventId],
+    queryFn: () => base44.entities.Event.filter({ id: eventId }),
+    select: (d) => d[0],
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Staff.create(data),
     onSuccess: () => {
@@ -117,6 +122,13 @@ export default function StaffManagement({ eventId }) {
       queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
     }
+  });
+
+  const updateChiefMutation = useMutation({
+    mutationFn: (chief_staff_name) => base44.entities.Event.update(eventId, { chief_staff_name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+    },
   });
 
   const handleAdd = () => {
@@ -174,6 +186,35 @@ export default function StaffManagement({ eventId }) {
           <Button onClick={handleAdd} disabled={!name.trim() || createMutation.isPending} size="sm" className="gap-0.5 h-8 px-2 shrink-0">
             <Plus className="w-3 h-3" />追加
           </Button>
+        </div>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-2 mb-2">
+        <div className="flex items-center gap-1.5 mb-2">
+          <ShieldCheck className="w-4 h-4 text-primary" />
+          <h3 className="text-xs font-bold">チーフ・システム管理者</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label className="text-[10px] font-medium text-muted-foreground">チーフ</label>
+            <select
+              value={event?.chief_staff_name || ""}
+              onChange={(e) => updateChiefMutation.mutate(e.target.value)}
+              className="mt-1 h-8 w-full rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              disabled={staffList.length === 0 || updateChiefMutation.isPending}
+            >
+              <option value="">未選択</option>
+              {staffList.map((staff) => (
+                <option key={staff.id} value={staff.name}>{staff.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] font-medium text-muted-foreground">システム管理者</label>
+            <div className="mt-1 h-8 rounded-md border border-border bg-muted/40 px-2 flex items-center text-xs font-medium">
+              髙岡 永輝
+            </div>
+          </div>
         </div>
       </div>
 

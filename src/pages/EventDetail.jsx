@@ -77,9 +77,9 @@ export default function EventDetail() {
 
   // userロールは閲覧専用タブのみ表示
   const desktopTabs = [
-    ...(isPrivileged ? [{ id: "staff", label: "スタッフ管理", icon: Users }] : []),
+    { id: "staff", label: "スタッフ管理", icon: Users },
     { id: "dragdrop", label: "配置表", icon: ClipboardList },
-    ...(isPrivileged ? [{ id: "map", label: "会場マップ", icon: MapPin }] : []),
+    { id: "map", label: "会場マップ", icon: MapPin },
     ...(showTimeline ? [{ id: "timeline", label: "タイムライン", icon: Clock }] : []),
     { id: "notice", label: "連絡事項", icon: Bell },
     { id: "tasks", label: "チェックリスト", icon: CheckSquare },

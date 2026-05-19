@@ -37,6 +37,12 @@ export default function StaffDragDropManager({ eventId }) {
     queryFn: () => base44.entities.PositionPreset.list(),
   });
 
+  const { data: positionTypes = [] } = useQuery({
+    queryKey: ["positionTypes"],
+    queryFn: () => base44.entities.PositionType.list(),
+    select: (d) => [...d].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+  });
+
   const updatePositionMutation = useMutation({
     mutationFn: ({ positionId, data }) => base44.entities.Position.update(positionId, data),
     onMutate: async ({ positionId, data }) => {
@@ -73,6 +79,32 @@ export default function StaffDragDropManager({ eventId }) {
     await Promise.all(slotPositions.map((p) => base44.entities.Position.delete(p.id)));
     queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
     setConfirmBulkDelete(null);
+  };
+
+  const getRequiredCountForSlot = (positionType, slot) => {
+    if (slot === TIME_SLOTS[0]) return positionType.required_count_before ?? positionType.required_count ?? 0;
+    if (slot === TIME_SLOTS[1]) return positionType.required_count_during ?? positionType.required_count ?? 0;
+    return positionType.required_count_after ?? positionType.required_count ?? 0;
+  };
+
+  const handleBulkCreatePositions = async (slot) => {
+    const existingNames = new Set((grouped[slot] || []).map((p) => p.name));
+    const targets = positionTypes.filter((pt) => !existingNames.has(pt.name));
+    if (targets.length === 0) return;
+    const startOrder = grouped[slot]?.length || 0;
+    await Promise.all(targets.map((pt, idx) =>
+      base44.entities.Position.create({
+        event_id: eventId,
+        name: pt.name,
+        time_slot: slot,
+        staff_names: [],
+        notes: "",
+        color: pt.color || "#6366f1",
+        required_count: getRequiredCountForSlot(pt, slot),
+        order: startOrder + idx,
+      })
+    ));
+    queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
   };
 
   const deleteMutation = useMutation({
@@ -225,6 +257,12 @@ export default function StaffDragDropManager({ eventId }) {
                 </div>
                 {isAdmin && (
                   <div className="flex items-center gap-1">
+                    <button onClick={() => handleBulkCreatePositions(slot)}
+                      disabled={positionTypes.length === 0}
+                      title="ポジション種別をこの時間帯に一括登録"
+                      className="text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-white/60 dark:bg-white/10 hover:bg-white/90 dark:hover:bg-white/20 text-current transition-colors font-medium select-none disabled:opacity-30 disabled:pointer-events-none">
+                      <Plus className="w-2.5 h-2.5" />一括登録
+                    </button>
                     <button onClick={() => openAdd(slot)}
                       title="ポジションを追加"
                       className="text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-white/60 dark:bg-white/10 hover:bg-white/90 dark:hover:bg-white/20 text-current transition-colors font-medium select-none">
