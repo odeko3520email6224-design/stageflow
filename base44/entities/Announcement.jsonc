@@ -58,5 +58,11 @@
     "event_id",
     "title",
     "body"
-  ]
+  ],
+  "rls": {
+    "create": false,
+    "read": true,
+    "update": false,
+    "delete": false
+  }
 }

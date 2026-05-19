@@ -18,5 +18,11 @@
   "required": [
     "event_id",
     "name"
-  ]
+  ],
+  "rls": {
+    "create": false,
+    "read": true,
+    "update": false,
+    "delete": false
+  }
 }

@@ -59,5 +59,11 @@
     "event_id",
     "name",
     "time_slot"
-  ]
+  ],
+  "rls": {
+    "create": false,
+    "read": true,
+    "update": false,
+    "delete": false
+  }
 }
