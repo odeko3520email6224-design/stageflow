@@ -34,8 +34,10 @@ export default function EventDetail() {
 
   const { isAdmin, isChief, canEdit, canManageSettings, role } = useUserRole();
   const isPrivileged = isAdmin || isChief;
-  const { isAuthenticated, authChecked } = useAuth();
+  const { isAuthenticated, authChecked, authError } = useAuth();
   const [currentUser, setCurrentUser] = useState(null);
+  const userIsLoggedIn = isAuthenticated || Boolean(currentUser);
+  const showLoggedOutBanner = Boolean(authError) || (authChecked && !userIsLoggedIn);
 
   // Timeline feature toggle (persisted in localStorage, default OFF)
   const [showTimeline, setShowTimeline] = useState(() => {
@@ -101,7 +103,7 @@ export default function EventDetail() {
 
       <AnnouncementAlert eventId={eventId} />
 
-      {authChecked && !isAuthenticated && (
+      {showLoggedOutBanner && (
         <div className="border-b border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">
           <div className="max-w-6xl mx-auto px-3 py-2 text-xs leading-relaxed">
             <div className="font-bold">未ログインにつき、機能制限中</div>
@@ -182,7 +184,7 @@ export default function EventDetail() {
             animate="animate"
             exit="exit"
           >
-            {tab === "staff" && <StaffManagement eventId={eventId} isLoggedIn={isAuthenticated} />}
+            {tab === "staff" && <StaffManagement eventId={eventId} isLoggedIn={userIsLoggedIn} />}
             {tab === "dragdrop" && <StaffDragDropManager eventId={eventId} />}
             {tab === "admin" && (
               <PositionTypeManagement

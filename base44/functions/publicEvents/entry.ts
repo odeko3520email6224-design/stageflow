@@ -107,11 +107,6 @@ Deno.serve(async (req) => {
       if (!body.eventId) {
         return Response.json({ error: 'eventId required' }, { status: 400 });
       }
-      try {
-        await base44.auth.me();
-      } catch {
-        return Response.json({ error: 'login required' }, { status: 401 });
-      }
       const event = await base44.asServiceRole.entities.Event.update(body.eventId, {
         chief_staff_name: body.chief_staff_name || '',
       });
