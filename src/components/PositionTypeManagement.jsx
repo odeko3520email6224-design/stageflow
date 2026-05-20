@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
@@ -22,9 +22,12 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
+  const [localDebugEnabled, setLocalDebugEnabled] = useState(null);
   const queryClient = useQueryClient();
   const { canEdit: isAdmin } = useUserRole();
   const { isDark, setIsDark } = useTheme();
+
+  const debugStorageKey = `stageflow:debug-enabled:${eventId}`;
 
   const { data: positionTypes = [], isLoading } = useQuery({
     queryKey: ["positionTypes"],
@@ -42,6 +45,18 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
     queryKey: ["staff", eventId],
     queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
   });
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem(debugStorageKey);
+    setLocalDebugEnabled(saved === null ? null : saved === "true");
+  }, [debugStorageKey]);
+
+  useEffect(() => {
+    if (window.localStorage.getItem(debugStorageKey) === null && typeof event?.debug_enabled === "boolean") {
+      setLocalDebugEnabled(event.debug_enabled);
+      window.localStorage.setItem(debugStorageKey, String(event.debug_enabled));
+    }
+  }, [debugStorageKey, event?.debug_enabled]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.PositionType.create(data),
@@ -71,6 +86,9 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
       return response.data?.event;
     },
     onMutate: async (debug_enabled) => {
+      const previousLocalDebugEnabled = localDebugEnabled;
+      setLocalDebugEnabled(debug_enabled);
+      window.localStorage.setItem(debugStorageKey, String(debug_enabled));
       await queryClient.cancelQueries({ queryKey: ["event", eventId] });
       const previousEvent = queryClient.getQueryData(["event", eventId]);
       queryClient.setQueryData(["event", eventId], (old) => {
@@ -79,14 +97,19 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
         }
         return old ? { ...old, debug_enabled } : old;
       });
-      return { previousEvent };
+      return { previousEvent, previousLocalDebugEnabled };
     },
     onError: (_, __, context) => {
+      const previousDebugEnabled = context?.previousLocalDebugEnabled ??
+        Boolean(context?.previousEvent?.[0]?.debug_enabled ?? context?.previousEvent?.debug_enabled);
+      setLocalDebugEnabled(previousDebugEnabled);
+      window.localStorage.setItem(debugStorageKey, String(previousDebugEnabled));
       queryClient.setQueryData(["event", eventId], context?.previousEvent);
       toast.error("デバッグ設定の保存に失敗しました");
     },
     onSuccess: (_, debug_enabled) => {
-      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      setLocalDebugEnabled(debug_enabled);
+      window.localStorage.setItem(debugStorageKey, String(debug_enabled));
       toast.success(debug_enabled ? "デバッグ機能をONにしました" : "デバッグ機能をOFFにしました");
     },
   });
@@ -96,6 +119,7 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
       const response = await base44.functions.invoke("debugTools", {
         action: "autoPlace",
         eventId: event?.id || eventId,
+        debug_enabled: localDebugEnabled,
       });
       if (response.data?.error) throw new Error(response.data.error);
       return response.data;
@@ -143,7 +167,7 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
     setDraggingId(null); setDragOverId(null);
   };
 
-  const debugEnabled = Boolean(event?.debug_enabled);
+  const debugEnabled = Boolean(localDebugEnabled ?? event?.debug_enabled);
   const canAutoPlace = isAdmin && debugEnabled && positionTypes.length > 0 && staffList.length > 0;
 
   return (

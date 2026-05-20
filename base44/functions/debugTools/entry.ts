@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.Position.filter({ event_id: eventId }),
     ]);
 
-    if (!event?.debug_enabled) {
+    if (!event?.debug_enabled && !body.debug_enabled) {
       return Response.json({ error: 'デバッグ機能がOFFです' }, { status: 400 });
     }
 
