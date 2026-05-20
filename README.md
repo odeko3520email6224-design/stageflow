@@ -28,6 +28,29 @@ VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
 
 Run the app: `npm run dev`
 
+**Run locally against real Base44 data**
+
+Create `.env.local` from `.env.example`:
+
+```
+VITE_BASE44_APP_ID=6a04d375dd2d16805b295b5a
+VITE_BASE44_APP_BASE_URL=https://stage-flow-map.base44.app
+```
+
+Then start the app:
+
+```
+npm run dev
+```
+
+Open the local URL. If login is required, use the app's login button or open the local URL with an `access_token` query parameter issued by Base44:
+
+```
+http://127.0.0.1:5173/?access_token=YOUR_BASE44_ACCESS_TOKEN
+```
+
+Do not commit `.env.local` or access tokens. They are ignored by git.
+
 **Publish your changes**
 
 Open [Base44.com](http://Base44.com) and click on Publish.
