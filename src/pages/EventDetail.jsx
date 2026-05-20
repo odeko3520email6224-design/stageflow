@@ -15,6 +15,7 @@ import AnnouncementAlert from "@/components/AnnouncementAlert";
 import StaffDragDropManager from "@/components/StaffDragDropManager";
 import BottomTabBar from "@/components/BottomTabBar";
 import UserNameEditor, { getUserDisplayName } from "@/components/UserNameEditor";
+import UserRestrictionBanner from "@/components/UserRestrictionBanner";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -184,6 +185,7 @@ export default function EventDetail() {
       </div>
 
       <div className="max-w-6xl mx-auto px-1.5 py-1.5 pb-16 sm:pb-8">
+        <UserRestrictionBanner role={role} />
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={`${tab}-${tabResetKey}`}

@@ -10,6 +10,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { motion } from "framer-motion";
 import EventFormModal from "@/components/EventFormModal";
 import UserNameEditor, { getUserDisplayName } from "@/components/UserNameEditor";
+import UserRestrictionBanner from "@/components/UserRestrictionBanner";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 
@@ -24,7 +25,7 @@ export default function Events() {
   const [editingEvent, setEditingEvent] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const queryClient = useQueryClient();
-  const { canEdit } = useUserRole();
+  const { canEdit, role } = useUserRole();
 
   const { data: events = [], isLoading, refetch } = useQuery({
     queryKey: ["events"],
@@ -75,6 +76,7 @@ export default function Events() {
         </div>
       }
       <div className="max-w-5xl mx-auto px-2 py-2 pb-16 sm:pb-2">
+      <UserRestrictionBanner role={role} />
       {/* Header */}
       <div className="mb-2">
         {/* Row 1: Title */}
