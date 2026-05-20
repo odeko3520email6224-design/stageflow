@@ -16,6 +16,7 @@ import StaffDragDropManager from "@/components/StaffDragDropManager";
 import BottomTabBar from "@/components/BottomTabBar";
 import UserNameEditor, { getUserDisplayName } from "@/components/UserNameEditor";
 import UserRestrictionBanner from "@/components/UserRestrictionBanner";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -203,7 +204,11 @@ export default function EventDetail() {
                 onToggleTimeline={handleToggleTimeline}
               />
             )}
-            {tab === "map" && <VenueMap eventId={eventId} />}
+            {tab === "map" && (
+              <ErrorBoundary resetKey={`${eventId}:map`} label="VenueMap" title="会場マップを表示できませんでした">
+                <VenueMap eventId={eventId} />
+              </ErrorBoundary>
+            )}
             {tab === "timeline" && canShowTimeline && <StaffTimeline eventId={eventId} />}
             {tab === "notice" && <AnnouncementManager eventId={eventId} />}
             {tab === "tasks" && <TaskChecklist eventId={eventId} />}

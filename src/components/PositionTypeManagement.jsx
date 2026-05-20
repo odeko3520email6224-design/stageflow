@@ -144,8 +144,21 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
       required_count_before: 0,
       required_count_during: 0,
       required_count_after: 0,
+      split_by_side: false,
       order: maxOrder + 1,
     });
+  };
+
+  const handleToggleSplitBySide = (positionType, splitBySide) => {
+    queryClient.setQueryData(["positionTypes"], (old = []) =>
+      old.map((pt) => pt.id === positionType.id ? { ...pt, split_by_side: splitBySide } : pt)
+    );
+    base44.entities.PositionType.update(positionType.id, { split_by_side: splitBySide })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["positionTypes"] }))
+      .catch(() => {
+        queryClient.invalidateQueries({ queryKey: ["positionTypes"] });
+        toast.error("上手・下手設定の保存に失敗しました");
+      });
   };
 
   const handleKeyDown = (e) => {
@@ -300,7 +313,17 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
                   </div>
                 )}
                 <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: pt.color || "#6366f1" }} />
-                <span className="font-medium text-xs flex-1">{pt.name}</span>
+                <span className="font-medium text-xs flex-1 min-w-0 truncate">{pt.name}</span>
+                <label className="flex items-center gap-1 text-[10px] text-muted-foreground shrink-0 select-none">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(pt.split_by_side)}
+                    onChange={(e) => handleToggleSplitBySide(pt, e.target.checked)}
+                    disabled={!isAdmin}
+                    className="w-3 h-3 accent-primary disabled:opacity-40"
+                  />
+                  上手/下手
+                </label>
                 <button onClick={() => setConfirmDelete({ id: pt.id, name: pt.name })} disabled={!isAdmin}
                   className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors disabled:opacity-30 disabled:pointer-events-none">
                   <Trash2 className="w-3.5 h-3.5" />

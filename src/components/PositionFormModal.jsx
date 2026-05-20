@@ -19,6 +19,9 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
     name: position?.name || "",
     time_slot: position?.time_slot || defaultTimeSlot,
     staff_names: position?.staff_names || [],
+    staff_names_kamite: position?.staff_names_kamite || [],
+    staff_names_shimote: position?.staff_names_shimote || [],
+    split_by_side: Boolean(position?.split_by_side),
     notes: position?.notes || "",
     color: position?.color || PRESET_COLORS[0],
     map_x: position?.map_x ?? null,
@@ -58,7 +61,11 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
     prev.name !== cur.name || prev.notes !== cur.notes;
   const isNonTextChange = (prev, cur) =>
     prev.time_slot !== cur.time_slot ||
-    prev.staff_names !== cur.staff_names || prev.color !== cur.color;
+    prev.staff_names !== cur.staff_names ||
+    prev.staff_names_kamite !== cur.staff_names_kamite ||
+    prev.staff_names_shimote !== cur.staff_names_shimote ||
+    prev.split_by_side !== cur.split_by_side ||
+    prev.color !== cur.color;
 
   useEffect(() => {
     if (!position) return;
@@ -79,8 +86,21 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
     return () => clearTimeout(timer);
   }, [form]);
 
-  const toggleStaff = (staffName) => {
+  const toggleStaff = (staffName, side = null) => {
     setForm((f) => {
+      if (f.split_by_side && side) {
+        const targetKey = side === "kamite" ? "staff_names_kamite" : "staff_names_shimote";
+        const otherKey = side === "kamite" ? "staff_names_shimote" : "staff_names_kamite";
+        const exists = f[targetKey].includes(staffName);
+        const nextTarget = exists ? f[targetKey].filter((n) => n !== staffName) : [...f[targetKey], staffName];
+        const nextOther = f[otherKey].filter((n) => n !== staffName);
+        return {
+          ...f,
+          [targetKey]: nextTarget,
+          [otherKey]: nextOther,
+          staff_names: [...new Set([...nextTarget, ...nextOther])],
+        };
+      }
       const exists = f.staff_names.includes(staffName);
       return {
         ...f,
@@ -93,7 +113,12 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
 
   const handlePositionTypeSelect = (ptId) => {
     const pt = positionTypes.find((p) => p.id === ptId);
-    if (pt) setForm((f) => ({ ...f, name: pt.name, color: pt.color || f.color }));
+    if (pt) setForm((f) => ({
+      ...f,
+      name: pt.name,
+      color: pt.color || f.color,
+      split_by_side: Boolean(pt.split_by_side),
+    }));
   };
 
   return (
@@ -123,6 +148,37 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
             <Label>ポジション</Label>
             {positionTypes.length === 0 ? (
               <p className="text-xs text-muted-foreground mt-1">管理タブでポジションを登録してください</p>
+            ) : form.split_by_side ? (
+              <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  { key: "kamite", label: "上手", selected: form.staff_names_kamite },
+                  { key: "shimote", label: "下手", selected: form.staff_names_shimote },
+                ].map((side) => (
+                  <div key={side.key} className="border border-border rounded-lg overflow-hidden max-h-44 overflow-y-auto">
+                    <div className="sticky top-0 bg-muted px-3 py-1 text-xs font-bold">{side.label}</div>
+                    {staffList.map((staff) => {
+                      const selected = side.selected.includes(staff.name);
+                      return (
+                        <button
+                          key={`${side.key}-${staff.id}`}
+                          type="button"
+                          onClick={() => toggleStaff(staff.name, side.key)}
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left border-b border-border/50 last:border-b-0 transition-colors ${
+                            selected ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/50"
+                          }`}
+                        >
+                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${
+                            selected ? "bg-primary border-primary" : "border-border"
+                          }`}>
+                            {selected && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                          </div>
+                          <span className="min-w-0 truncate">{staff.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
             ) : (
               <ResponsiveSelect
                 value={positionTypes.find((pt) => pt.name === form.name)?.id || ""}

@@ -28,6 +28,27 @@
       "description": "\u62c5\u5f53\u30b9\u30bf\u30c3\u30d5\u540d\u30ea\u30b9\u30c8",
       "default": []
     },
+    "staff_names_kamite": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "\u4e0a\u624b\u5074\u306e\u62c5\u5f53\u30b9\u30bf\u30c3\u30d5\u540d\u30ea\u30b9\u30c8",
+      "default": []
+    },
+    "staff_names_shimote": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "\u4e0b\u624b\u5074\u306e\u62c5\u5f53\u30b9\u30bf\u30c3\u30d5\u540d\u30ea\u30b9\u30c8",
+      "default": []
+    },
+    "split_by_side": {
+      "type": "boolean",
+      "description": "\u4e0a\u624b\u30fb\u4e0b\u624b\u3067\u30b9\u30bf\u30c3\u30d5\u914d\u7f6e\u3092\u5206\u3051\u308b",
+      "default": false
+    },
     "notes": {
       "type": "string",
       "description": "\u5099\u8003"

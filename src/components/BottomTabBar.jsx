@@ -30,19 +30,19 @@ export default function BottomTabBar({ activeTab, onTabChange, onActiveTabReset,
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 safe-area-bottom">
-      <div className="flex items-stretch justify-around h-12">
+      <div className="flex items-stretch justify-around min-h-12">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => handleTabClick(id)}
-            className={`flex flex-col items-center justify-center flex-1 gap-0.5 transition-colors focus-visible:outline-none select-none ${
+            className={`flex min-w-0 flex-col items-center justify-center flex-1 gap-0.5 px-0.5 py-1 transition-colors focus-visible:outline-none select-none ${
               activeTab === id ? "text-primary" : "text-muted-foreground"
             }`}
             aria-current={activeTab === id ? "page" : undefined}
             aria-label={label}
           >
             <Icon className="w-4 h-4 shrink-0" />
-            <span className="text-[9px] font-medium leading-none">{label}</span>
+            <span className="max-w-full truncate text-[9px] font-medium leading-none">{label}</span>
           </button>
         ))}
       </div>

@@ -31,6 +31,11 @@
       "description": "\u7d42\u6f14\u5f8c\u306e\u5fc5\u8981\u4eba\u6570",
       "default": 0
     },
+    "split_by_side": {
+      "type": "boolean",
+      "description": "\u4e0a\u624b\u30fb\u4e0b\u624b\u3067\u30b9\u30bf\u30c3\u30d5\u914d\u7f6e\u3092\u5206\u3051\u308b",
+      "default": false
+    },
     "order": {
       "type": "number",
       "description": "\u8868\u793a\u9806",

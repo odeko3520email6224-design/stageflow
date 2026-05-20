@@ -4,12 +4,15 @@ import { getStaffDisplayName } from "@/lib/staffName";
 export default function PositionCard({
   pos, isAdmin, draggable = false, draggedStaff = null,
   onEdit, onDelete, onDragOver, onDrop, onStaffDragStart, onStaffRemove,
-  onStaffEdit,
+  onStaffEdit, onDropSide,
   emptyLabel = "スタッフ未登録", staffList = [],
   requiredCount = 0, onRequiredCountChange, occupiedInSlot = [],
   maskStaffNames = false,
 }) {
-  const staffNames = pos.staff_names || [];
+  const splitBySide = Boolean(pos.split_by_side);
+  const kamiteStaffNames = pos.staff_names_kamite || [];
+  const shimoteStaffNames = pos.staff_names_shimote || [];
+  const staffNames = splitBySide ? [...new Set([...kamiteStaffNames, ...shimoteStaffNames])] : (pos.staff_names || []);
   const assignedCount = staffNames.length;
   const diff = requiredCount > 0 ? requiredCount - assignedCount : null;
 
@@ -49,7 +52,56 @@ export default function PositionCard({
       </div>
 
       <div className="divide-y divide-border/40">
-        {staffNames.length > 0 ? staffNames.map((name, i) => {
+        {splitBySide ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
+            {[
+              { key: "kamite", label: "上手", names: kamiteStaffNames },
+              { key: "shimote", label: "下手", names: shimoteStaffNames },
+            ].map((side) => (
+              <div
+                key={side.key}
+                onDragOver={onDragOver}
+                onDrop={onDropSide ? (e) => onDropSide(e, side.key) : undefined}
+                className="min-h-14"
+              >
+                <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground bg-muted/30">{side.label}</div>
+                {side.names.length > 0 ? side.names.map((name, i) => {
+                  const staffData = staffList.find((s) => s.name === name);
+                  const displayName = getStaffDisplayName(name, maskStaffNames);
+                  return (
+                    <div key={`${pos.id}-${side.key}-${name}-${i}`}
+                      draggable={draggable && isAdmin}
+                      onDragStart={draggable && isAdmin && onStaffDragStart ? (e) => onStaffDragStart(e, name, pos.id) : undefined}
+                      className={["flex items-center justify-between gap-2 px-2 py-0.5 select-none",
+                        draggable && isAdmin ? "cursor-move hover:bg-muted/50" : "",
+                        draggable && draggedStaff === name ? "opacity-50" : ""].join(" ")}>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs text-foreground">{displayName}</span>
+                        {staffData?.note && <span className="text-[10px] text-muted-foreground ml-1.5">({staffData.note})</span>}
+                      </div>
+                      {isAdmin && (onStaffEdit || onStaffRemove) && (
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          {onStaffEdit && staffData && (
+                            <button onClick={() => onStaffEdit(staffData)} className="p-1 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors" title="スタッフ編集">
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                          )}
+                          {onStaffRemove && (
+                            <button onClick={() => onStaffRemove(pos.id, name)} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors" title="配置から外す">
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }) : (
+                  <div className="px-2 py-2 text-[11px] text-muted-foreground">{emptyLabel}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : staffNames.length > 0 ? staffNames.map((name, i) => {
           const staffData = staffList.find((s) => s.name === name);
           const displayName = getStaffDisplayName(name, maskStaffNames);
           return (

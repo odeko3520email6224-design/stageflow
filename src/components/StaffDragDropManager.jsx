@@ -101,6 +101,9 @@ export default function StaffDragDropManager({ eventId }) {
         name: pt.name,
         time_slot: slot,
         staff_names: [],
+        staff_names_kamite: [],
+        staff_names_shimote: [],
+        split_by_side: Boolean(pt.split_by_side),
         notes: "",
         color: pt.color || "#6366f1",
         required_count: getRequiredCountForSlot(pt, slot),
@@ -132,23 +135,43 @@ export default function StaffDragDropManager({ eventId }) {
   };
   const handleDragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; };
 
-  const assignStaffToPosition = useCallback((staffName, positionId) => {
+  const assignStaffToPosition = useCallback((staffName, positionId, side = null) => {
     const position = positions.find((p) => p.id === positionId);
     if (!position) return;
     const currentStaffNames = position.staff_names || [];
-    if (currentStaffNames.includes(staffName)) return;
+    const kamite = position.staff_names_kamite || [];
+    const shimote = position.staff_names_shimote || [];
+    if (currentStaffNames.includes(staffName) && (!position.split_by_side || !side)) return;
     const slot = position.time_slot || "開場中";
     const alreadyInSlot = positions.some(
       (p) => p.id !== positionId && (p.time_slot || "開場中") === slot && (p.staff_names || []).includes(staffName)
     );
     if (alreadyInSlot) return;
-    updatePositionMutation.mutate({ positionId, data: { staff_names: [...currentStaffNames, staffName] } });
+    const nextKamite = side === "kamite" ? [...new Set([...kamite, staffName])] : kamite.filter((n) => n !== staffName);
+    const nextShimote = side === "shimote" ? [...new Set([...shimote, staffName])] : shimote.filter((n) => n !== staffName);
+    const nextStaffNames = position.split_by_side
+      ? [...new Set([...nextKamite, ...nextShimote])]
+      : [...new Set([...currentStaffNames, staffName])];
+    updatePositionMutation.mutate({
+      positionId,
+      data: {
+        staff_names: nextStaffNames,
+        ...(position.split_by_side ? { staff_names_kamite: nextKamite, staff_names_shimote: nextShimote } : {}),
+      },
+    });
   }, [positions, updatePositionMutation]);
 
   const handleDropOnPosition = (e, positionId) => {
     e.preventDefault();
     if (!draggedStaff) return;
     assignStaffToPosition(draggedStaff, positionId);
+    setDraggedStaff(null);
+  };
+
+  const handleDropOnPositionSide = (e, positionId, side) => {
+    e.preventDefault();
+    if (!draggedStaff) return;
+    assignStaffToPosition(draggedStaff, positionId, side);
     setDraggedStaff(null);
   };
 
@@ -159,7 +182,11 @@ export default function StaffDragDropManager({ eventId }) {
     if (!position) return;
     updatePositionMutation.mutate({
       positionId,
-      data: { staff_names: (position.staff_names || []).filter((n) => n !== staffName) },
+      data: {
+        staff_names: (position.staff_names || []).filter((n) => n !== staffName),
+        staff_names_kamite: (position.staff_names_kamite || []).filter((n) => n !== staffName),
+        staff_names_shimote: (position.staff_names_shimote || []).filter((n) => n !== staffName),
+      },
     });
   };
 
@@ -329,6 +356,7 @@ export default function StaffDragDropManager({ eventId }) {
                             draggedStaff={draggedStaff}
                             onDragOver={handleDragOver}
                             onDrop={(e) => handleDropOnPosition(e, pos.id)}
+                            onDropSide={(e, side) => handleDropOnPositionSide(e, pos.id, side)}
                             onStaffDragStart={(e, name, posId) => {
                               handleStaffDragStart(e, name);
                               removeStaffFromPosition(posId, name);

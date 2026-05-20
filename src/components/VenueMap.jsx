@@ -72,13 +72,11 @@ async function saveVenueMapAssets(eventId, { map_pdf_url, map_image_url }) {
 }
 
 async function loadVenueMapAsset(eventId) {
-  const [assetResult, fallbackResult] = await Promise.allSettled([
-    base44.entities.VenueMapAsset?.filter({ event_id: eventId }),
+  const [fallbackResult] = await Promise.allSettled([
     base44.entities.MapTemplate.filter({ name: `${VENUE_MAP_FALLBACK_PREFIX}:${eventId}` }),
   ]);
-  const asset = assetResult.status === "fulfilled" ? assetResult.value?.[0] : null;
   const fallback = fallbackResult.status === "fulfilled" ? fallbackResult.value?.[0]?.areas?.[0] : null;
-  return asset || fallback || null;
+  return fallback || null;
 }
 
 function getPinColor(pos) {
