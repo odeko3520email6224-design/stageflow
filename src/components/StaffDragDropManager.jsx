@@ -11,6 +11,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import { getStaffDisplayName } from "@/lib/staffName";
+import { unwrapFunctionResponse } from "@/lib/base44Response";
 import PresetSelector from "@/components/PresetSelector";
 import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 
@@ -72,8 +73,9 @@ export default function StaffDragDropManager({ eventId }) {
           positionId,
           ...data,
         });
-        if (response.data?.error) throw new Error(response.data.error);
-        return response.data?.position;
+        const payload = unwrapFunctionResponse(response);
+        if (payload?.error) throw new Error(payload.error);
+        return payload?.position;
       }
       return base44.entities.Position.update(positionId, data);
     },

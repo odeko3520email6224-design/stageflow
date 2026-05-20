@@ -6,6 +6,7 @@ import { AlertCircle, Download, FileText, Loader2, Map, MapPin, Move, Upload, X 
 import { useUserRole } from "@/hooks/useUserRole";
 import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 import { getStaffDisplayName } from "@/lib/staffName";
+import { unwrapFunctionResponse } from "@/lib/base44Response";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorkerSource from "@/lib/pdfWorkerSource";
 
@@ -67,11 +68,12 @@ async function saveVenueMapAssets(eventId, { map_pdf_url, map_image_url }) {
     map_pdf_url,
     map_image_url,
   });
-  if (response.data?.error) throw new Error(response.data.error);
-  if ((map_pdf_url || map_image_url) && !response.data?.asset?.map_image_url && !response.data?.asset?.map_pdf_url) {
+  const payload = unwrapFunctionResponse(response);
+  if (payload?.error) throw new Error(payload.error);
+  if ((map_pdf_url || map_image_url) && !payload?.asset?.map_image_url && !payload?.asset?.map_pdf_url) {
     throw new Error("会場マップの保存結果を確認できませんでした");
   }
-  return response.data;
+  return payload;
 }
 
 async function loadVenueMapAsset(eventId) {
@@ -81,7 +83,7 @@ async function loadVenueMapAsset(eventId) {
     base44.entities.MapTemplate.list(),
   ]);
   if (functionResult.status === "fulfilled") {
-    const payload = functionResult.value?.data;
+    const payload = unwrapFunctionResponse(functionResult.value);
     if (payload?.error) throw new Error(payload.error);
     if (payload?.asset?.map_image_url || payload?.asset?.map_pdf_url) {
       return payload.asset;

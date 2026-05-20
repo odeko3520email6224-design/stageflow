@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Eye, Pencil, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
+import { unwrapFunctionResponse } from "@/lib/base44Response";
 
 const modeEventName = "stageflow:event-mode-change";
 const normalizeMode = (mode) => (mode === "public" || mode === "edit" ? mode : "edit");
@@ -51,8 +52,9 @@ export function ModeVisibilityControls({ eventId, field, mode = "edit", canManag
         field,
         mode: nextMode,
       });
-      if (response.data?.error) throw new Error(response.data.error);
-      return response.data?.event;
+      const payload = unwrapFunctionResponse(response);
+      if (payload?.error) throw new Error(payload.error);
+      return payload?.event;
     },
     onMutate: async (nextMode) => {
       rememberMode(eventId, field, nextMode);

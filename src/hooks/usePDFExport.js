@@ -14,8 +14,8 @@ export function usePDFExport(eventId, type, filename) {
     setExporting(true);
     try {
       const response = await base44.functions.invoke("exportPositionPDF", { eventId, type });
-      if (response.data.error) {
-        alert("エラー: " + response.data.error);
+      if (payload.error) {
+        alert("エラー: " + payload.error);
         return;
       }
 
@@ -25,7 +25,7 @@ export function usePDFExport(eventId, type, filename) {
       container.style.top = "-9999px";
       container.style.width = "297mm";
       container.style.backgroundColor = "white";
-      container.innerHTML = response.data.html;
+      container.innerHTML = payload.html;
       document.body.appendChild(container);
 
       await new Promise((resolve) => setTimeout(resolve, 1500));

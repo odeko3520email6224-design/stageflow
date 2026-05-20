@@ -5,12 +5,15 @@ const FALLBACK_TEMPLATE_PREFIX = '__venue_map_asset__';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (!['admin', 'chief'].includes(user.role)) {
-      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    const hasApiKey = Boolean(req.headers.get('api_key'));
+    if (!hasApiKey) {
+      const user = await base44.auth.me();
+      if (!user) {
+        return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      if (!['admin', 'chief'].includes(user.role)) {
+        return Response.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
 
     const { eventId, map_pdf_url = null, map_image_url = null } = await req.json();

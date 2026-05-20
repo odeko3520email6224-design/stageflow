@@ -13,9 +13,12 @@ const sortByOrder = (a: Record<string, any>, b: Record<string, any>) => (a.order
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const hasApiKey = Boolean(req.headers.get('api_key'));
+    if (!hasApiKey) {
+      const user = await base44.auth.me();
+      if (!user) {
+        return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     const body = await req.json().catch(() => ({}));

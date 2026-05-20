@@ -11,6 +11,7 @@ import { TIME_SLOT_STYLES } from "@/lib/constants";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getStaffDisplayName } from "@/lib/staffName";
+import { unwrapFunctionResponse } from "@/lib/base44Response";
 import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 
 export default function StaffManagement({ eventId }) {
@@ -121,8 +122,9 @@ export default function StaffManagement({ eventId }) {
         eventId: event?.id || eventId,
         chief_staff_name,
       });
-      if (response.data?.error) throw new Error(response.data.error);
-      return response.data?.event;
+      const payload = unwrapFunctionResponse(response);
+      if (payload?.error) throw new Error(payload.error);
+      return payload?.event;
     },
     onMutate: async (chief_staff_name) => {
       await queryClient.cancelQueries({ queryKey: ["event", eventId] });

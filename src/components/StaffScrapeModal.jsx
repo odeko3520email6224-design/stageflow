@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { X, Download, Loader2, CheckCircle2, AlertCircle, ChevronLeft } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { unwrapFunctionResponse } from "@/lib/base44Response";
 
 export default function StaffScrapeModal({ eventId, onClose }) {
   const [url, setUrl] = useState("");
@@ -28,7 +29,7 @@ export default function StaffScrapeModal({ eventId, onClose }) {
 
     try {
       const res = await base44.functions.invoke("scrapeStaffNames", { url: url.trim(), eventId });
-      const data = res.data;
+      const data = unwrapFunctionResponse(res);
       if (data.error) {
         setError(data.error);
       } else if (!data.staffList || data.staffList.length === 0) {
@@ -67,7 +68,7 @@ export default function StaffScrapeModal({ eventId, onClose }) {
         eventId,
         selectedNames,
       });
-      const data = res.data;
+      const data = unwrapFunctionResponse(res);
       if (data.error) {
         setError(data.error);
       } else {

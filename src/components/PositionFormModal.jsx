@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ResponsiveSelect } from "@/components/ui/responsive-select";
+import { unwrapFunctionResponse } from "@/lib/base44Response";
 import { X, Check } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -51,8 +52,9 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
           positionId: position.id,
           ...data,
         });
-        if (response.data?.error) throw new Error(response.data.error);
-        return response.data?.position;
+        const payload = unwrapFunctionResponse(response);
+        if (payload?.error) throw new Error(payload.error);
+        return payload?.position;
       }
       return base44.entities.Position.create(data);
     },

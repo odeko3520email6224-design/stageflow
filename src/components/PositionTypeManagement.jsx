@@ -9,6 +9,7 @@ import MapTemplateManagement from "@/components/MapTemplateManagement";
 import PositionPresetManager from "@/components/PositionPresetManager";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTheme } from "@/lib/ThemeProvider";
+import { unwrapFunctionResponse } from "@/lib/base44Response";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 const PRESET_COLORS = [
@@ -88,8 +89,9 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
         eventId: event?.id || eventId,
         debug_enabled,
       });
-      if (response.data?.error) throw new Error(response.data.error);
-      return response.data?.event;
+      const payload = unwrapFunctionResponse(response);
+      if (payload?.error) throw new Error(payload.error);
+      return payload?.event;
     },
     onMutate: async (debug_enabled) => {
       const previousLocalDebugEnabled = localDebugEnabled;
@@ -127,8 +129,9 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
         eventId: event?.id || eventId,
         debug_enabled: localDebugEnabled,
       });
-      if (response.data?.error) throw new Error(response.data.error);
-      return response.data;
+      const payload = unwrapFunctionResponse(response);
+      if (payload?.error) throw new Error(payload.error);
+      return payload;
     },
     onError: (error) => {
       toast.error(error.message || "自動配置に失敗しました");
@@ -177,8 +180,9 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
       split_by_side: splitBySide,
     })
       .then((response) => {
-        if (response.data?.error) throw new Error(response.data.error);
-        return response.data;
+        const payload = unwrapFunctionResponse(response);
+        if (payload?.error) throw new Error(payload.error);
+        return payload;
       })
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ["positionTypes"] });
