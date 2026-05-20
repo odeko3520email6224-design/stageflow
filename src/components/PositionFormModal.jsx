@@ -13,6 +13,7 @@ import {
   loadPositionSideSettings,
   rememberPositionSideSettings,
 } from "@/lib/positionSideSettings";
+import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
 import { X, Check } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -39,18 +40,21 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
     queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   // PositionType list for name selection (global, not event-specific)
   const { data: rawPositionTypes = [] } = useQuery({
     queryKey: ["positionTypes"],
     queryFn: () => base44.entities.PositionType.list(),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: sideSettings } = useQuery({
     queryKey: ["positionSideSettings", eventId],
     queryFn: () => loadPositionSideSettings(base44, eventId),
     staleTime: 30_000,
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const positionTypes = applyPositionSideSettingsToTypes(rawPositionTypes, sideSettings);

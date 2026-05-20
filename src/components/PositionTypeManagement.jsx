@@ -11,6 +11,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useTheme } from "@/lib/ThemeProvider";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
 import { loadEventById } from "@/lib/eventLoader";
+import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
 import {
   applyPositionSideSettingsToTypes,
   loadPositionSideSettings,
@@ -41,12 +42,14 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
     queryKey: ["positionTypes"],
     queryFn: () => base44.entities.PositionType.list(),
     select: (d) => [...d].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: sideSettings } = useQuery({
     queryKey: ["positionSideSettings", eventId],
     queryFn: () => loadPositionSideSettings(base44, eventId),
     staleTime: 30_000,
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const positionTypes = applyPositionSideSettingsToTypes(rawPositionTypes, sideSettings);
@@ -54,16 +57,19 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
     queryFn: () => loadEventById(eventId),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
     queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
     queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   useEffect(() => {

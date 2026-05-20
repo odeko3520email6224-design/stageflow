@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Map, Save, Zap, X } from "lucide-react";
+import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
 
 export default function MapTemplateManagement({ eventId }) {
   const [newName, setNewName] = useState("");
@@ -18,11 +19,13 @@ export default function MapTemplateManagement({ eventId }) {
       const items = await base44.entities.MapTemplate.list("-created_date");
       return items.filter((item) => !item.name?.startsWith("__venue_map_asset__:"));
     },
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: currentAreas = [] } = useQuery({
     queryKey: ["mapareas", eventId],
     queryFn: () => base44.entities.MapArea.filter({ event_id: eventId }, "order"),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const deleteTemplate = useMutation({

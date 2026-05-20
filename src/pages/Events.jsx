@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import EventFormModal from "@/components/EventFormModal";
 import UserNameEditor, { getUserDisplayName } from "@/components/UserNameEditor";
 import UserRestrictionBanner from "@/components/UserRestrictionBanner";
+import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 
@@ -29,7 +30,8 @@ export default function Events() {
 
   const { data: events = [], isLoading, refetch } = useQuery({
     queryKey: ["events"],
-    queryFn: () => base44.entities.Event.list("-created_date")
+    queryFn: () => base44.entities.Event.list("-created_date"),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { isPulling, pullDistance } = usePullToRefresh(async () => {

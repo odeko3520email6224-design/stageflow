@@ -10,6 +10,7 @@ import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import { getStaffDisplayName } from "@/lib/staffName";
 import { loadEventById } from "@/lib/eventLoader";
+import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
 
 export default function StaffList({ eventId }) {
   const [showModal, setShowModal] = useState(false);
@@ -23,16 +24,19 @@ export default function StaffList({ eventId }) {
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
     queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: positions = [], isLoading } = useQuery({
     queryKey: ["positions", eventId],
     queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
     queryFn: () => loadEventById(eventId),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: activePreset } = useQuery({
@@ -40,6 +44,7 @@ export default function StaffList({ eventId }) {
     queryFn: () => base44.entities.PositionPreset.filter({ id: event.active_preset_id }),
     enabled: !!event?.active_preset_id,
     select: (d) => d[0],
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const deleteMutation = useMutation({

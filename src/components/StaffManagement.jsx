@@ -13,6 +13,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { getStaffDisplayName } from "@/lib/staffName";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
 import { loadEventById } from "@/lib/eventLoader";
+import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
 import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 
 export default function StaffManagement({ eventId }) {
@@ -29,17 +30,20 @@ export default function StaffManagement({ eventId }) {
 
   const { data: staffList = [], isLoading } = useQuery({
     queryKey: ["staff", eventId],
-    queryFn: () => base44.entities.Staff.filter({ event_id: eventId })
+    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
-    queryFn: () => base44.entities.Position.filter({ event_id: eventId })
+    queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
     queryFn: () => loadEventById(eventId),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   useEffect(() => {

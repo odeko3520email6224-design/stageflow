@@ -1,7 +1,8 @@
 import { base44 } from "@/api/base44Client";
 import { appParams } from "@/lib/app-params";
+import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
 
-export const EVENT_MODE_REFETCH_INTERVAL = 3000;
+export const EVENT_MODE_REFETCH_INTERVAL = LIVE_SYNC_INTERVAL;
 export const EVENT_MODE_TEMPLATE_PREFIX = "__event_modes__";
 export const EVENT_MODE_FIELDS = ["staff_management_mode", "assignment_mode", "venue_map_mode"];
 

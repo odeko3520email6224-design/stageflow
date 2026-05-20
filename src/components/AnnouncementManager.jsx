@@ -10,6 +10,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { motion } from "framer-motion";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getStaffDisplayName } from "@/lib/staffName";
+import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
 
 const PRIORITY_STYLES = {
   "通常": { badge: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700", icon: Bell },
@@ -649,13 +650,14 @@ export default function AnnouncementManager({ eventId }) {
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
     queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: announcements = [], isLoading } = useQuery({
     queryKey: ["announcements", eventId],
     queryFn: () => base44.entities.Announcement.filter({ event_id: eventId }),
     select: (d) => d.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)),
-    refetchInterval: 3000,
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   // Fire browser notification for new announcements

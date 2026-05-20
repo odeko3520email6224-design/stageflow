@@ -4,6 +4,7 @@ import { Clock, CalendarClock } from "lucide-react";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getStaffDisplayName } from "@/lib/staffName";
+import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
 
 export default function StaffTimeline({ eventId }) {
   const { role } = useUserRole();
@@ -12,11 +13,13 @@ export default function StaffTimeline({ eventId }) {
   const { data: positions = [], isLoading: loadingPos } = useQuery({
     queryKey: ["positions", eventId],
     queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: staffList = [], isLoading: loadingStaff } = useQuery({
     queryKey: ["staff", eventId],
     queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   if (loadingPos || loadingStaff) {

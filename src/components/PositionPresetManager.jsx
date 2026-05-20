@@ -9,6 +9,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { loadEventById } from "@/lib/eventLoader";
+import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
 
 function SlotPositionSelector({ slot, selectedIds, positionTypes, onChange }) {
   const style = TIME_SLOT_STYLES[slot];
@@ -219,9 +220,9 @@ export default function PositionPresetManager({ eventId }) {
   const queryClient = useQueryClient();
   const { canEdit: isAdmin } = useUserRole();
 
-  const { data: presets = [], isLoading } = useQuery({ queryKey: ["positionPresets"], queryFn: () => base44.entities.PositionPreset.list() });
-  const { data: positionTypes = [] } = useQuery({ queryKey: ["positionTypes"], queryFn: () => base44.entities.PositionType.list() });
-  const { data: event } = useQuery({ queryKey: ["event", eventId], queryFn: () => loadEventById(eventId) });
+  const { data: presets = [], isLoading } = useQuery({ queryKey: ["positionPresets"], queryFn: () => base44.entities.PositionPreset.list(), refetchInterval: LIVE_SYNC_INTERVAL });
+  const { data: positionTypes = [] } = useQuery({ queryKey: ["positionTypes"], queryFn: () => base44.entities.PositionType.list(), refetchInterval: LIVE_SYNC_INTERVAL });
+  const { data: event } = useQuery({ queryKey: ["event", eventId], queryFn: () => loadEventById(eventId), refetchInterval: LIVE_SYNC_INTERVAL });
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.PositionPreset.create(data),

@@ -5,6 +5,7 @@ import { CheckSquare, Square, Plus, Trash2, Pencil, Check, X, ClipboardCheck } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
 
 export default function TaskChecklist({ eventId }) {
   const queryClient = useQueryClient();
@@ -21,6 +22,7 @@ export default function TaskChecklist({ eventId }) {
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ["tasks", eventId],
     queryFn: () => base44.entities.Task.filter({ event_id: eventId }, "order"),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const createMutation = useMutation({

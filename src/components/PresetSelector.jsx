@@ -7,6 +7,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { TIME_SLOTS } from "@/lib/constants";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { loadEventById } from "@/lib/eventLoader";
+import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
 
 export default function PresetSelector({ eventId, compact = false }) {
   const [open, setOpen] = useState(false);
@@ -17,16 +18,19 @@ export default function PresetSelector({ eventId, compact = false }) {
   const { data: presets = [] } = useQuery({
     queryKey: ["positionPresets"],
     queryFn: () => base44.entities.PositionPreset.list(),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: positionTypes = [] } = useQuery({
     queryKey: ["positionTypes"],
     queryFn: () => base44.entities.PositionType.list(),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
     queryFn: () => loadEventById(eventId),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const activePreset = presets.find((p) => p.id === event?.active_preset_id);

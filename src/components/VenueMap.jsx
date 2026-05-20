@@ -8,6 +8,7 @@ import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useRe
 import { getStaffDisplayName } from "@/lib/staffName";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
 import { appParams } from "@/lib/app-params";
+import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorkerSource from "@/lib/pdfWorkerSource";
 
@@ -238,16 +239,19 @@ export default function VenueMap({ eventId }) {
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
     queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
     queryFn: () => loadVenueMapEvent(eventId),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: venueMapAsset } = useQuery({
     queryKey: ["venueMapAsset", eventId],
     queryFn: () => loadVenueMapAsset(eventId),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const updatePosition = useMutation({

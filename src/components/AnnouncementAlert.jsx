@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { AlertTriangle, X, Bell, ShieldAlert } from "lucide-react";
+import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
 
 const PRIORITY_STYLES = {
   "緊急": { bar: "bg-red-600 text-white", icon: ShieldAlert, label: "緊急" },
@@ -15,12 +16,13 @@ export default function AnnouncementAlert({ eventId }) {
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
     queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: announcements = [] } = useQuery({
     queryKey: ["announcements-alert", eventId],
     queryFn: () => base44.entities.Announcement.filter({ event_id: eventId, is_alert: true }),
-    refetchInterval: 3000,
+    refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const visible = announcements.filter((a) => {
