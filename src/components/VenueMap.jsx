@@ -67,7 +67,7 @@ async function saveVenueMapAssets(eventId, { map_pdf_url, map_image_url }) {
     map_image_url,
   });
   if (response.data?.error) throw new Error(response.data.error);
-  return response.data?.event;
+  return response.data;
 }
 
 function getPinColor(pos) {
@@ -165,6 +165,12 @@ export default function VenueMap({ eventId }) {
     select: (d) => d[0],
   });
 
+  const { data: venueMapAsset } = useQuery({
+    queryKey: ["venueMapAsset", eventId],
+    queryFn: () => base44.entities.VenueMapAsset.filter({ event_id: eventId }),
+    select: (d) => d?.[0],
+  });
+
   const updatePosition = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Position.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positions", eventId] }),
@@ -172,8 +178,8 @@ export default function VenueMap({ eventId }) {
 
   const filteredPositions = positions.filter((p) => (p.time_slot || TIME_SLOTS[0]) === slotFilter);
   const positionsOnMap = filteredPositions.filter((p) => p.map_x != null && p.map_y != null);
-  const storedMapImageUrl = event?.map_image_url || "";
-  const effectivePdfUrl = localPdfUrl || event?.map_pdf_url || "";
+  const storedMapImageUrl = venueMapAsset?.map_image_url || event?.map_image_url || "";
+  const effectivePdfUrl = localPdfUrl || venueMapAsset?.map_pdf_url || event?.map_pdf_url || "";
   const effectiveMapImageUrl = localMapImageUrl || storedMapImageUrl;
   const hasPDF = Boolean(effectiveMapImageUrl || effectivePdfUrl);
   const { mode: venueMapMode, isReady: isModeReady } = useResolvedEventMode(eventId, "venue_map_mode", event?.venue_map_mode);
@@ -300,7 +306,7 @@ export default function VenueMap({ eventId }) {
       const imageUrl = isPDF ? results[1].file_url : results[0].file_url;
       setLocalPdfUrl(pdfUrl);
       setLocalMapImageUrl(imageUrl);
-      const updatedEvent = await saveVenueMapAssets(eventId, {
+      const { event: updatedEvent, asset: updatedAsset } = await saveVenueMapAssets(eventId, {
         map_pdf_url: pdfUrl,
         map_image_url: imageUrl,
       });
@@ -310,7 +316,9 @@ export default function VenueMap({ eventId }) {
         }
         return old ? { ...old, ...updatedEvent } : updatedEvent;
       });
+      queryClient.setQueryData(["venueMapAsset", eventId], updatedAsset ? [updatedAsset] : []);
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["venueMapAsset", eventId] });
       queryClient.invalidateQueries({ queryKey: ["events"] });
     } catch (error) {
       console.error("Map file upload error:", error);
@@ -325,14 +333,16 @@ export default function VenueMap({ eventId }) {
     if (!confirm("会場マップPDFを削除しますか？ピンの座標は残ります。")) return;
     setLocalPdfUrl("");
     setLocalMapImageUrl("");
-    const updatedEvent = await saveVenueMapAssets(eventId, { map_pdf_url: null, map_image_url: null });
+    const { event: updatedEvent, asset: updatedAsset } = await saveVenueMapAssets(eventId, { map_pdf_url: null, map_image_url: null });
     queryClient.setQueryData(["event", eventId], (old) => {
       if (Array.isArray(old)) {
         return old.map((item) => item.id === eventId ? { ...item, ...updatedEvent } : item);
       }
       return old ? { ...old, ...updatedEvent } : updatedEvent;
     });
+    queryClient.setQueryData(["venueMapAsset", eventId], updatedAsset ? [updatedAsset] : []);
     queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+    queryClient.invalidateQueries({ queryKey: ["venueMapAsset", eventId] });
     queryClient.invalidateQueries({ queryKey: ["events"] });
   };
 

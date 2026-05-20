@@ -16,10 +16,26 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'eventId is required' }, { status: 400 });
     }
 
-    const event = await base44.asServiceRole.entities.Event.update(eventId, {
+    const data = {
       map_pdf_url,
       map_image_url,
-    });
+    };
+    let event = null;
+    try {
+      event = await base44.asServiceRole.entities.Event.update(eventId, data);
+    } catch (eventError) {
+      console.warn('Event venue map field update failed:', eventError.message);
+    }
+
+    const existingAssets = await base44.asServiceRole.entities.VenueMapAsset.filter({ event_id: eventId });
+    const assetPayload = {
+      event_id: eventId,
+      ...data,
+      updated_at: new Date().toISOString(),
+    };
+    const asset = existingAssets?.[0]
+      ? await base44.asServiceRole.entities.VenueMapAsset.update(existingAssets[0].id, assetPayload)
+      : await base44.asServiceRole.entities.VenueMapAsset.create(assetPayload);
 
     return Response.json({
       event: {
@@ -27,6 +43,10 @@ Deno.serve(async (req) => {
         id: eventId,
         map_pdf_url,
         map_image_url,
+      },
+      asset: {
+        ...(asset || {}),
+        ...assetPayload,
       },
     });
   } catch (error) {
