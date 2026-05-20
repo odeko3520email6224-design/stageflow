@@ -113,7 +113,7 @@ export default function StaffManagement({ eventId }) {
   const [showScrapeModal, setShowScrapeModal] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const queryClient = useQueryClient();
-  const { role } = useUserRole();
+  const { canEdit, role } = useUserRole();
   const shouldMaskStaffNames = role !== "admin" && role !== "chief";
 
 
@@ -262,7 +262,13 @@ export default function StaffManagement({ eventId }) {
           <p className="text-[11px] text-muted-foreground">スタッフの追加・編集・削除が可能です。</p>
           <div className="text-xs font-medium text-foreground mt-0.5">登録スタッフ数：{staffList.length}名</div>
         </div>
-        <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2 shrink-0" onClick={() => setShowScrapeModal(true)}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-1 h-7 text-xs px-2 shrink-0"
+          onClick={() => canEdit && setShowScrapeModal(true)}
+          disabled={!canEdit}
+        >
           <Download className="w-3 h-3" />A-CAST取得
         </Button>
       </div>
@@ -350,15 +356,17 @@ export default function StaffManagement({ eventId }) {
                     </div>
                   </div>
                   <button
-                  onClick={() => setEditingStaff(staff)}
-                  className="p-1 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => canEdit && setEditingStaff(staff)}
+                  disabled={!canEdit}
+                  className="p-1 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30 disabled:pointer-events-none"
                   title="編集">
                   
                     <Pencil className="w-3 h-3" />
                   </button>
                   <button
-                  onClick={() => setConfirmDelete({ id: staff.id, name: staff.name })}
-                  className="p-1 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => canEdit && setConfirmDelete({ id: staff.id, name: staff.name })}
+                  disabled={!canEdit}
+                  className="p-1 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30 disabled:pointer-events-none"
                   title="削除">
                     <Trash2 className="w-3 h-3" />
                   </button>
