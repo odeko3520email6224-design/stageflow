@@ -88,12 +88,11 @@ export default function EventDetail() {
 
   if (!event) return <div className="p-8 text-muted-foreground">イベントが見つかりません</div>;
 
-  // userロールは閲覧専用タブのみ表示
   const desktopTabs = [
-    ...(isPrivileged ? [{ id: "staff", label: "スタッフ管理", icon: Users }] : []),
+    { id: "staff", label: "スタッフ管理", icon: Users },
     { id: "dragdrop", label: "配置表", icon: ClipboardList },
-    ...(isPrivileged ? [{ id: "map", label: "会場マップ", icon: MapPin }] : []),
-    ...(showTimeline ? [{ id: "timeline", label: "タイムライン", icon: Clock }] : []),
+    { id: "map", label: "会場マップ", icon: MapPin },
+    ...(canShowTimeline ? [{ id: "timeline", label: "タイムライン", icon: Clock }] : []),
     { id: "notice", label: "連絡事項", icon: Bell },
     { id: "tasks", label: "チェックリスト", icon: CheckSquare },
     ...(isPrivileged ? [{ id: "admin", label: "管理", icon: Settings }] : []),
@@ -192,7 +191,7 @@ export default function EventDetail() {
               />
             )}
             {tab === "map" && <VenueMap eventId={eventId} />}
-            {tab === "timeline" && showTimeline && <StaffTimeline eventId={eventId} />}
+            {tab === "timeline" && canShowTimeline && <StaffTimeline eventId={eventId} />}
             {tab === "notice" && <AnnouncementManager eventId={eventId} />}
             {tab === "tasks" && <TaskChecklist eventId={eventId} />}
           </motion.div>
@@ -205,7 +204,7 @@ export default function EventDetail() {
           activeTab={tab}
           onTabChange={handleTabChange}
           onActiveTabReset={handleActiveTabReset}
-          showTimeline={showTimeline}
+          showTimeline={canShowTimeline}
           isPrivileged={isPrivileged}
         />
       </div>

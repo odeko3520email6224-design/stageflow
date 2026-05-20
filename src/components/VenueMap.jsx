@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Download, FileText, Loader2, Map, MapPin, Move, Upload, X } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
-import { HiddenInEditMode, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
+import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 
 const ROLE_COLORS = {
   "受付": "#3b82f6",
@@ -150,9 +150,10 @@ export default function VenueMap({ eventId }) {
   const effectivePdfUrl = localPdfUrl || event?.map_pdf_url || "";
   const effectiveMapImageUrl = localMapImageUrl || storedMapImageUrl;
   const hasPDF = Boolean(effectiveMapImageUrl || effectivePdfUrl);
-  const venueMapMode = useResolvedEventMode(eventId, "venue_map_mode", event?.venue_map_mode);
+  const { mode: venueMapMode, isReady: isModeReady } = useResolvedEventMode(eventId, "venue_map_mode", event?.venue_map_mode);
   const isEditMode = venueMapMode === "edit";
   const hideForUser = role === "user" && isEditMode;
+  const isVisibilityReady = Boolean(role) && isModeReady;
   const canUseEditTools = canEdit && isEditMode;
 
   useEffect(() => {
@@ -419,7 +420,7 @@ export default function VenueMap({ eventId }) {
             size="sm"
             variant="outline"
             onClick={handleExportPDF}
-            disabled={!hasPDF || loadingPDF || exportingPDF || positionsOnMap.length === 0}
+            disabled={!isVisibilityReady || hideForUser || !hasPDF || loadingPDF || exportingPDF || positionsOnMap.length === 0}
             className="gap-1 h-7 text-xs"
           >
             {exportingPDF ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
@@ -434,7 +435,9 @@ export default function VenueMap({ eventId }) {
         </div>
       </div>
 
-      {hideForUser ? (
+      {!isVisibilityReady ? (
+        <ModeLoadingPlaceholder />
+      ) : hideForUser ? (
         <HiddenInEditMode title="会場マップは編集モード中です" />
       ) : (
         <>

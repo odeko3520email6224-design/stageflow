@@ -9,11 +9,13 @@ const modeEventName = "stageflow:event-mode-change";
 
 export function useResolvedEventMode(eventId, field, eventMode) {
   const [localMode, setLocalMode] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false);
   const storageKey = getModeStorageKey(eventId, field);
 
   useEffect(() => {
     const savedMode = window.localStorage.getItem(storageKey);
     setLocalMode(savedMode === "edit" || savedMode === "public" ? savedMode : null);
+    setIsLoaded(true);
   }, [storageKey]);
 
   useEffect(() => {
@@ -26,7 +28,10 @@ export function useResolvedEventMode(eventId, field, eventMode) {
     return () => window.removeEventListener(modeEventName, handleModeChange);
   }, [eventId, field]);
 
-  return localMode || eventMode || "public";
+  return {
+    mode: localMode || eventMode || "public",
+    isReady: isLoaded || eventMode === "edit" || eventMode === "public",
+  };
 }
 
 function rememberMode(eventId, field, mode) {
@@ -121,6 +126,15 @@ export function HiddenInEditMode({ title = "編集モード中です" }) {
       <Lock className="w-8 h-8 mx-auto mb-2" />
       <p className="text-sm font-bold">{title}</p>
       <p className="mt-1 text-xs">現在このページは編集モードのため、userロールでは内容を表示できません。</p>
+    </div>
+  );
+}
+
+export function ModeLoadingPlaceholder() {
+  return (
+    <div className="rounded-xl border border-border bg-card px-4 py-8 text-center text-muted-foreground">
+      <div className="mx-auto mb-2 h-6 w-6 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+      <p className="text-xs font-medium">表示モードを確認しています</p>
     </div>
   );
 }

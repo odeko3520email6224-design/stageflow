@@ -10,7 +10,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import PresetSelector from "@/components/PresetSelector";
-import { HiddenInEditMode, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
+import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 
 export default function StaffDragDropManager({ eventId }) {
   const queryClient = useQueryClient();
@@ -221,9 +221,10 @@ export default function StaffDragDropManager({ eventId }) {
     );
     return slotsWithAssignment.length < TIME_SLOTS.length;
   });
-  const assignmentMode = useResolvedEventMode(eventId, "assignment_mode", event?.assignment_mode);
+  const { mode: assignmentMode, isReady: isModeReady } = useResolvedEventMode(eventId, "assignment_mode", event?.assignment_mode);
   const isEditMode = assignmentMode === "edit";
   const hideForUser = role === "user" && isEditMode;
+  const isVisibilityReady = Boolean(role) && isModeReady;
   const isAdmin = canEdit && isEditMode;
 
   return (
@@ -246,13 +247,15 @@ export default function StaffDragDropManager({ eventId }) {
             label="配置表"
           />
           {isAdmin && <PresetSelector eventId={eventId} compact />}
-          <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2" onClick={handleExportPDF} disabled={exportingPDF || positions.length === 0}>
+          <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2" onClick={handleExportPDF} disabled={!isVisibilityReady || hideForUser || exportingPDF || positions.length === 0}>
             <Download className="w-3 h-3" />{exportingPDF ? '...' : 'PDF'}
           </Button>
         </div>
       </div>
 
-      {hideForUser ? (
+      {!isVisibilityReady ? (
+        <ModeLoadingPlaceholder />
+      ) : hideForUser ? (
         <HiddenInEditMode title="配置表は編集モード中です" />
       ) : (
         <>
