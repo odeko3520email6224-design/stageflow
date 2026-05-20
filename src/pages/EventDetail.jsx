@@ -68,12 +68,6 @@ export default function EventDetail() {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (role && !isPrivileged && tab === "admin") {
-      setTab("staff", { replace: true });
-    }
-  }, [isPrivileged, role, setTab, tab]);
-
   const { data: event, isLoading, refetch: refetchEvent } = useQuery({
     queryKey: ["event", eventId],
     queryFn: () => base44.entities.Event.filter({ id: eventId }),
@@ -96,9 +90,9 @@ export default function EventDetail() {
 
   // userロールは閲覧専用タブのみ表示
   const desktopTabs = [
-    { id: "staff", label: "スタッフ管理", icon: Users },
+    ...(isPrivileged ? [{ id: "staff", label: "スタッフ管理", icon: Users }] : []),
     { id: "dragdrop", label: "配置表", icon: ClipboardList },
-    { id: "map", label: "会場マップ", icon: MapPin },
+    ...(isPrivileged ? [{ id: "map", label: "会場マップ", icon: MapPin }] : []),
     ...(showTimeline ? [{ id: "timeline", label: "タイムライン", icon: Clock }] : []),
     { id: "notice", label: "連絡事項", icon: Bell },
     { id: "tasks", label: "チェックリスト", icon: CheckSquare },

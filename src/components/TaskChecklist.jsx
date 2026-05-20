@@ -5,11 +5,11 @@ import { CheckSquare, Square, Plus, Trash2, Pencil, Check, X, ClipboardCheck } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { useUserRole } from "@/hooks/useUserRole";
 
 export default function TaskChecklist({ eventId }) {
   const queryClient = useQueryClient();
-  const { canEdit } = useUserRole();
+  // 連絡事項・チェックリストは全ロールに編集権限を付与
+  const canEdit = true;
 
   const [newTitle, setNewTitle] = useState("");
   const [newNote, setNewNote] = useState("");
