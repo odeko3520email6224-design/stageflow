@@ -6,6 +6,8 @@ import { AlertCircle, Download, FileText, Loader2, Map, MapPin, Move, Upload, X 
 import { useUserRole } from "@/hooks/useUserRole";
 import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 import { getStaffDisplayName } from "@/lib/staffName";
+import * as pdfjsLib from "pdfjs-dist";
+import PdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?worker&inline";
 
 const ROLE_COLORS = {
   "受付": "#3b82f6",
@@ -16,23 +18,31 @@ const ROLE_COLORS = {
 
 const TIME_SLOTS = ["開場中", "開演中", "終演後"];
 const PIN_RADIUS_PX = 11;
+let pdfWorkerPort = null;
 
-async function renderPDFFileToImageFile(file) {
-  const pdfjsLib = await import("pdfjs-dist");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-    "pdfjs-dist/build/pdf.worker.min.mjs",
-    import.meta.url
-  ).href;
+function ensurePDFWorker() {
+  if (typeof window === "undefined" || !("Worker" in window)) return;
+  if (!pdfWorkerPort) {
+    pdfWorkerPort = new PdfWorker();
+    pdfjsLib.GlobalWorkerOptions.workerPort = pdfWorkerPort;
+  }
+}
 
-  const data = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data }).promise;
+async function renderPDFPageToCanvas({ file, url, canvas, scale = 2 }) {
+  ensurePDFWorker();
+  const source = file ? { data: await file.arrayBuffer() } : { url };
+  const pdf = await pdfjsLib.getDocument(source).promise;
   const page = await pdf.getPage(1);
-  const viewport = page.getViewport({ scale: 2 });
-  const canvas = document.createElement("canvas");
+  const viewport = page.getViewport({ scale });
   const context = canvas.getContext("2d");
   canvas.width = viewport.width;
   canvas.height = viewport.height;
-  await page.render({ canvasContext: context, viewport }).promise;
+  await page.render({ canvas, canvasContext: context, viewport }).promise;
+}
+
+async function renderPDFFileToImageFile(file) {
+  const canvas = document.createElement("canvas");
+  await renderPDFPageToCanvas({ file, canvas });
 
   const blob = await new Promise((resolve, reject) => {
     try {
@@ -188,17 +198,7 @@ export default function VenueMap({ eventId }) {
           canvas.height = image.naturalHeight;
           context.drawImage(image, 0, 0);
         } else {
-          const pdfjsLib = await import("pdfjs-dist");
-          pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-            "pdfjs-dist/build/pdf.worker.min.mjs",
-            import.meta.url
-          ).href;
-          const pdf = await pdfjsLib.getDocument({ url: effectivePdfUrl }).promise;
-          const page = await pdf.getPage(1);
-          const viewport = page.getViewport({ scale: 2 });
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          await page.render({ canvasContext: context, viewport }).promise;
+          await renderPDFPageToCanvas({ url: effectivePdfUrl, canvas });
         }
         if (!cancelled) {
           setPdfSize({ width: canvas.width, height: canvas.height });
