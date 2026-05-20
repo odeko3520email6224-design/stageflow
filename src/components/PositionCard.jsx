@@ -4,6 +4,7 @@ import { getStaffDisplayName } from "@/lib/staffName";
 export default function PositionCard({
   pos, isAdmin, draggable = false, draggedStaff = null,
   onEdit, onDelete, onDragOver, onDrop, onStaffDragStart, onStaffRemove,
+  onStaffEdit,
   emptyLabel = "スタッフ未登録", staffList = [],
   requiredCount = 0, onRequiredCountChange, occupiedInSlot = [],
   maskStaffNames = false,
@@ -62,10 +63,19 @@ export default function PositionCard({
                 <span className="text-xs text-foreground">{displayName}</span>
                 {staffData?.note && <span className="text-[10px] text-muted-foreground ml-1.5">({staffData.note})</span>}
               </div>
-              {onStaffRemove && isAdmin && (
-                <button onClick={() => onStaffRemove(pos.id, name)} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors">
-                  <Trash2 className="w-3 h-3" />
-                </button>
+              {isAdmin && (onStaffEdit || onStaffRemove) && (
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {onStaffEdit && staffData && (
+                    <button onClick={() => onStaffEdit(staffData)} className="p-1 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors" title="スタッフ編集">
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  )}
+                  {onStaffRemove && (
+                    <button onClick={() => onStaffRemove(pos.id, name)} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors" title="配置から外す">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           );

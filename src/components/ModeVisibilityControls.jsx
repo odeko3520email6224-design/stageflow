@@ -7,10 +7,11 @@ import { base44 } from "@/api/base44Client";
 const getModeStorageKey = (eventId, field) => `stageflow:event-mode:${eventId}:${field}`;
 const modeEventName = "stageflow:event-mode-change";
 
-export function useResolvedEventMode(eventId, field, eventMode) {
+export function useResolvedEventMode(eventId, field, eventMode, options = {}) {
   const [localMode, setLocalMode] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const storageKey = getModeStorageKey(eventId, field);
+  const preferLocal = options.preferLocal === true;
 
   useEffect(() => {
     const savedMode = window.localStorage.getItem(storageKey);
@@ -29,7 +30,7 @@ export function useResolvedEventMode(eventId, field, eventMode) {
   }, [eventId, field]);
 
   return {
-    mode: eventMode || localMode || "public",
+    mode: preferLocal ? (localMode || eventMode || "public") : (eventMode || localMode || "public"),
     isReady: isLoaded || eventMode === "edit" || eventMode === "public",
   };
 }

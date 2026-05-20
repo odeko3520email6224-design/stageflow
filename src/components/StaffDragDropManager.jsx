@@ -5,6 +5,7 @@ import { AlertCircle, ClipboardList, Plus, Download, Users, GripVertical, Trash2
 import { Button } from "@/components/ui/button";
 import PositionCard from "@/components/PositionCard";
 import PositionFormModal from "@/components/PositionFormModal";
+import StaffEditModal from "@/components/StaffEditModal";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePDFExport } from "@/hooks/usePDFExport";
@@ -70,6 +71,7 @@ export default function StaffDragDropManager({ eventId }) {
 
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [editingStaff, setEditingStaff] = useState(null);
   const [defaultSlot, setDefaultSlot] = useState("開場中");
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(null); // slot name
@@ -332,6 +334,7 @@ export default function StaffDragDropManager({ eventId }) {
                               removeStaffFromPosition(posId, name);
                             }}
                             onStaffRemove={removeStaffFromPosition}
+                            onStaffEdit={(staff) => setEditingStaff(staff)}
                             onEdit={(p) => { setEditing(p); setShowModal(true); }}
                             onDelete={(id) => setConfirmDelete({ id, name: pos.name })}
                             emptyLabel="スタッフをドラッグして配置"
@@ -436,6 +439,13 @@ export default function StaffDragDropManager({ eventId }) {
         <PositionFormModal position={editing} eventId={eventId} defaultTimeSlot={defaultSlot}
           onClose={() => setShowModal(false)}
           onSaved={() => { queryClient.invalidateQueries({ queryKey: ["positions", eventId] }); }} />
+      )}
+      {editingStaff && (
+        <StaffEditModal
+          staff={editingStaff}
+          onClose={() => setEditingStaff(null)}
+          onSaved={() => {}}
+        />
       )}
       {confirmDelete && (
         <ConfirmDialog message={`「${confirmDelete.name}」を削除しますか？`} confirmLabel="削除"
