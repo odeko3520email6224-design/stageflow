@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Settings, Moon, Sun, GripVertical, Clock, Bug, Wand2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Settings, Moon, Sun, GripVertical, Clock, Bug, Wand2, Loader2, AlertTriangle } from "lucide-react";
 import MapTemplateManagement from "@/components/MapTemplateManagement";
 import PositionPresetManager from "@/components/PositionPresetManager";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -20,6 +20,7 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
   const [name, setName] = useState("");
   const [color, setColor] = useState(PRESET_COLORS[0]);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmAutoPlace, setConfirmAutoPlace] = useState(false);
   const [draggingId, setDraggingId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
   const [localDebugEnabled, setLocalDebugEnabled] = useState(null);
@@ -205,34 +206,39 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
       </div>
 
       {/* Debug tools */}
-      <div className="bg-card border border-border rounded-xl p-3 mb-3">
+      <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-3 mb-3 shadow-sm dark:bg-amber-950/40 dark:border-amber-500">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
-            <Bug className="w-4 h-4 text-primary shrink-0" />
+            <div className="p-1.5 rounded-lg bg-amber-200 text-amber-900 dark:bg-amber-500/25 dark:text-amber-200 shrink-0">
+              <Bug className="w-4 h-4" />
+            </div>
             <div className="min-w-0">
-              <p className="text-xs font-semibold">デバッグ機能</p>
-              <p className="text-[10px] text-muted-foreground truncate">各時間帯にポジションとスタッフを自動配置します</p>
+              <p className="text-xs font-bold text-amber-950 dark:text-amber-100">デバッグ機能</p>
+              <p className="text-[10px] text-amber-900 dark:text-amber-200 truncate">各時間帯にポジションとスタッフを自動配置します</p>
             </div>
           </div>
           <button
             onClick={() => isAdmin && toggleDebugMutation.mutate(!debugEnabled)}
             disabled={!isAdmin || toggleDebugMutation.isPending}
-            className={`relative w-10 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${debugEnabled ? "bg-primary" : "bg-muted-foreground/30"}`}
+            className={`relative w-10 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-50 ${debugEnabled ? "bg-amber-600" : "bg-amber-300/70 dark:bg-amber-900"}`}
             aria-label="デバッグ機能切り替え"
           >
             <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${debugEnabled ? "translate-x-4" : "translate-x-0"}`} />
           </button>
         </div>
+        <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-red-300 bg-red-50 px-2 py-1.5 text-red-800 dark:border-red-500/70 dark:bg-red-950/40 dark:text-red-200">
+          <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <p className="text-[10px] font-semibold leading-relaxed">この変更は登録されたデータに変更を加えます。元に戻すことはできません。</p>
+        </div>
         <div className="mt-2 flex items-center justify-between gap-2">
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[10px] text-amber-900 dark:text-amber-200">
             {staffList.length === 0 ? "スタッフ登録後に実行できます" : `登録スタッフ${staffList.length}名を順番に割り当てます`}
           </p>
           <Button
-            onClick={() => autoPlaceMutation.mutate()}
+            onClick={() => setConfirmAutoPlace(true)}
             disabled={!canAutoPlace || autoPlaceMutation.isPending}
             size="sm"
-            variant="outline"
-            className="gap-1 h-7 text-xs px-2 shrink-0"
+            className="gap-1 h-7 text-xs px-2 shrink-0 bg-red-600 hover:bg-red-700 text-white"
           >
             {autoPlaceMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
             自動配置
@@ -309,6 +315,15 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
         <ConfirmDialog message={`「${confirmDelete.name}」を削除しますか？`} confirmLabel="削除"
           onConfirm={() => { deleteMutation.mutate(confirmDelete.id); setConfirmDelete(null); }}
           onCancel={() => setConfirmDelete(null)} />
+      )}
+
+      {confirmAutoPlace && (
+        <ConfirmDialog
+          message={"この変更は登録されたデータに変更を加えます。元に戻すことはできません。\n\n各時間帯のポジションとスタッフ配置を自動更新します。実行しますか？"}
+          confirmLabel="自動配置を実行"
+          onConfirm={() => { autoPlaceMutation.mutate(); setConfirmAutoPlace(false); }}
+          onCancel={() => setConfirmAutoPlace(false)}
+        />
       )}
 
       <div className="border-t border-border my-3" />
