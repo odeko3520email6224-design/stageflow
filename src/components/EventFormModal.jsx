@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { X } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function EventFormModal({ event, onClose, onSaved }) {
+  const queryClient = useQueryClient();
   const [form, setForm] = useState({
     name: event?.name || "",
     date: event?.date || "",
@@ -22,7 +24,35 @@ export default function EventFormModal({ event, onClose, onSaved }) {
       event
         ? base44.entities.Event.update(event.id, data)
         : base44.entities.Event.create(data),
-    onSuccess: onSaved,
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: ["events"] });
+      if (event) await queryClient.cancelQueries({ queryKey: ["event", event.id] });
+      const previousEvents = queryClient.getQueryData(["events"]);
+      const previousEvent = event ? queryClient.getQueryData(["event", event.id]) : undefined;
+      const optimisticId = event?.id || `temp-event-${Date.now()}`;
+      const optimisticEvent = { ...(event || {}), ...data, id: optimisticId };
+
+      queryClient.setQueryData(["events"], (old = []) => {
+        if (event) return old.map((item) => item.id === event.id ? { ...item, ...data } : item);
+        return [optimisticEvent, ...old];
+      });
+      if (event) queryClient.setQueryData(["event", event.id], optimisticEvent);
+
+      return { previousEvents, previousEvent, optimisticId };
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(["events"], context?.previousEvents);
+      if (event) queryClient.setQueryData(["event", event.id], context?.previousEvent);
+      toast.error(event ? "保存に失敗しました" : "作成に失敗しました");
+    },
+    onSuccess: (savedEvent, __, context) => {
+      if (!event && savedEvent?.id) {
+        queryClient.setQueryData(["events"], (old = []) =>
+          old.map((item) => item.id === context?.optimisticId ? savedEvent : item)
+        );
+      }
+      onSaved?.();
+    },
   });
 
   // Auto-save: text fields (name, venue, description) → 500ms, others (date, status) → instant
@@ -52,8 +82,19 @@ export default function EventFormModal({ event, onClose, onSaved }) {
   }, [form]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md mx-2 p-4">
+    <motion.div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-md p-2"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.18 }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <motion.div
+        className="bg-card border border-border rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md p-4 max-h-[92vh] overflow-y-auto"
+        initial={{ y: 32, opacity: 0, scale: 0.98 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+      >
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold">{event ? "イベント編集" : "新規イベント"}</h2>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted transition-colors">
@@ -122,7 +163,7 @@ export default function EventFormModal({ event, onClose, onSaved }) {
             </Button>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

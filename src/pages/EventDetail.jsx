@@ -31,6 +31,7 @@ const tabVariants = {
 export default function EventDetail() {
   const { eventId } = useParams();
   const [tab, setTab] = useTabNavigation("staff");
+  const [tabResetKey, setTabResetKey] = useState(0);
 
   const { isAdmin, isChief, canEdit, canManageSettings, role } = useUserRole();
   const isPrivileged = isAdmin || isChief;
@@ -50,6 +51,14 @@ export default function EventDetail() {
     try { localStorage.setItem(TIMELINE_STORAGE_KEY, String(val)); } catch {}
     // If currently on timeline tab and disabling, switch to staff
     if (!val && tab === "timeline") setTab("staff");
+  };
+
+  const handleTabChange = (newTab, options) => {
+    setTab(newTab, options);
+  };
+
+  const handleActiveTabReset = () => {
+    setTabResetKey((key) => key + 1);
   };
 
   useEffect(() => {
@@ -141,7 +150,10 @@ export default function EventDetail() {
               {desktopTabs.map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
-                  onClick={() => setTab(id)}
+                  onClick={() => {
+                    if (tab === id) handleActiveTabReset();
+                    handleTabChange(id, tab === id ? { replace: true, reset: true } : undefined);
+                  }}
                   className={`flex items-center gap-1.5 py-2 text-xs font-medium border-b-2 whitespace-nowrap transition-colors focus-visible:outline-none select-none shrink-0 ${
                     tab === id
                       ? "border-primary text-primary"
@@ -161,7 +173,7 @@ export default function EventDetail() {
       <div className="max-w-6xl mx-auto px-1.5 py-1.5 pb-16 sm:pb-8">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
-            key={tab}
+            key={`${tab}-${tabResetKey}`}
             variants={tabVariants}
             initial="initial"
             animate="animate"
@@ -186,7 +198,13 @@ export default function EventDetail() {
 
       {/* Bottom Tab Navigation - Mobile Only */}
       <div className="sm:hidden">
-        <BottomTabBar activeTab={tab} onTabChange={setTab} showTimeline={showTimeline} isPrivileged={isPrivileged} />
+        <BottomTabBar
+          activeTab={tab}
+          onTabChange={handleTabChange}
+          onActiveTabReset={handleActiveTabReset}
+          showTimeline={showTimeline}
+          isPrivileged={isPrivileged}
+        />
       </div>
     </div>
   );

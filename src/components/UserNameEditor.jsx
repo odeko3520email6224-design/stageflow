@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, X } from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 export function getUserDisplayName(user) {
   return user?.username || user?.full_name || user?.email || "";
@@ -52,8 +53,19 @@ export default function UserNameEditor({ user, onSaved }) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4" onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
-          <div className="w-full max-w-sm rounded-xl border border-border bg-card p-4 shadow-xl">
+        <motion.div
+          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-md p-2 sm:p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.18 }}
+          onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+        >
+          <motion.div
+            className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl border border-border bg-card p-4 shadow-xl"
+            initial={{ y: 30, opacity: 0, scale: 0.98 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+          >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold">ユーザー名を登録</h3>
               <button onClick={() => setOpen(false)} className="p-1 rounded hover:bg-muted text-muted-foreground" aria-label="閉じる">
@@ -81,8 +93,8 @@ export default function UserNameEditor({ user, onSaved }) {
                 保存
               </Button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </>
   );

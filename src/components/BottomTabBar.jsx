@@ -10,7 +10,7 @@ const ALL_TABS = [
   { id: "admin", label: "管理", icon: Settings },
 ];
 
-export default function BottomTabBar({ activeTab, onTabChange, showTimeline = false, isPrivileged = true }) {
+export default function BottomTabBar({ activeTab, onTabChange, onActiveTabReset, showTimeline = false, isPrivileged = true }) {
   // userロール: 配置表・タイムライン・連絡事項・チェックリストのみ
   const USER_VISIBLE = ["dragdrop", "timeline", "notice", "tasks"];
   const TABS = ALL_TABS.filter((t) => {
@@ -21,7 +21,9 @@ export default function BottomTabBar({ activeTab, onTabChange, showTimeline = fa
 
   const handleTabClick = (tabId) => {
     if (activeTab === tabId) {
-      window.history.pushState({}, "", window.location.pathname);
+      onActiveTabReset?.(tabId);
+      onTabChange(tabId, { replace: true, reset: true });
+      return;
     }
     onTabChange(tabId);
   };

@@ -8,6 +8,7 @@ import { Plus, Trash2, Users, AlertCircle, Pencil, X, UserCog, Download, ShieldC
 import StaffScrapeModal from "@/components/StaffScrapeModal";
 import { TIME_SLOT_STYLES } from "@/lib/constants";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { motion } from "framer-motion";
 
 function EditModal({ staff, onClose, onSaved }) {
   const [name, setName] = useState(staff.name);
@@ -20,6 +21,29 @@ function EditModal({ staff, onClose, onSaved }) {
 
   const updateMutation = useMutation({
     mutationFn: (data) => base44.entities.Staff.update(staff.id, data),
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: ["staff", staff.event_id] });
+      await queryClient.cancelQueries({ queryKey: ["positions", staff.event_id] });
+      const previousStaff = queryClient.getQueryData(["staff", staff.event_id]);
+      const previousPositions = queryClient.getQueryData(["positions", staff.event_id]);
+      queryClient.setQueryData(["staff", staff.event_id], (old = []) =>
+        old.map((item) => item.id === staff.id ? { ...item, ...data } : item)
+      );
+      if (data.name && data.name !== staff.name) {
+        queryClient.setQueryData(["positions", staff.event_id], (old = []) =>
+          old.map((position) => ({
+            ...position,
+            staff_names: (position.staff_names || []).map((name) => name === staff.name ? data.name : name),
+          }))
+        );
+      }
+      return { previousStaff, previousPositions };
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(["staff", staff.event_id], context?.previousStaff);
+      queryClient.setQueryData(["positions", staff.event_id], context?.previousPositions);
+      toast.error("保存に失敗しました");
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", staff.event_id] });
       queryClient.invalidateQueries({ queryKey: ["positions", staff.event_id] });
@@ -43,8 +67,19 @@ function EditModal({ staff, onClose, onSaved }) {
   }, [localName, localNote]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm p-5">
+    <motion.div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-md p-2 sm:p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.18 }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <motion.div
+        className="bg-card border border-border rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-sm p-5"
+        initial={{ y: 32, opacity: 0, scale: 0.98 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+      >
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-base">スタッフ編集</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="閉じる">
@@ -64,8 +99,8 @@ function EditModal({ staff, onClose, onSaved }) {
         <div className="flex gap-2 mt-4">
           <Button variant="outline" className="flex-1" size="sm" onClick={onClose}>閉じる</Button>
         </div>
-      </div>
-    </div>);
+      </motion.div>
+    </motion.div>);
 
 }
 
@@ -96,10 +131,26 @@ export default function StaffManagement({ eventId }) {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Staff.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: ["staff", eventId] });
+      const previousStaff = queryClient.getQueryData(["staff", eventId]);
+      const optimisticId = `temp-staff-${Date.now()}`;
+      queryClient.setQueryData(["staff", eventId], (old = []) => [...old, { ...data, id: optimisticId }]);
       setName("");
       setNote("");
+      return { previousStaff, optimisticId };
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(["staff", eventId], context?.previousStaff);
+      toast.error("スタッフの追加に失敗しました");
+    },
+    onSuccess: (createdStaff, __, context) => {
+      if (createdStaff?.id) {
+        queryClient.setQueryData(["staff", eventId], (old = []) =>
+          old.map((staff) => staff.id === context?.optimisticId ? createdStaff : staff)
+        );
+      }
+      queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
     }
   });
 
@@ -117,6 +168,28 @@ export default function StaffManagement({ eventId }) {
           )
         );
       }
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["staff", eventId] });
+      await queryClient.cancelQueries({ queryKey: ["positions", eventId] });
+      const previousStaff = queryClient.getQueryData(["staff", eventId]);
+      const previousPositions = queryClient.getQueryData(["positions", eventId]);
+      const staffToDelete = staffList.find((s) => s.id === id);
+      queryClient.setQueryData(["staff", eventId], (old = []) => old.filter((staff) => staff.id !== id));
+      if (staffToDelete) {
+        queryClient.setQueryData(["positions", eventId], (old = []) =>
+          old.map((position) => ({
+            ...position,
+            staff_names: (position.staff_names || []).filter((name) => name !== staffToDelete.name),
+          }))
+        );
+      }
+      return { previousStaff, previousPositions };
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(["staff", eventId], context?.previousStaff);
+      queryClient.setQueryData(["positions", eventId], context?.previousPositions);
+      toast.error("スタッフの削除に失敗しました");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff", eventId] });

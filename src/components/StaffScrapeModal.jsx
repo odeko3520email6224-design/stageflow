@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, Download, Loader2, CheckCircle2, AlertCircle, ChevronLeft } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 
 export default function StaffScrapeModal({ eventId, onClose }) {
   const [url, setUrl] = useState("");
@@ -90,11 +91,19 @@ export default function StaffScrapeModal({ eventId, onClose }) {
   const checkedCount = staffList ? staffList.filter((_, i) => checked[i]).length : 0;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+    <motion.div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-md p-2 sm:p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.18 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+      <motion.div
+        className="bg-card border border-border rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]"
+        initial={{ y: 34, opacity: 0, scale: 0.98 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
           <h2 className="font-bold text-base flex items-center gap-2">
@@ -236,7 +245,7 @@ export default function StaffScrapeModal({ eventId, onClose }) {
             </Button>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

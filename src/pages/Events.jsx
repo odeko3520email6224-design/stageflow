@@ -41,7 +41,16 @@ export default function Events() {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Event.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["events"] })
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["events"] });
+      const previousEvents = queryClient.getQueryData(["events"]);
+      queryClient.setQueryData(["events"], (old = []) => old.filter((event) => event.id !== id));
+      return { previousEvents };
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(["events"], context?.previousEvents);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["events"] })
   });
 
   const handleEdit = (e, event) => {

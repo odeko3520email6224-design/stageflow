@@ -7,6 +7,7 @@ import {
   ShieldAlert, Send, X, Eye, ChevronDown, ChevronUp, Megaphone, Paperclip, FileText, Pencil
 } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { motion } from "framer-motion";
 
 const PRIORITY_STYLES = {
   "通常": { badge: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700", icon: Bell },
@@ -26,7 +27,33 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Announcement.create(data),
-    onSuccess: () => {
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: ["announcements", eventId] });
+      await queryClient.cancelQueries({ queryKey: ["announcements-alert", eventId] });
+      const previousAnnouncements = queryClient.getQueryData(["announcements", eventId]);
+      const previousAlert = queryClient.getQueryData(["announcements-alert", eventId]);
+      const optimisticId = `temp-announcement-${Date.now()}`;
+      const optimisticAnnouncement = {
+        ...data,
+        id: optimisticId,
+        created_date: new Date().toISOString(),
+      };
+      queryClient.setQueryData(["announcements", eventId], (old = []) => [optimisticAnnouncement, ...old]);
+      if (data.is_alert) {
+        queryClient.invalidateQueries({ queryKey: ["announcements-alert", eventId] });
+      }
+      return { previousAnnouncements, previousAlert, optimisticId };
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(["announcements", eventId], context?.previousAnnouncements);
+      queryClient.setQueryData(["announcements-alert", eventId], context?.previousAlert);
+    },
+    onSuccess: (createdAnnouncement, __, context) => {
+      if (createdAnnouncement?.id) {
+        queryClient.setQueryData(["announcements", eventId], (old = []) =>
+          old.map((item) => item.id === context?.optimisticId ? createdAnnouncement : item)
+        );
+      }
       queryClient.invalidateQueries({ queryKey: ["announcements", eventId] });
       queryClient.invalidateQueries({ queryKey: ["announcements-alert", eventId] });
       onSaved();
@@ -69,8 +96,18 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-2 overflow-hidden">
-    <div className="bg-card w-full sm:max-w-lg rounded-t-xl sm:rounded-xl overflow-hidden shadow-2xl h-[90vh] sm:h-auto flex flex-col">
+    <motion.div
+      className="fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-2 overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.18 }}
+    >
+    <motion.div
+      className="bg-card w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl h-[90vh] sm:h-auto flex flex-col"
+      initial={{ y: 36, opacity: 0, scale: 0.98 }}
+      animate={{ y: 0, opacity: 1, scale: 1 }}
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+    >
       <div className="flex items-center justify-between px-3 py-2 border-b border-border">
         <h3 className="font-bold text-base flex items-center gap-2">
           <Send className="w-4 h-4 text-primary" />連絡事項を作成
@@ -214,8 +251,8 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
             <Send className="w-3.5 h-3.5" />送信
           </Button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -235,6 +272,20 @@ function AnnouncementEditForm({ ann, staffList, onClose, onSaved }) {
 
   const updateMutation = useMutation({
     mutationFn: (data) => base44.entities.Announcement.update(ann.id, data),
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: ["announcements", ann.event_id] });
+      await queryClient.cancelQueries({ queryKey: ["announcements-alert", ann.event_id] });
+      const previousAnnouncements = queryClient.getQueryData(["announcements", ann.event_id]);
+      const previousAlert = queryClient.getQueryData(["announcements-alert", ann.event_id]);
+      queryClient.setQueryData(["announcements", ann.event_id], (old = []) =>
+        old.map((item) => item.id === ann.id ? { ...item, ...data } : item)
+      );
+      return { previousAnnouncements, previousAlert };
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(["announcements", ann.event_id], context?.previousAnnouncements);
+      queryClient.setQueryData(["announcements-alert", ann.event_id], context?.previousAlert);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements", ann.event_id] });
       queryClient.invalidateQueries({ queryKey: ["announcements-alert", ann.event_id] });
@@ -272,8 +323,18 @@ function AnnouncementEditForm({ ann, staffList, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-2 overflow-hidden">
-      <div className="bg-card w-full sm:max-w-lg rounded-t-xl sm:rounded-xl overflow-hidden shadow-2xl h-[90vh] sm:h-auto flex flex-col">
+    <motion.div
+      className="fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-2 overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.18 }}
+    >
+      <motion.div
+        className="bg-card w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl h-[90vh] sm:h-auto flex flex-col"
+        initial={{ y: 36, opacity: 0, scale: 0.98 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+      >
         <div className="flex items-center justify-between px-3 py-2 border-b border-border">
           <h3 className="font-bold text-base flex items-center gap-2"><Pencil className="w-4 h-4 text-primary" />連絡事項を編集</h3>
           <button onClick={onClose} className="p-1 rounded hover:bg-muted text-muted-foreground" aria-label="閉じる"><X className="w-4 h-4" /></button>
@@ -350,8 +411,8 @@ function AnnouncementEditForm({ ann, staffList, onClose, onSaved }) {
             <Send className="w-3.5 h-3.5" />保存
           </Button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -373,6 +434,23 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
     mutationFn: (name) => base44.entities.Announcement.update(ann.id, {
       read_by: [...new Set([...(ann.read_by || []), name])],
     }),
+    onMutate: async (name) => {
+      await queryClient.cancelQueries({ queryKey: ["announcements", ann.event_id] });
+      await queryClient.cancelQueries({ queryKey: ["announcements-alert", ann.event_id] });
+      const previousAnnouncements = queryClient.getQueryData(["announcements", ann.event_id]);
+      const previousAlert = queryClient.getQueryData(["announcements-alert", ann.event_id]);
+      queryClient.setQueryData(["announcements", ann.event_id], (old = []) =>
+        old.map((item) => item.id === ann.id
+          ? { ...item, read_by: [...new Set([...(item.read_by || []), name])] }
+          : item
+        )
+      );
+      return { previousAnnouncements, previousAlert };
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(["announcements", ann.event_id], context?.previousAnnouncements);
+      queryClient.setQueryData(["announcements-alert", ann.event_id], context?.previousAlert);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements", ann.event_id] });
       queryClient.invalidateQueries({ queryKey: ["announcements-alert", ann.event_id] });
@@ -598,6 +676,18 @@ export default function AnnouncementManager({ eventId }) {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Announcement.delete(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["announcements", eventId] });
+      await queryClient.cancelQueries({ queryKey: ["announcements-alert", eventId] });
+      const previousAnnouncements = queryClient.getQueryData(["announcements", eventId]);
+      const previousAlert = queryClient.getQueryData(["announcements-alert", eventId]);
+      queryClient.setQueryData(["announcements", eventId], (old = []) => old.filter((item) => item.id !== id));
+      return { previousAnnouncements, previousAlert };
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(["announcements", eventId], context?.previousAnnouncements);
+      queryClient.setQueryData(["announcements-alert", eventId], context?.previousAlert);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements", eventId] });
       queryClient.invalidateQueries({ queryKey: ["announcements-alert", eventId] });
