@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+const FALLBACK_TEMPLATE_PREFIX = '__venue_map_asset__';
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -27,15 +29,36 @@ Deno.serve(async (req) => {
       console.warn('Event venue map field update failed:', eventError.message);
     }
 
-    const existingAssets = await base44.asServiceRole.entities.VenueMapAsset.filter({ event_id: eventId });
     const assetPayload = {
       event_id: eventId,
       ...data,
       updated_at: new Date().toISOString(),
     };
-    const asset = existingAssets?.[0]
-      ? await base44.asServiceRole.entities.VenueMapAsset.update(existingAssets[0].id, assetPayload)
-      : await base44.asServiceRole.entities.VenueMapAsset.create(assetPayload);
+    let asset = null;
+    let fallback = null;
+    try {
+      const existingAssets = await base44.asServiceRole.entities.VenueMapAsset.filter({ event_id: eventId });
+      asset = existingAssets?.[0]
+        ? await base44.asServiceRole.entities.VenueMapAsset.update(existingAssets[0].id, assetPayload)
+        : await base44.asServiceRole.entities.VenueMapAsset.create(assetPayload);
+    } catch (assetError) {
+      console.warn('VenueMapAsset update failed:', assetError.message);
+    }
+
+    try {
+      const fallbackName = `${FALLBACK_TEMPLATE_PREFIX}:${eventId}`;
+      const existingFallbacks = await base44.asServiceRole.entities.MapTemplate.filter({ name: fallbackName });
+      const fallbackPayload = {
+        name: fallbackName,
+        description: 'StageFlow venue map asset fallback',
+        areas: [assetPayload],
+      };
+      fallback = existingFallbacks?.[0]
+        ? await base44.asServiceRole.entities.MapTemplate.update(existingFallbacks[0].id, fallbackPayload)
+        : await base44.asServiceRole.entities.MapTemplate.create(fallbackPayload);
+    } catch (fallbackError) {
+      console.warn('Venue map fallback update failed:', fallbackError.message);
+    }
 
     return Response.json({
       event: {
@@ -48,6 +71,7 @@ Deno.serve(async (req) => {
         ...(asset || {}),
         ...assetPayload,
       },
+      fallback: fallback || null,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

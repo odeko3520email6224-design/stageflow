@@ -18,6 +18,7 @@ const ROLE_COLORS = {
 
 const TIME_SLOTS = ["開場中", "開演中", "終演後"];
 const PIN_RADIUS_PX = 11;
+const VENUE_MAP_FALLBACK_PREFIX = "__venue_map_asset__";
 let pdfWorkerPort = null;
 
 function ensurePDFWorker() {
@@ -68,6 +69,16 @@ async function saveVenueMapAssets(eventId, { map_pdf_url, map_image_url }) {
   });
   if (response.data?.error) throw new Error(response.data.error);
   return response.data;
+}
+
+async function loadVenueMapAsset(eventId) {
+  const [assetResult, fallbackResult] = await Promise.allSettled([
+    base44.entities.VenueMapAsset?.filter({ event_id: eventId }),
+    base44.entities.MapTemplate.filter({ name: `${VENUE_MAP_FALLBACK_PREFIX}:${eventId}` }),
+  ]);
+  const asset = assetResult.status === "fulfilled" ? assetResult.value?.[0] : null;
+  const fallback = fallbackResult.status === "fulfilled" ? fallbackResult.value?.[0]?.areas?.[0] : null;
+  return asset || fallback || null;
 }
 
 function getPinColor(pos) {
@@ -167,8 +178,7 @@ export default function VenueMap({ eventId }) {
 
   const { data: venueMapAsset } = useQuery({
     queryKey: ["venueMapAsset", eventId],
-    queryFn: () => base44.entities.VenueMapAsset.filter({ event_id: eventId }),
-    select: (d) => d?.[0],
+    queryFn: () => loadVenueMapAsset(eventId),
   });
 
   const updatePosition = useMutation({
@@ -316,7 +326,7 @@ export default function VenueMap({ eventId }) {
         }
         return old ? { ...old, ...updatedEvent } : updatedEvent;
       });
-      queryClient.setQueryData(["venueMapAsset", eventId], updatedAsset ? [updatedAsset] : []);
+      queryClient.setQueryData(["venueMapAsset", eventId], updatedAsset || null);
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
       queryClient.invalidateQueries({ queryKey: ["venueMapAsset", eventId] });
       queryClient.invalidateQueries({ queryKey: ["events"] });
@@ -340,7 +350,7 @@ export default function VenueMap({ eventId }) {
       }
       return old ? { ...old, ...updatedEvent } : updatedEvent;
     });
-    queryClient.setQueryData(["venueMapAsset", eventId], updatedAsset ? [updatedAsset] : []);
+    queryClient.setQueryData(["venueMapAsset", eventId], updatedAsset || null);
     queryClient.invalidateQueries({ queryKey: ["event", eventId] });
     queryClient.invalidateQueries({ queryKey: ["venueMapAsset", eventId] });
     queryClient.invalidateQueries({ queryKey: ["events"] });

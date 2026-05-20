@@ -14,7 +14,10 @@ export default function MapTemplateManagement({ eventId }) {
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["mapTemplates"],
-    queryFn: () => base44.entities.MapTemplate.list("-created_date"),
+    queryFn: async () => {
+      const items = await base44.entities.MapTemplate.list("-created_date");
+      return items.filter((item) => !item.name?.startsWith("__venue_map_asset__:"));
+    },
   });
 
   const { data: currentAreas = [] } = useQuery({
