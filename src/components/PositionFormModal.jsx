@@ -11,6 +11,7 @@ import {
   applyPositionSideMutation,
   applyPositionSideSettingsToTypes,
   loadPositionSideSettings,
+  rememberPositionSideSettings,
 } from "@/lib/positionSideSettings";
 import { X, Check } from "lucide-react";
 import { motion } from "framer-motion";
@@ -95,7 +96,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
     },
     onSuccess: (result) => {
       if (result?.sideSettings) {
-        queryClient.setQueryData(["positionSideSettings", eventId], result.sideSettings);
+        queryClient.setQueryData(["positionSideSettings", eventId], rememberPositionSideSettings(eventId, result.sideSettings));
       }
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
       queryClient.invalidateQueries({ queryKey: ["staff", eventId] });

@@ -18,6 +18,7 @@ import {
   applyPositionSideSettingsToPositions,
   applyPositionSideSettingsToTypes,
   loadPositionSideSettings,
+  rememberPositionSideSettings,
 } from "@/lib/positionSideSettings";
 import PresetSelector from "@/components/PresetSelector";
 import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
@@ -107,7 +108,7 @@ export default function StaffDragDropManager({ eventId }) {
     },
     onSuccess: (result) => {
       if (result?.sideSettings) {
-        queryClient.setQueryData(["positionSideSettings", eventId], result.sideSettings);
+        queryClient.setQueryData(["positionSideSettings", eventId], rememberPositionSideSettings(eventId, result.sideSettings));
       }
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
     },

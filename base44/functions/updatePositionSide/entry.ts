@@ -10,7 +10,12 @@ async function loadSideTemplate(base44: any, eventId: string) {
     const allRecords = await base44.asServiceRole.entities.MapTemplate.list();
     records = allRecords?.filter((item: Record<string, any>) => item.name === name) || [];
   }
-  const record = records?.[0] || null;
+  const record = records
+    ?.sort((a: Record<string, any>, b: Record<string, any>) => {
+      const aDate = new Date(a.updated_date || a.created_date || 0).getTime();
+      const bDate = new Date(b.updated_date || b.created_date || 0).getTime();
+      return bDate - aDate;
+    })?.[0] || null;
   const data = record?.areas?.[0] || {};
   return {
     record,
@@ -86,10 +91,10 @@ Deno.serve(async (req) => {
 
       for (const position of matchingPositions) {
         const existingSide = nextSideData.positions[position.id] || {};
-        const kamite = existingSide.staff_names_kamite || [];
-        const shimote = existingSide.staff_names_shimote || [];
+        const kamite = splitBySide ? [] : (existingSide.staff_names_kamite || []);
+        const shimote = splitBySide ? [] : (existingSide.staff_names_shimote || []);
         const staffNames = splitBySide
-          ? unique([...kamite, ...shimote, ...(position.staff_names || [])])
+          ? []
           : unique(position.staff_names || []);
         const updated = await base44.asServiceRole.entities.Position.update(position.id, { staff_names: staffNames });
         nextSideData.positions[position.id] = {

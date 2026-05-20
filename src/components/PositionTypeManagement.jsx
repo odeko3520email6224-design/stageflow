@@ -14,6 +14,7 @@ import { loadEventById } from "@/lib/eventLoader";
 import {
   applyPositionSideSettingsToTypes,
   loadPositionSideSettings,
+  rememberPositionSideSettings,
 } from "@/lib/positionSideSettings";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
@@ -151,7 +152,7 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
     },
     onSuccess: (result) => {
       if (result?.sideSettings) {
-        queryClient.setQueryData(["positionSideSettings", eventId], result.sideSettings);
+        queryClient.setQueryData(["positionSideSettings", eventId], rememberPositionSideSettings(eventId, result.sideSettings));
       }
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
       toast.success(`自動配置しました（作成${result.created}件・更新${result.updated}件）`);
@@ -173,12 +174,24 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
   };
 
   const handleToggleSplitBySide = (positionType, splitBySide) => {
+    const matchingPositionIds = new Set(
+      (queryClient.getQueryData(["positions", eventId]) || [])
+        .filter((position) => position.name === positionType.name)
+        .map((position) => position.id)
+    );
     queryClient.setQueryData(["positionSideSettings", eventId], (old) => ({
       position_types: {
         ...(old?.position_types || {}),
         [positionType.name]: splitBySide,
       },
-      positions: old?.positions || {},
+      positions: Object.fromEntries(
+        Object.entries(old?.positions || {}).map(([positionId, data]) => [
+          positionId,
+          splitBySide && matchingPositionIds.has(positionId)
+            ? { ...data, split_by_side: true, staff_names_kamite: [], staff_names_shimote: [] }
+            : data,
+        ])
+      ),
       updated_at: new Date().toISOString(),
     }));
     queryClient.setQueryData(["positions", eventId], (old = []) =>
@@ -186,8 +199,9 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
         ? {
             ...position,
             split_by_side: splitBySide,
-            staff_names_kamite: position.staff_names_kamite || [],
-            staff_names_shimote: position.staff_names_shimote || [],
+            staff_names: splitBySide ? [] : (position.staff_names || []),
+            staff_names_kamite: splitBySide ? [] : (position.staff_names_kamite || []),
+            staff_names_shimote: splitBySide ? [] : (position.staff_names_shimote || []),
           }
         : position)
     );
@@ -205,7 +219,7 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
       })
       .then((payload) => {
         if (payload?.sideSettings) {
-          queryClient.setQueryData(["positionSideSettings", eventId], payload.sideSettings);
+          queryClient.setQueryData(["positionSideSettings", eventId], rememberPositionSideSettings(eventId, payload.sideSettings));
         }
         queryClient.invalidateQueries({ queryKey: ["positionTypes"] });
         queryClient.invalidateQueries({ queryKey: ["positions", eventId] });

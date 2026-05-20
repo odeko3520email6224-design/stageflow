@@ -2,8 +2,14 @@ import { appParams } from "@/lib/app-params";
 
 export const POSITION_SIDE_TEMPLATE_PREFIX = "__position_side__";
 
+const positionSideCache = new Map();
+
 export function getPositionSideTemplateName(eventId) {
   return `${POSITION_SIDE_TEMPLATE_PREFIX}:${eventId}`;
+}
+
+function getPositionSideCacheKey(eventId) {
+  return `stageflow:position_side:${eventId}`;
 }
 
 export function normalizePositionSideSettings(raw) {
@@ -12,6 +18,44 @@ export function normalizePositionSideSettings(raw) {
     positions: raw?.positions || {},
     updated_at: raw?.updated_at || null,
   };
+}
+
+function hasPositionSideSettings(settings) {
+  return Boolean(
+    Object.keys(settings?.position_types || {}).length ||
+    Object.keys(settings?.positions || {}).length
+  );
+}
+
+function readCachedPositionSideSettings(eventId) {
+  const inMemory = positionSideCache.get(eventId);
+  if (inMemory) return inMemory;
+  if (typeof window === "undefined") return normalizePositionSideSettings();
+  try {
+    const cached = JSON.parse(window.localStorage.getItem(getPositionSideCacheKey(eventId)) || "{}");
+    const settings = normalizePositionSideSettings(cached);
+    if (hasPositionSideSettings(settings)) {
+      positionSideCache.set(eventId, settings);
+      return settings;
+    }
+  } catch {
+    // Ignore corrupt local cache and fall back to server data.
+  }
+  return normalizePositionSideSettings();
+}
+
+export function rememberPositionSideSettings(eventId, settings) {
+  const normalized = normalizePositionSideSettings(settings);
+  if (!hasPositionSideSettings(normalized)) return normalized;
+  positionSideCache.set(eventId, normalized);
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem(getPositionSideCacheKey(eventId), JSON.stringify(normalized));
+    } catch {
+      // Storage may be unavailable; in-memory cache still prevents visible flicker for this session.
+    }
+  }
+  return normalized;
 }
 
 function getNewestTemplate(records, name) {
@@ -36,20 +80,26 @@ export async function loadPositionSideSettings(base44, eventId) {
   const name = getPositionSideTemplateName(eventId);
   try {
     const restRecord = await loadPositionSideSettingsFromRest(eventId);
-    if (restRecord) return normalizePositionSideSettings(restRecord?.areas?.[0]);
+    if (restRecord) return rememberPositionSideSettings(eventId, restRecord?.areas?.[0]);
   } catch (error) {
     console.warn("Position side settings REST read failed; trying SDK.", error);
   }
 
-  const [filteredResult, listResult] = await Promise.allSettled([
-    base44.entities.MapTemplate.filter({ name }),
-    base44.entities.MapTemplate.list(),
-  ]);
-  const fromFilter = filteredResult.status === "fulfilled" ? getNewestTemplate(filteredResult.value, name) : null;
-  const fromList = listResult.status === "fulfilled"
-    ? getNewestTemplate(listResult.value, name)
-    : null;
-  return normalizePositionSideSettings((fromFilter || fromList)?.areas?.[0]);
+  try {
+    const [filteredResult, listResult] = await Promise.allSettled([
+      base44.entities.MapTemplate.filter({ name }),
+      base44.entities.MapTemplate.list(),
+    ]);
+    const fromFilter = filteredResult.status === "fulfilled" ? getNewestTemplate(filteredResult.value, name) : null;
+    const fromList = listResult.status === "fulfilled"
+      ? getNewestTemplate(listResult.value, name)
+      : null;
+    const record = fromFilter || fromList;
+    if (record) return rememberPositionSideSettings(eventId, record?.areas?.[0]);
+  } catch (error) {
+    console.warn("Position side settings SDK read failed; using cached settings.", error);
+  }
+  return readCachedPositionSideSettings(eventId);
 }
 
 export function applyPositionSideMutation(settings, positionId, data) {
