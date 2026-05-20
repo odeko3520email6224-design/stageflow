@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
+import {
+  applyPositionSideSettingsToTypes,
+  loadPositionSideSettings,
+} from "@/lib/positionSideSettings";
 import { X, Check } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -36,15 +40,28 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
   });
 
   // PositionType list for name selection (global, not event-specific)
-  const { data: positionTypes = [] } = useQuery({
+  const { data: rawPositionTypes = [] } = useQuery({
     queryKey: ["positionTypes"],
     queryFn: () => base44.entities.PositionType.list(),
   });
+
+  const { data: sideSettings } = useQuery({
+    queryKey: ["positionSideSettings", eventId],
+    queryFn: () => loadPositionSideSettings(base44, eventId),
+  });
+
+  const positionTypes = applyPositionSideSettingsToTypes(rawPositionTypes, sideSettings);
 
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async (data) => {
+      const {
+        staff_names_kamite,
+        staff_names_shimote,
+        split_by_side,
+        ...positionFields
+      } = data;
       if (position) {
         const response = await base44.functions.invoke("updatePositionSide", {
           action: "updatePositionStaff",
@@ -54,13 +71,32 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
         });
         const payload = unwrapFunctionResponse(response);
         if (payload?.error) throw new Error(payload.error);
-        return payload?.position;
+        return payload;
       }
-      return base44.entities.Position.create(data);
+      const created = await base44.entities.Position.create({
+        ...positionFields,
+        staff_names: data.staff_names || [],
+      });
+      if (split_by_side || staff_names_kamite?.length || staff_names_shimote?.length) {
+        const response = await base44.functions.invoke("updatePositionSide", {
+          action: "updatePositionStaff",
+          eventId,
+          positionId: created.id,
+          ...data,
+        });
+        const payload = unwrapFunctionResponse(response);
+        if (payload?.error) throw new Error(payload.error);
+        return payload;
+      }
+      return { position: created };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (result?.sideSettings) {
+        queryClient.setQueryData(["positionSideSettings", eventId], result.sideSettings);
+      }
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
       queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["positionSideSettings", eventId] });
       onSaved();
     },
   });

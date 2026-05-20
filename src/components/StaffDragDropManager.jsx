@@ -12,6 +12,11 @@ import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import { getStaffDisplayName } from "@/lib/staffName";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
+import {
+  applyPositionSideSettingsToPositions,
+  applyPositionSideSettingsToTypes,
+  loadPositionSideSettings,
+} from "@/lib/positionSideSettings";
 import PresetSelector from "@/components/PresetSelector";
 import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 
@@ -40,24 +45,19 @@ export default function StaffDragDropManager({ eventId }) {
     queryFn: () => base44.entities.PositionPreset.list(),
   });
 
-  const { data: positionTypes = [] } = useQuery({
+  const { data: rawPositionTypes = [] } = useQuery({
     queryKey: ["positionTypes"],
     queryFn: () => base44.entities.PositionType.list(),
     select: (d) => [...d].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   });
 
-  const positions = rawPositions.map((position) => {
-    const positionType = positionTypes.find((pt) => pt.name === position.name);
-    if (!positionType || position.split_by_side === Boolean(positionType.split_by_side)) {
-      return position;
-    }
-    return {
-      ...position,
-      split_by_side: Boolean(positionType.split_by_side),
-      staff_names_kamite: position.staff_names_kamite || [],
-      staff_names_shimote: position.staff_names_shimote || [],
-    };
+  const { data: sideSettings } = useQuery({
+    queryKey: ["positionSideSettings", eventId],
+    queryFn: () => loadPositionSideSettings(base44, eventId),
   });
+
+  const positionTypes = applyPositionSideSettingsToTypes(rawPositionTypes, sideSettings);
+  const positions = applyPositionSideSettingsToPositions(rawPositions, positionTypes, sideSettings);
 
   const updatePositionMutation = useMutation({
     mutationFn: async ({ positionId, data }) => {
@@ -75,7 +75,7 @@ export default function StaffDragDropManager({ eventId }) {
         });
         const payload = unwrapFunctionResponse(response);
         if (payload?.error) throw new Error(payload.error);
-        return payload?.position;
+        return payload;
       }
       return base44.entities.Position.update(positionId, data);
     },
@@ -83,15 +83,19 @@ export default function StaffDragDropManager({ eventId }) {
       await queryClient.cancelQueries({ queryKey: ["positions", eventId] });
       const previousPositions = queryClient.getQueryData(["positions", eventId]);
       queryClient.setQueryData(["positions", eventId], (old) =>
-        old.map((p) => (p.id === positionId ? { ...p, ...data } : p))
+        (old || []).map((p) => (p.id === positionId ? { ...p, ...data } : p))
       );
       return { previousPositions };
     },
     onError: (err, newData, context) => {
       queryClient.setQueryData(["positions", eventId], context.previousPositions);
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (result?.sideSettings) {
+        queryClient.setQueryData(["positionSideSettings", eventId], result.sideSettings);
+      }
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["positionSideSettings", eventId] });
     },
   });
 
@@ -133,9 +137,6 @@ export default function StaffDragDropManager({ eventId }) {
         name: pt.name,
         time_slot: slot,
         staff_names: [],
-        staff_names_kamite: [],
-        staff_names_shimote: [],
-        split_by_side: Boolean(pt.split_by_side),
         notes: "",
         color: pt.color || "#6366f1",
         required_count: getRequiredCountForSlot(pt, slot),

@@ -12,20 +12,12 @@ Deno.serve(async (req) => {
     }
 
     let event = null;
-    let asset = null;
     let fallbackAsset = null;
 
     try {
       event = await base44.asServiceRole.entities.Event.get(eventId);
     } catch (eventError) {
       console.warn('Event venue map read failed:', eventError.message);
-    }
-
-    try {
-      const assets = await base44.asServiceRole.entities.VenueMapAsset.filter({ event_id: eventId });
-      asset = assets?.[0] || null;
-    } catch (assetError) {
-      console.warn('VenueMapAsset read failed:', assetError.message);
     }
 
     try {
@@ -42,9 +34,9 @@ Deno.serve(async (req) => {
 
     const resolved = {
       event_id: eventId,
-      map_pdf_url: asset?.map_pdf_url || fallbackAsset?.map_pdf_url || event?.map_pdf_url || null,
-      map_image_url: asset?.map_image_url || fallbackAsset?.map_image_url || event?.map_image_url || null,
-      updated_at: asset?.updated_at || fallbackAsset?.updated_at || null,
+      map_pdf_url: fallbackAsset?.map_pdf_url || event?.map_pdf_url || null,
+      map_image_url: fallbackAsset?.map_image_url || event?.map_image_url || null,
+      updated_at: fallbackAsset?.updated_at || null,
     };
 
     return Response.json({

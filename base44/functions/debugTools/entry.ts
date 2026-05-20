@@ -9,6 +9,41 @@ const getRequiredCountForSlot = (positionType: Record<string, any>, slot: string
 };
 
 const sortByOrder = (a: Record<string, any>, b: Record<string, any>) => (a.order ?? 0) - (b.order ?? 0);
+const SIDE_TEMPLATE_PREFIX = '__position_side__';
+
+async function loadSideTemplate(base44: any, eventId: string) {
+  const name = `${SIDE_TEMPLATE_PREFIX}:${eventId}`;
+  let records = await base44.asServiceRole.entities.MapTemplate.filter({ name });
+  if (!records?.length) {
+    const allRecords = await base44.asServiceRole.entities.MapTemplate.list();
+    records = allRecords?.filter((item: Record<string, any>) => item.name === name) || [];
+  }
+  const record = records?.[0] || null;
+  const data = record?.areas?.[0] || {};
+  return {
+    record,
+    data: {
+      position_types: data.position_types || {},
+      positions: data.positions || {},
+      updated_at: data.updated_at || null,
+    },
+  };
+}
+
+async function saveSideTemplate(base44: any, eventId: string, template: Record<string, any>) {
+  const { record, ...data } = template;
+  const payload = {
+    name: `${SIDE_TEMPLATE_PREFIX}:${eventId}`,
+    description: 'StageFlow position side settings',
+    areas: [{
+      ...data,
+      updated_at: new Date().toISOString(),
+    }],
+  };
+  return record?.id
+    ? await base44.asServiceRole.entities.MapTemplate.update(record.id, payload)
+    : await base44.asServiceRole.entities.MapTemplate.create(payload);
+}
 
 Deno.serve(async (req) => {
   try {
@@ -39,11 +74,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'unknown action' }, { status: 400 });
     }
 
-    const [event, staffList, positionTypes, existingPositions] = await Promise.all([
+    const [event, staffList, positionTypes, existingPositions, sideTemplate] = await Promise.all([
       base44.asServiceRole.entities.Event.get(eventId),
       base44.asServiceRole.entities.Staff.filter({ event_id: eventId }),
       base44.asServiceRole.entities.PositionType.list(),
       base44.asServiceRole.entities.Position.filter({ event_id: eventId }),
+      loadSideTemplate(base44, eventId),
     ]);
 
     if (!event?.debug_enabled && !body.debug_enabled) {
@@ -64,6 +100,12 @@ Deno.serve(async (req) => {
     let created = 0;
     let updated = 0;
     let assigned = 0;
+    const nextSideData = {
+      ...sideTemplate.data,
+      positions: {
+        ...sideTemplate.data.positions,
+      },
+    };
 
     for (const slot of TIME_SLOTS) {
       const assignedInSlot = new Set<string>();
@@ -94,26 +136,24 @@ Deno.serve(async (req) => {
           (position.time_slot || TIME_SLOTS[0]) === slot && position.name === positionType.name
         );
 
-        const splitBySide = Boolean(positionType.split_by_side);
+        const splitBySide = Boolean(nextSideData.position_types[positionType.name]);
         const kamiteStaffNames = splitBySide ? staffNames.filter((_, staffIndex) => staffIndex % 2 === 0) : [];
         const shimoteStaffNames = splitBySide ? staffNames.filter((_, staffIndex) => staffIndex % 2 === 1) : [];
         const payload = {
           name: positionType.name,
           time_slot: slot,
           staff_names: splitBySide ? [...new Set([...kamiteStaffNames, ...shimoteStaffNames])] : staffNames,
-          staff_names_kamite: kamiteStaffNames,
-          staff_names_shimote: shimoteStaffNames,
-          split_by_side: splitBySide,
           color: positionType.color || '#6366f1',
           required_count: requiredCount,
           order: existing?.order ?? index,
         };
 
+        let savedPosition = existing;
         if (existing) {
-          await base44.asServiceRole.entities.Position.update(existing.id, payload);
+          savedPosition = await base44.asServiceRole.entities.Position.update(existing.id, payload);
           updated += 1;
         } else {
-          await base44.asServiceRole.entities.Position.create({
+          savedPosition = await base44.asServiceRole.entities.Position.create({
             event_id: eventId,
             notes: '',
             ...payload,
@@ -121,11 +161,21 @@ Deno.serve(async (req) => {
           created += 1;
         }
 
+        if (savedPosition?.id) {
+          nextSideData.positions[savedPosition.id] = {
+            ...(nextSideData.positions[savedPosition.id] || {}),
+            split_by_side: splitBySide,
+            staff_names_kamite: kamiteStaffNames,
+            staff_names_shimote: shimoteStaffNames,
+          };
+        }
         assigned += staffNames.length;
       }
     }
 
-    return Response.json({ created, updated, assigned });
+    await saveSideTemplate(base44, eventId, { record: sideTemplate.record, ...nextSideData });
+
+    return Response.json({ created, updated, assigned, sideSettings: nextSideData });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

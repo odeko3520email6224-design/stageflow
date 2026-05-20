@@ -39,17 +39,7 @@ Deno.serve(async (req) => {
       ...data,
       updated_at: new Date().toISOString(),
     };
-    let asset = null;
     let fallback = null;
-    try {
-      const existingAssets = await base44.asServiceRole.entities.VenueMapAsset.filter({ event_id: eventId });
-      asset = existingAssets?.[0]
-        ? await base44.asServiceRole.entities.VenueMapAsset.update(existingAssets[0].id, assetPayload)
-        : await base44.asServiceRole.entities.VenueMapAsset.create(assetPayload);
-    } catch (assetError) {
-      console.warn('VenueMapAsset update failed:', assetError.message);
-      persistenceErrors.push(`VenueMapAsset: ${assetError.message}`);
-    }
 
     try {
       const fallbackName = `${FALLBACK_TEMPLATE_PREFIX}:${eventId}`;
@@ -71,7 +61,7 @@ Deno.serve(async (req) => {
       persistenceErrors.push(`MapTemplate fallback: ${fallbackError.message}`);
     }
 
-    if (!event && !asset && !fallback) {
+    if (!event && !fallback) {
       return Response.json({
         error: 'Venue map could not be persisted',
         details: persistenceErrors,
@@ -86,13 +76,11 @@ Deno.serve(async (req) => {
         map_image_url,
       },
       asset: {
-        ...(asset || {}),
         ...assetPayload,
       },
       fallback: fallback || null,
       persisted: {
         event: Boolean(event),
-        asset: Boolean(asset),
         fallback: Boolean(fallback),
       },
     });

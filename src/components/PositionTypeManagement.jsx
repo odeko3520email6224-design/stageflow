@@ -10,6 +10,10 @@ import PositionPresetManager from "@/components/PositionPresetManager";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTheme } from "@/lib/ThemeProvider";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
+import {
+  applyPositionSideSettingsToTypes,
+  loadPositionSideSettings,
+} from "@/lib/positionSideSettings";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 const PRESET_COLORS = [
@@ -31,11 +35,18 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
 
   const debugStorageKey = `stageflow:debug-enabled:${eventId}`;
 
-  const { data: positionTypes = [], isLoading } = useQuery({
+  const { data: rawPositionTypes = [], isLoading } = useQuery({
     queryKey: ["positionTypes"],
     queryFn: () => base44.entities.PositionType.list(),
     select: (d) => [...d].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   });
+
+  const { data: sideSettings } = useQuery({
+    queryKey: ["positionSideSettings", eventId],
+    queryFn: () => loadPositionSideSettings(base44, eventId),
+  });
+
+  const positionTypes = applyPositionSideSettingsToTypes(rawPositionTypes, sideSettings);
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
@@ -137,7 +148,11 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
       toast.error(error.message || "自動配置に失敗しました");
     },
     onSuccess: (result) => {
+      if (result?.sideSettings) {
+        queryClient.setQueryData(["positionSideSettings", eventId], result.sideSettings);
+      }
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["positionSideSettings", eventId] });
       toast.success(`自動配置しました（作成${result.created}件・更新${result.updated}件）`);
     },
   });
@@ -152,16 +167,19 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
       required_count_before: 0,
       required_count_during: 0,
       required_count_after: 0,
-      split_by_side: false,
       order: maxOrder + 1,
     });
   };
 
   const handleToggleSplitBySide = (positionType, splitBySide) => {
-    queryClient.setQueryData(["positionTypes"], (old = []) =>
-      old.map((pt) => pt.id === positionType.id ? { ...pt, split_by_side: splitBySide } : pt)
-    );
-    const matchingPositions = positions.filter((position) => position.name === positionType.name);
+    queryClient.setQueryData(["positionSideSettings", eventId], (old) => ({
+      position_types: {
+        ...(old?.position_types || {}),
+        [positionType.name]: splitBySide,
+      },
+      positions: old?.positions || {},
+      updated_at: new Date().toISOString(),
+    }));
     queryClient.setQueryData(["positions", eventId], (old = []) =>
       old.map((position) => position.name === positionType.name
         ? {
@@ -184,13 +202,18 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
         if (payload?.error) throw new Error(payload.error);
         return payload;
       })
-      .then(() => {
+      .then((payload) => {
+        if (payload?.sideSettings) {
+          queryClient.setQueryData(["positionSideSettings", eventId], payload.sideSettings);
+        }
         queryClient.invalidateQueries({ queryKey: ["positionTypes"] });
         queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+        queryClient.invalidateQueries({ queryKey: ["positionSideSettings", eventId] });
       })
       .catch(() => {
         queryClient.invalidateQueries({ queryKey: ["positionTypes"] });
         queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+        queryClient.invalidateQueries({ queryKey: ["positionSideSettings", eventId] });
         toast.error("\u4e0a\u624b\u30fb\u4e0b\u624b\u8a2d\u5b9a\u306e\u4fdd\u5b58\u306b\u5931\u6557\u3057\u307e\u3057\u305f");
       });
   };
