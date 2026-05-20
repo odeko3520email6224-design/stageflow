@@ -4,20 +4,18 @@ import { Eye, Pencil, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 
-const getModeStorageKey = (eventId, field) => `stageflow:event-mode:${eventId}:${field}`;
 const modeEventName = "stageflow:event-mode-change";
+const normalizeMode = (mode) => (mode === "public" || mode === "edit" ? mode : "edit");
 
 export function useResolvedEventMode(eventId, field, eventMode, options = {}) {
   const [localMode, setLocalMode] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const storageKey = getModeStorageKey(eventId, field);
   const preferLocal = options.preferLocal === true;
 
   useEffect(() => {
-    const savedMode = window.localStorage.getItem(storageKey);
-    setLocalMode(savedMode === "edit" || savedMode === "public" ? savedMode : null);
+    setLocalMode(null);
     setIsLoaded(true);
-  }, [storageKey]);
+  }, [eventId, field]);
 
   useEffect(() => {
     const handleModeChange = (event) => {
@@ -29,21 +27,21 @@ export function useResolvedEventMode(eventId, field, eventMode, options = {}) {
     return () => window.removeEventListener(modeEventName, handleModeChange);
   }, [eventId, field]);
 
+  const resolvedMode = preferLocal && localMode ? localMode : normalizeMode(eventMode);
+
   return {
-    mode: preferLocal ? (localMode || eventMode || "public") : (eventMode || localMode || "public"),
+    mode: resolvedMode,
     isReady: isLoaded || eventMode === "edit" || eventMode === "public",
   };
 }
 
 function rememberMode(eventId, field, mode) {
-  const storageKey = getModeStorageKey(eventId, field);
-  window.localStorage.setItem(storageKey, mode);
   window.dispatchEvent(new CustomEvent(modeEventName, {
     detail: { eventId, field, mode },
   }));
 }
 
-export function ModeVisibilityControls({ eventId, field, mode = "public", canManage, label }) {
+export function ModeVisibilityControls({ eventId, field, mode = "edit", canManage, label }) {
   const queryClient = useQueryClient();
 
   const updateMode = useMutation({
@@ -69,7 +67,7 @@ export function ModeVisibilityControls({ eventId, field, mode = "public", canMan
       return { previousEvent };
     },
     onError: (_, __, context) => {
-      const previousMode = context?.previousEvent?.[field] || context?.previousEvent?.[0]?.[field] || "public";
+      const previousMode = normalizeMode(context?.previousEvent?.[field] || context?.previousEvent?.[0]?.[field]);
       rememberMode(eventId, field, previousMode);
       queryClient.setQueryData(["event", eventId], context?.previousEvent);
       toast.error("モードの保存に失敗しました");
@@ -83,6 +81,8 @@ export function ModeVisibilityControls({ eventId, field, mode = "public", canMan
         }
         return old ? { ...old, [field]: savedMode } : old;
       });
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
       toast.success("モードを保存しました");
     },
   });

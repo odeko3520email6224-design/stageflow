@@ -167,7 +167,7 @@ export default function VenueMap({ eventId }) {
   const hasPDF = Boolean(effectiveMapImageUrl || effectivePdfUrl);
   const { mode: venueMapMode, isReady: isModeReady } = useResolvedEventMode(eventId, "venue_map_mode", event?.venue_map_mode);
   const isEditMode = venueMapMode === "edit";
-  const hideForUser = !canEdit && event?.venue_map_mode !== "public";
+  const hideForUser = !canEdit && venueMapMode !== "public";
   const isVisibilityReady = Boolean(role) && isModeReady && Boolean(event);
   const canUseEditTools = canEdit && isEditMode;
   const shouldMaskStaffNames = role !== "admin" && role !== "chief";

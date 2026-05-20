@@ -40,6 +40,33 @@
     "active_preset_id": {
       "type": "string",
       "description": "\u9069\u7528\u4e2d\u306e\u30dd\u30b8\u30b7\u30e7\u30f3\u30d7\u30ea\u30bb\u30c3\u30c8ID"
+    },
+    "staff_management_mode": {
+      "type": "string",
+      "enum": [
+        "public",
+        "edit"
+      ],
+      "default": "edit",
+      "description": "\u30b9\u30bf\u30c3\u30d5\u7ba1\u7406\u306e\u8868\u793a\u30e2\u30fc\u30c9"
+    },
+    "assignment_mode": {
+      "type": "string",
+      "enum": [
+        "public",
+        "edit"
+      ],
+      "default": "edit",
+      "description": "\u914d\u7f6e\u8868\u306e\u8868\u793a\u30e2\u30fc\u30c9"
+    },
+    "venue_map_mode": {
+      "type": "string",
+      "enum": [
+        "public",
+        "edit"
+      ],
+      "default": "edit",
+      "description": "\u4f1a\u5834\u30de\u30c3\u30d7\u306e\u8868\u793a\u30e2\u30fc\u30c9"
     }
   },
   "required": [

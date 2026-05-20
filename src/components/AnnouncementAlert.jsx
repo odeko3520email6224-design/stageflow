@@ -20,7 +20,7 @@ export default function AnnouncementAlert({ eventId }) {
   const { data: announcements = [] } = useQuery({
     queryKey: ["announcements-alert", eventId],
     queryFn: () => base44.entities.Announcement.filter({ event_id: eventId, is_alert: true }),
-    refetchInterval: 15000,
+    refetchInterval: 3000,
   });
 
   const visible = announcements.filter((a) => {

@@ -226,7 +226,7 @@ export default function StaffDragDropManager({ eventId }) {
   });
   const { mode: assignmentMode, isReady: isModeReady } = useResolvedEventMode(eventId, "assignment_mode", event?.assignment_mode);
   const isEditMode = assignmentMode === "edit";
-  const hideForUser = !canEdit && event?.assignment_mode !== "public";
+  const hideForUser = !canEdit && assignmentMode !== "public";
   const isVisibilityReady = Boolean(role) && isModeReady && Boolean(event);
   const isAdmin = canEdit && isEditMode;
   const shouldMaskStaffNames = role !== "admin" && role !== "chief";
@@ -281,9 +281,9 @@ export default function StaffDragDropManager({ eventId }) {
                 {isAdmin && (
                   <div className="flex items-center gap-1">
                     <button onClick={() => handleBulkCreatePositions(slot)}
-                      disabled={positionTypes.length === 0}
+                      disabled
                       title="ポジション種別をこの時間帯に一括登録"
-                      className="text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-white/60 dark:bg-white/10 hover:bg-white/90 dark:hover:bg-white/20 text-current transition-colors font-medium select-none disabled:opacity-30 disabled:pointer-events-none">
+                      className="text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700/60 text-slate-500 dark:text-slate-400 transition-colors font-medium select-none cursor-not-allowed opacity-50">
                       <Plus className="w-2.5 h-2.5" />一括登録
                     </button>
                     <button onClick={() => openAdd(slot)}

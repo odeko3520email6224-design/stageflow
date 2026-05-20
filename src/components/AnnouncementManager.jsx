@@ -655,7 +655,7 @@ export default function AnnouncementManager({ eventId }) {
     queryKey: ["announcements", eventId],
     queryFn: () => base44.entities.Announcement.filter({ event_id: eventId }),
     select: (d) => d.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)),
-    refetchInterval: 15000, // poll every 15s for new announcements
+    refetchInterval: 3000,
   });
 
   // Fire browser notification for new announcements
