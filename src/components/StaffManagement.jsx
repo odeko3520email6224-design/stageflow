@@ -125,7 +125,14 @@ export default function StaffManagement({ eventId }) {
   });
 
   const updateChiefMutation = useMutation({
-    mutationFn: (chief_staff_name) => base44.entities.Event.update(event?.id || eventId, { chief_staff_name }),
+    mutationFn: async (chief_staff_name) => {
+      const response = await base44.functions.invoke("updateEventChief", {
+        eventId: event?.id || eventId,
+        chief_staff_name,
+      });
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data?.event;
+    },
     onMutate: async (chief_staff_name) => {
       await queryClient.cancelQueries({ queryKey: ["event", eventId] });
       const previousEvent = queryClient.getQueryData(["event", eventId]);
@@ -209,7 +216,7 @@ export default function StaffManagement({ eventId }) {
         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
           <div className="flex items-center gap-1.5 shrink-0">
             <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-            <h3 className="text-xs font-bold">チーフ・管理者</h3>
+            <h3 className="text-xs font-bold">チーフ・システム管理者</h3>
           </div>
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
             <span className="text-[10px] font-medium text-muted-foreground shrink-0">チーフ</span>
@@ -226,7 +233,7 @@ export default function StaffManagement({ eventId }) {
             </select>
           </div>
           <div className="flex items-center gap-1.5 shrink-0 text-xs">
-            <span className="text-[10px] font-medium text-muted-foreground">管理者</span>
+            <span className="text-[10px] font-medium text-muted-foreground">システム管理者</span>
             <span className="font-medium">髙岡 永輝</span>
           </div>
         </div>
