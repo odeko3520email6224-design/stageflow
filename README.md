@@ -40,6 +40,8 @@ BASE44_API_KEY=your_local_base44_api_key
 
 `BASE44_API_KEY` is optional, but useful for local write testing. Keep it server-side only: do not rename it to `VITE_BASE44_API_KEY`.
 
+After changing files under `base44/functions`, publish the app from Base44 Builder before testing those function changes against real data. The local Vite proxy calls the currently deployed Base44 functions.
+
 Then start the app:
 
 ```
