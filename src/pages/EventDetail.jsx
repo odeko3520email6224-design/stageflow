@@ -36,8 +36,8 @@ export default function EventDetail() {
 
   const { isAdmin, isChief, canEdit, canManageSettings, role } = useUserRole();
   const isPrivileged = isAdmin || isChief;
-  const canShowTimeline = showTimeline || !isPrivileged;
   const [currentUser, setCurrentUser] = useState(null);
+  
 
   // Timeline feature toggle (persisted in localStorage, default OFF)
   const [showTimeline, setShowTimeline] = useState(() => {
@@ -47,6 +47,8 @@ export default function EventDetail() {
       return false;
     }
   });
+
+  const canShowTimeline = showTimeline || !isPrivileged;
 
   const handleToggleTimeline = (val) => {
     setShowTimeline(val);
