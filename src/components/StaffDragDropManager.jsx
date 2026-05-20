@@ -10,11 +10,11 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import PresetSelector from "@/components/PresetSelector";
+import { HiddenInEditMode, ModeVisibilityControls } from "@/components/ModeVisibilityControls";
 
 export default function StaffDragDropManager({ eventId }) {
   const queryClient = useQueryClient();
-  const { canEdit } = useUserRole();
-  const isAdmin = canEdit; // admin or chief
+  const { canEdit, canManageSettings, role } = useUserRole();
 
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
@@ -221,6 +221,10 @@ export default function StaffDragDropManager({ eventId }) {
     );
     return slotsWithAssignment.length < TIME_SLOTS.length;
   });
+  const assignmentMode = event?.assignment_mode || "public";
+  const isEditMode = assignmentMode === "edit";
+  const hideForUser = role === "user" && isEditMode;
+  const isAdmin = canEdit && isEditMode;
 
   return (
     <div>
@@ -233,13 +237,25 @@ export default function StaffDragDropManager({ eventId }) {
             return <div className="text-sm font-medium text-foreground mt-0.5">全時間帯合計：{totalAssigned}名配置済み</div>;
           })()}
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <PresetSelector eventId={eventId} compact />
+        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+          <ModeVisibilityControls
+            eventId={eventId}
+            field="assignment_mode"
+            mode={assignmentMode}
+            canManage={canManageSettings}
+            label="配置表"
+          />
+          {isAdmin && <PresetSelector eventId={eventId} compact />}
           <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2" onClick={handleExportPDF} disabled={exportingPDF || positions.length === 0}>
             <Download className="w-3 h-3" />{exportingPDF ? '...' : 'PDF'}
           </Button>
         </div>
       </div>
+
+      {hideForUser ? (
+        <HiddenInEditMode title="配置表は編集モード中です" />
+      ) : (
+        <>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
         {TIME_SLOTS.map((slot) => {
@@ -423,6 +439,8 @@ export default function StaffDragDropManager({ eventId }) {
           onConfirm={() => handleBulkDelete(confirmBulkDelete)}
           onCancel={() => setConfirmBulkDelete(null)}
         />
+      )}
+        </>
       )}
     </div>
   );

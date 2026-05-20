@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Download, FileText, Loader2, Map, MapPin, Move, Upload, X } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
+import { HiddenInEditMode, ModeVisibilityControls } from "@/components/ModeVisibilityControls";
 
 const ROLE_COLORS = {
   "受付": "#3b82f6",
@@ -110,7 +111,7 @@ function UnplacedPanel({ positions, draggingPin, onSelectPin, onDragStart, disab
 
 export default function VenueMap({ eventId }) {
   const queryClient = useQueryClient();
-  const { canEdit } = useUserRole();
+  const { canEdit, canManageSettings, role } = useUserRole();
   const fileInputRef = useRef(null);
   const mapRef = useRef(null);
   const canvasRef = useRef(null);
@@ -149,6 +150,10 @@ export default function VenueMap({ eventId }) {
   const effectivePdfUrl = localPdfUrl || event?.map_pdf_url || "";
   const effectiveMapImageUrl = localMapImageUrl || storedMapImageUrl;
   const hasPDF = Boolean(effectiveMapImageUrl || effectivePdfUrl);
+  const venueMapMode = event?.venue_map_mode || "public";
+  const isEditMode = venueMapMode === "edit";
+  const hideForUser = role === "user" && isEditMode;
+  const canUseEditTools = canEdit && isEditMode;
 
   useEffect(() => {
     let cancelled = false;
@@ -225,21 +230,21 @@ export default function VenueMap({ eventId }) {
   };
 
   const handleMapClick = (e) => {
-    if (!canEdit || !draggingPin || !hasPDF) return;
+    if (!canUseEditTools || !draggingPin || !hasPDF) return;
     const { x, y } = getMapCoords(e.clientX, e.clientY);
     placePin(draggingPin, x, y);
   };
 
   const handleMapDrop = (e) => {
     e.preventDefault();
-    if (!canEdit || !dragPinRef.current || !hasPDF) return;
+    if (!canUseEditTools || !dragPinRef.current || !hasPDF) return;
     const { x, y } = getMapCoords(e.clientX, e.clientY);
     placePin(dragPinRef.current, x, y);
     dragPinRef.current = null;
   };
 
   const handlePinDragStart = (e, pos) => {
-    if (!canEdit) return;
+    if (!canUseEditTools) return;
     e.stopPropagation();
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", pos.id);
@@ -249,7 +254,7 @@ export default function VenueMap({ eventId }) {
   };
 
   const handleTouchEnd = (e) => {
-    if (!canEdit || !draggingPin || !hasPDF) return;
+    if (!canUseEditTools || !draggingPin || !hasPDF) return;
     const touch = e.changedTouches[0];
     const { x, y } = getMapCoords(touch.clientX, touch.clientY);
     placePin(draggingPin, x, y);
@@ -382,7 +387,14 @@ export default function VenueMap({ eventId }) {
           会場マップ
         </h2>
         <div className="flex gap-1.5 flex-wrap justify-end sm:ml-auto">
-          {canEdit && (
+          <ModeVisibilityControls
+            eventId={eventId}
+            field="venue_map_mode"
+            mode={venueMapMode}
+            canManage={canManageSettings}
+            label="会場マップ"
+          />
+          {canUseEditTools && (
             <>
               <Button
                 size="sm"
@@ -413,7 +425,7 @@ export default function VenueMap({ eventId }) {
             {exportingPDF ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
             PDF出力
           </Button>
-          {canEdit && hasPDF && (
+          {canUseEditTools && hasPDF && (
             <Button size="sm" variant="outline" onClick={handlePDFRemove} className="gap-1 h-7 text-xs">
               <X className="w-3 h-3" />
               PDF削除
@@ -421,6 +433,11 @@ export default function VenueMap({ eventId }) {
           )}
         </div>
       </div>
+
+      {hideForUser ? (
+        <HiddenInEditMode title="会場マップは編集モード中です" />
+      ) : (
+        <>
 
       <div className="flex gap-0 border-b border-border mb-2">
         {TIME_SLOTS.map((slot) => (
@@ -488,7 +505,7 @@ export default function VenueMap({ eventId }) {
                     <p className="text-sm font-medium text-foreground">A4サイズのPDFまたは画像を読み込んでください</p>
                     <p className="text-xs mt-1">読み込んだマップ上にポジションのピンを配置できます。</p>
                   </div>
-                  {canEdit && (
+                  {canUseEditTools && (
                     <Button size="sm" onClick={() => fileInputRef.current?.click()} className="gap-1">
                       <Upload className="w-3.5 h-3.5" />
                       PDF/画像読込
@@ -517,13 +534,13 @@ export default function VenueMap({ eventId }) {
                     }}
                   >
                     <button
-                      draggable={canEdit}
+                      draggable={canUseEditTools}
                       onDragStart={(e) => handlePinDragStart(e, pos)}
                       onClick={(e) => {
                         e.stopPropagation();
                         setTooltip(isActive ? null : pos);
                       }}
-                      className={`flex flex-col items-center select-none ${canEdit ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"}`}
+                      className={`flex flex-col items-center select-none ${canUseEditTools ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"}`}
                     >
                       <span
                         className="w-5 h-5 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-[9px] font-bold"
@@ -556,7 +573,7 @@ export default function VenueMap({ eventId }) {
                         <div className="mt-1 text-xs text-muted-foreground">
                           {getStaffLabel(pos) || "担当スタッフ未設定"}
                         </div>
-                        {canEdit && (
+                        {canUseEditTools && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -580,15 +597,17 @@ export default function VenueMap({ eventId }) {
         <UnplacedPanel
           positions={filteredPositions}
           draggingPin={draggingPin}
-          disabled={!canEdit || !hasPDF}
+          disabled={!canUseEditTools || !hasPDF}
           onSelectPin={(pos) => {
-            if (!canEdit || !hasPDF) return;
+            if (!canUseEditTools || !hasPDF) return;
             setDraggingPin(pos);
             setTooltip(null);
           }}
           onDragStart={(e, pos) => handlePinDragStart(e, pos)}
         />
       </div>
+        </>
+      )}
     </div>
   );
 }
