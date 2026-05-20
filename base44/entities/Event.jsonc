@@ -46,6 +46,15 @@
       "default": false,
       "description": "\u30c7\u30d0\u30c3\u30b0\u7528\u81ea\u52d5\u914d\u7f6e\u6a5f\u80fd\u306e\u6709\u52b9\u72b6\u614b"
     },
+    "staff_management_mode": {
+      "type": "string",
+      "enum": [
+        "public",
+        "edit"
+      ],
+      "default": "public",
+      "description": "\u30b9\u30bf\u30c3\u30d5\u7ba1\u7406\u306e\u8868\u793a\u30e2\u30fc\u30c9"
+    },
     "assignment_mode": {
       "type": "string",
       "enum": [

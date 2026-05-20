@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const ALLOWED_FIELDS = new Set(['assignment_mode', 'venue_map_mode']);
+const ALLOWED_FIELDS = new Set(['staff_management_mode', 'assignment_mode', 'venue_map_mode']);
 const ALLOWED_MODES = new Set(['public', 'edit']);
 
 Deno.serve(async (req) => {

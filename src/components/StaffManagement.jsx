@@ -11,6 +11,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { motion } from "framer-motion";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getStaffDisplayName } from "@/lib/staffName";
+import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 
 function EditModal({ staff, onClose, onSaved }) {
   const [name, setName] = useState(staff.name);
@@ -113,7 +114,7 @@ export default function StaffManagement({ eventId }) {
   const [showScrapeModal, setShowScrapeModal] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const queryClient = useQueryClient();
-  const { canEdit, role } = useUserRole();
+  const { canEdit, canManageSettings, role } = useUserRole();
   const shouldMaskStaffNames = role !== "admin" && role !== "chief";
 
 
@@ -232,7 +233,7 @@ export default function StaffManagement({ eventId }) {
   });
 
   const handleAdd = () => {
-    if (!name.trim()) return;
+    if (!canUseEditTools || !name.trim()) return;
     createMutation.mutate({ event_id: eventId, name: name.trim(), note: note.trim() });
   };
 
@@ -254,24 +255,49 @@ export default function StaffManagement({ eventId }) {
     assignedMap[name].sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
   });
 
+  const { mode: staffManagementMode, isReady: isModeReady } = useResolvedEventMode(eventId, "staff_management_mode", event?.staff_management_mode);
+  const resolvedStaffManagementMode = event?.staff_management_mode || staffManagementMode;
+  const isEditMode = staffManagementMode === "edit";
+  const hideForUser = !canEdit && resolvedStaffManagementMode !== "public";
+  const isVisibilityReady = Boolean(role) && isModeReady && Boolean(event);
+  const canUseEditTools = canEdit && isEditMode;
+
   return (
     <div>
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
           <h2 className="text-sm font-bold flex items-center gap-1.5 mb-0.5"><UserCog className="w-4 h-4 text-primary" />スタッフ管理</h2>
           <p className="text-[11px] text-muted-foreground">スタッフの追加・編集・削除が可能です。</p>
-          <div className="text-xs font-medium text-foreground mt-0.5">登録スタッフ数：{staffList.length}名</div>
+          {isVisibilityReady && !hideForUser && (
+            <div className="text-xs font-medium text-foreground mt-0.5">登録スタッフ数：{staffList.length}名</div>
+          )}
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          className="gap-1 h-7 text-xs px-2 shrink-0"
-          onClick={() => canEdit && setShowScrapeModal(true)}
-          disabled={!canEdit}
-        >
-          <Download className="w-3 h-3" />A-CAST取得
-        </Button>
+        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+          <ModeVisibilityControls
+            eventId={eventId}
+            field="staff_management_mode"
+            mode={staffManagementMode}
+            canManage={canManageSettings}
+            label="スタッフ管理"
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 h-7 text-xs px-2 shrink-0"
+            onClick={() => canUseEditTools && setShowScrapeModal(true)}
+            disabled={!canUseEditTools}
+          >
+            <Download className="w-3 h-3" />A-CAST取得
+          </Button>
+        </div>
       </div>
+
+      {!isVisibilityReady ? (
+        <ModeLoadingPlaceholder />
+      ) : hideForUser ? (
+        <HiddenInEditMode title="スタッフ管理は編集モード中です" />
+      ) : (
+        <>
 
       {/* Add form */}
       <div className="bg-card border border-border rounded-lg p-1 mb-1.5">
@@ -281,15 +307,17 @@ export default function StaffManagement({ eventId }) {
             onChange={(e) => setName(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="スタッフ名"
+            disabled={!canUseEditTools}
             className="flex-1 h-8 text-sm" />
           
           <Input
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="備考"
+            disabled={!canUseEditTools}
             className="w-24 h-8 text-sm" />
           
-          <Button onClick={handleAdd} disabled={!name.trim() || createMutation.isPending} size="sm" className="gap-0.5 h-8 px-2 shrink-0">
+          <Button onClick={handleAdd} disabled={!canUseEditTools || !name.trim() || createMutation.isPending} size="sm" className="gap-0.5 h-8 px-2 shrink-0">
             <Plus className="w-3 h-3" />追加
           </Button>
         </div>
@@ -307,7 +335,7 @@ export default function StaffManagement({ eventId }) {
               value={event?.chief_staff_name || ""}
               onChange={(e) => updateChiefMutation.mutate(e.target.value)}
               className="h-7 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              disabled={staffList.length === 0 || updateChiefMutation.isPending}
+              disabled={!canUseEditTools || staffList.length === 0 || updateChiefMutation.isPending}
             >
               <option value="">未選択</option>
               {staffList.map((staff) => (
@@ -356,16 +384,16 @@ export default function StaffManagement({ eventId }) {
                     </div>
                   </div>
                   <button
-                  onClick={() => canEdit && setEditingStaff(staff)}
-                  disabled={!canEdit}
+                  onClick={() => canUseEditTools && setEditingStaff(staff)}
+                  disabled={!canUseEditTools}
                   className="p-1 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30 disabled:pointer-events-none"
                   title="編集">
                   
                     <Pencil className="w-3 h-3" />
                   </button>
                   <button
-                  onClick={() => canEdit && setConfirmDelete({ id: staff.id, name: staff.name })}
-                  disabled={!canEdit}
+                  onClick={() => canUseEditTools && setConfirmDelete({ id: staff.id, name: staff.name })}
+                  disabled={!canUseEditTools}
                   className="p-1 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30 disabled:pointer-events-none"
                   title="削除">
                     <Trash2 className="w-3 h-3" />
@@ -404,6 +432,8 @@ export default function StaffManagement({ eventId }) {
           onConfirm={() => { deleteMutation.mutate(confirmDelete.id); setConfirmDelete(null); }}
           onCancel={() => setConfirmDelete(null)}
         />
+      )}
+        </>
       )}
     </div>);
 
