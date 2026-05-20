@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { AlertCircle, ClipboardList, Plus, Download, Users, GripVertical, Trash2 } from "lucide-react";
@@ -118,6 +118,9 @@ export default function StaffDragDropManager({ eventId }) {
   const [draggedStaff, setDraggedStaff] = useState(null);
   const [draggingPosId, setDraggingPosId] = useState(null);
   const [dragOverPosId, setDragOverPosId] = useState(null);
+  const autoScrollFrameRef = useRef(null);
+  const dragPointRef = useRef(null);
+  const autoScrollActiveRef = useRef(false);
 
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -125,6 +128,64 @@ export default function StaffDragDropManager({ eventId }) {
   const [defaultSlot, setDefaultSlot] = useState("開場中");
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(null); // slot name
+
+  const stopAutoScroll = useCallback(() => {
+    autoScrollActiveRef.current = false;
+    dragPointRef.current = null;
+    if (autoScrollFrameRef.current) {
+      cancelAnimationFrame(autoScrollFrameRef.current);
+      autoScrollFrameRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    const isDragging = Boolean(draggedStaff || draggingPosId);
+    if (!canEdit || !isDragging) {
+      stopAutoScroll();
+      return undefined;
+    }
+
+    autoScrollActiveRef.current = true;
+    const edgeSize = 96;
+    const maxSpeed = 24;
+
+    const getVelocity = (point, size) => {
+      if (point < edgeSize) return -Math.ceil(((edgeSize - point) / edgeSize) * maxSpeed);
+      if (point > size - edgeSize) return Math.ceil(((point - (size - edgeSize)) / edgeSize) * maxSpeed);
+      return 0;
+    };
+
+    const step = () => {
+      autoScrollFrameRef.current = null;
+      if (!autoScrollActiveRef.current || !dragPointRef.current) return;
+
+      const { x, y } = dragPointRef.current;
+      const top = getVelocity(y, window.innerHeight);
+      const left = getVelocity(x, window.innerWidth);
+      if (top || left) {
+        window.scrollBy({ top, left, behavior: "auto" });
+        autoScrollFrameRef.current = requestAnimationFrame(step);
+      }
+    };
+
+    const handleWindowDragOver = (e) => {
+      dragPointRef.current = { x: e.clientX, y: e.clientY };
+      if (!autoScrollFrameRef.current) {
+        autoScrollFrameRef.current = requestAnimationFrame(step);
+      }
+    };
+
+    window.addEventListener("dragover", handleWindowDragOver);
+    window.addEventListener("drop", stopAutoScroll);
+    window.addEventListener("dragend", stopAutoScroll);
+
+    return () => {
+      window.removeEventListener("dragover", handleWindowDragOver);
+      window.removeEventListener("drop", stopAutoScroll);
+      window.removeEventListener("dragend", stopAutoScroll);
+      stopAutoScroll();
+    };
+  }, [draggedStaff, draggingPosId, canEdit, stopAutoScroll]);
 
   // 一括削除: スロット内の全ポジションを削除
   const handleBulkDelete = async (slot) => {
@@ -179,6 +240,10 @@ export default function StaffDragDropManager({ eventId }) {
   const handleStaffDragStart = (e, staffName) => {
     setDraggedStaff(staffName);
     e.dataTransfer.effectAllowed = "move";
+  };
+  const handleStaffDragEnd = () => {
+    setDraggedStaff(null);
+    stopAutoScroll();
   };
   const handleDragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; };
 
@@ -267,6 +332,7 @@ export default function StaffDragDropManager({ eventId }) {
   };
 
   const handlePosDragStart = (e, posId) => { setDraggingPosId(posId); e.dataTransfer.effectAllowed = "move"; };
+  const handlePosDragEnd = () => { setDraggingPosId(null); setDragOverPosId(null); stopAutoScroll(); };
   const handlePosDragOver = (e, posId) => { e.preventDefault(); if (posId !== draggingPosId) setDragOverPosId(posId); };
   const handlePosDrop = (e, slot, targetPosId) => {
     e.preventDefault();
@@ -392,7 +458,7 @@ export default function StaffDragDropManager({ eventId }) {
                         {isAdmin && (
                           <div draggable
                             onDragStart={(e) => handlePosDragStart(e, pos.id)}
-                            onDragEnd={() => { setDraggingPosId(null); setDragOverPosId(null); }}
+                            onDragEnd={handlePosDragEnd}
                             className="mt-2 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-0.5 shrink-0">
                             <GripVertical className="w-3.5 h-3.5" />
                           </div>
@@ -410,6 +476,7 @@ export default function StaffDragDropManager({ eventId }) {
                               handleStaffDragStart(e, name);
                               removeStaffFromPosition(posId, name);
                             }}
+                            onStaffDragEnd={handleStaffDragEnd}
                             onStaffRemove={removeStaffFromPosition}
                             onStaffEdit={(staff) => setEditingStaff(staff)}
                             onEdit={(p) => { setEditing(p); setShowModal(true); }}
@@ -452,6 +519,7 @@ export default function StaffDragDropManager({ eventId }) {
               return (
               <div key={s.id} draggable={isAdmin}
                 onDragStart={isAdmin ? (e) => handleStaffDragStart(e, s.name) : undefined}
+                onDragEnd={isAdmin ? handleStaffDragEnd : undefined}
                 className={`flex items-center gap-2 px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 ${isAdmin ? "cursor-move hover:bg-amber-100 dark:hover:bg-amber-900/50" : "cursor-default"} ${draggedStaff === s.name ? "opacity-50" : ""}`}>
                 <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center text-amber-700 dark:text-amber-300 font-bold text-[10px] shrink-0">
                   {displayName.charAt(0)}

@@ -3,7 +3,7 @@ import { getStaffDisplayName } from "@/lib/staffName";
 
 export default function PositionCard({
   pos, isAdmin, draggable = false, draggedStaff = null,
-  onEdit, onDelete, onDragOver, onDrop, onStaffDragStart, onStaffRemove,
+  onEdit, onDelete, onDragOver, onDrop, onStaffDragStart, onStaffDragEnd, onStaffRemove,
   onStaffEdit, onDropSide,
   emptyLabel = "スタッフ未登録", staffList = [],
   requiredCount = 0, onRequiredCountChange, occupiedInSlot = [],
@@ -72,6 +72,7 @@ export default function PositionCard({
                     <div key={`${pos.id}-${side.key}-${name}-${i}`}
                       draggable={draggable && isAdmin}
                       onDragStart={draggable && isAdmin && onStaffDragStart ? (e) => onStaffDragStart(e, name, pos.id) : undefined}
+                      onDragEnd={draggable && isAdmin ? onStaffDragEnd : undefined}
                       className={["flex items-center justify-between gap-2 px-2 py-0.5 select-none",
                         draggable && isAdmin ? "cursor-move hover:bg-muted/50" : "",
                         draggable && draggedStaff === name ? "opacity-50" : ""].join(" ")}>
@@ -108,6 +109,7 @@ export default function PositionCard({
             <div key={draggable ? `${pos.id}-${name}` : i}
               draggable={draggable && isAdmin}
               onDragStart={draggable && isAdmin && onStaffDragStart ? (e) => onStaffDragStart(e, name, pos.id) : undefined}
+              onDragEnd={draggable && isAdmin ? onStaffDragEnd : undefined}
               className={["flex items-center justify-between gap-2 px-2 py-0.5 select-none",
                 draggable && isAdmin ? "cursor-move hover:bg-muted/50" : "",
                 draggable && draggedStaff === name ? "opacity-50" : ""].join(" ")}>
