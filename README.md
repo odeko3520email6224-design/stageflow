@@ -35,7 +35,10 @@ Create `.env.local` from `.env.example`:
 ```
 VITE_BASE44_APP_ID=6a04d375dd2d16805b295b5a
 VITE_BASE44_APP_BASE_URL=https://stage-flow-map.base44.app
+BASE44_API_KEY=your_local_base44_api_key
 ```
+
+`BASE44_API_KEY` is optional, but useful for local write testing. Keep it server-side only: do not rename it to `VITE_BASE44_API_KEY`.
 
 Then start the app:
 
