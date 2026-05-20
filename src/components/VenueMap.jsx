@@ -32,13 +32,17 @@ async function renderPDFFileToImageFile(file) {
   const context = canvas.getContext("2d");
   canvas.width = viewport.width;
   canvas.height = viewport.height;
-  await page.render({ canvas, canvasContext: context, viewport }).promise;
+  await page.render({ canvasContext: context, viewport }).promise;
 
   const blob = await new Promise((resolve, reject) => {
-    canvas.toBlob((result) => {
-      if (result) resolve(result);
-      else reject(new Error("PDF preview image creation failed"));
-    }, "image/jpeg", 0.92);
+    try {
+      canvas.toBlob((result) => {
+        if (result) resolve(result);
+        else reject(new Error("PDF preview image creation failed"));
+      }, "image/jpeg", 0.92);
+    } catch (err) {
+      reject(err);
+    }
   });
 
   const baseName = file.name.replace(/\.pdf$/i, "") || "venue-map";
@@ -147,7 +151,7 @@ export default function VenueMap({ eventId }) {
 
   const filteredPositions = positions.filter((p) => (p.time_slot || TIME_SLOTS[0]) === slotFilter);
   const positionsOnMap = filteredPositions.filter((p) => p.map_x != null && p.map_y != null);
-  const storedMapImageUrl = event?.map_image_url && event.map_image_url !== event?.map_pdf_url ? event.map_image_url : "";
+  const storedMapImageUrl = event?.map_image_url || "";
   const effectivePdfUrl = localPdfUrl || event?.map_pdf_url || "";
   const effectiveMapImageUrl = localMapImageUrl || storedMapImageUrl;
   const hasPDF = Boolean(effectiveMapImageUrl || effectivePdfUrl);
@@ -194,7 +198,7 @@ export default function VenueMap({ eventId }) {
           const viewport = page.getViewport({ scale: 2 });
           canvas.width = viewport.width;
           canvas.height = viewport.height;
-          await page.render({ canvas, canvasContext: context, viewport }).promise;
+          await page.render({ canvasContext: context, viewport }).promise;
         }
         if (!cancelled) {
           setPdfSize({ width: canvas.width, height: canvas.height });
