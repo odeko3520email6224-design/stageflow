@@ -1,13 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const safeRead = async (reader, fallback) => {
-  try {
-    return await reader();
-  } catch {
-    return fallback;
-  }
-};
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -17,7 +9,7 @@ Deno.serve(async (req) => {
     }
 
     const [
-      events,
+      event,
       staff,
       positions,
       announcements,
@@ -26,16 +18,15 @@ Deno.serve(async (req) => {
       positionPresets,
       mapAreas,
     ] = await Promise.all([
-      safeRead(() => base44.asServiceRole.entities.Event.filter({ id: eventId }), []),
-      safeRead(() => base44.asServiceRole.entities.Staff.filter({ event_id: eventId }), []),
-      safeRead(() => base44.asServiceRole.entities.Position.filter({ event_id: eventId }), []),
-      safeRead(() => base44.asServiceRole.entities.Announcement.filter({ event_id: eventId }), []),
-      safeRead(() => base44.asServiceRole.entities.Task.filter({ event_id: eventId }, 'order'), []),
-      safeRead(() => base44.asServiceRole.entities.PositionType.list(), []),
-      safeRead(() => base44.asServiceRole.entities.PositionPreset.list(), []),
-      safeRead(() => base44.asServiceRole.entities.MapArea.filter({ event_id: eventId }, 'order'), []),
+      base44.asServiceRole.entities.Event.get(eventId),
+      base44.asServiceRole.entities.Staff.filter({ event_id: eventId }),
+      base44.asServiceRole.entities.Position.filter({ event_id: eventId }),
+      base44.asServiceRole.entities.Announcement.filter({ event_id: eventId }),
+      base44.asServiceRole.entities.Task.filter({ event_id: eventId }, 'order'),
+      base44.asServiceRole.entities.PositionType.list(),
+      base44.asServiceRole.entities.PositionPreset.list(),
+      base44.asServiceRole.entities.MapArea.filter({ event_id: eventId }, 'order'),
     ]);
-    const event = events[0] || null;
 
     return Response.json({
       event,
