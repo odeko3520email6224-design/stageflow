@@ -22,17 +22,9 @@ import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTabNavigation } from "@/hooks/useTabNavigation";
+import { loadEventById } from "@/lib/eventLoader";
 
 const TIMELINE_STORAGE_KEY = "stageflow_timeline_enabled";
-
-async function loadEventById(eventId) {
-  try {
-    return await base44.entities.Event.get(eventId);
-  } catch {
-    const events = await base44.entities.Event.filter({ id: eventId });
-    return events?.[0] || null;
-  }
-}
 
 const tabVariants = {
   initial: { opacity: 0, y: 8 },

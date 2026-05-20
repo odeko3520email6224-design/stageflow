@@ -12,6 +12,7 @@ import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import { getStaffDisplayName } from "@/lib/staffName";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
+import { loadEventById } from "@/lib/eventLoader";
 import {
   applyPositionSideMutation,
   applyPositionSideSettingsToPositions,
@@ -37,8 +38,7 @@ export default function StaffDragDropManager({ eventId }) {
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => base44.entities.Event.filter({ id: eventId }),
-    select: (d) => d[0],
+    queryFn: () => loadEventById(eventId),
   });
 
   const { data: presets = [] } = useQuery({

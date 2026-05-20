@@ -9,6 +9,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import { getStaffDisplayName } from "@/lib/staffName";
+import { loadEventById } from "@/lib/eventLoader";
 
 export default function StaffList({ eventId }) {
   const [showModal, setShowModal] = useState(false);
@@ -31,8 +32,7 @@ export default function StaffList({ eventId }) {
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => base44.entities.Event.filter({ id: eventId }),
-    select: (d) => d[0],
+    queryFn: () => loadEventById(eventId),
   });
 
   const { data: activePreset } = useQuery({

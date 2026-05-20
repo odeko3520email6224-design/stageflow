@@ -8,6 +8,7 @@ import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { useUserRole } from "@/hooks/useUserRole";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { loadEventById } from "@/lib/eventLoader";
 
 function SlotPositionSelector({ slot, selectedIds, positionTypes, onChange }) {
   const style = TIME_SLOT_STYLES[slot];
@@ -220,7 +221,7 @@ export default function PositionPresetManager({ eventId }) {
 
   const { data: presets = [], isLoading } = useQuery({ queryKey: ["positionPresets"], queryFn: () => base44.entities.PositionPreset.list() });
   const { data: positionTypes = [] } = useQuery({ queryKey: ["positionTypes"], queryFn: () => base44.entities.PositionType.list() });
-  const { data: event } = useQuery({ queryKey: ["event", eventId], queryFn: () => base44.entities.Event.filter({ id: eventId }), select: (d) => d[0] });
+  const { data: event } = useQuery({ queryKey: ["event", eventId], queryFn: () => loadEventById(eventId) });
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.PositionPreset.create(data),

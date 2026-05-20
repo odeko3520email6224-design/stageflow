@@ -6,6 +6,7 @@ import { BookOpen, ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { TIME_SLOTS } from "@/lib/constants";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { loadEventById } from "@/lib/eventLoader";
 
 export default function PresetSelector({ eventId, compact = false }) {
   const [open, setOpen] = useState(false);
@@ -25,8 +26,7 @@ export default function PresetSelector({ eventId, compact = false }) {
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => base44.entities.Event.filter({ id: eventId }),
-    select: (d) => d[0],
+    queryFn: () => loadEventById(eventId),
   });
 
   const activePreset = presets.find((p) => p.id === event?.active_preset_id);

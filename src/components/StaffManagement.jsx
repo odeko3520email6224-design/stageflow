@@ -12,6 +12,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getStaffDisplayName } from "@/lib/staffName";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
+import { loadEventById } from "@/lib/eventLoader";
 import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 
 export default function StaffManagement({ eventId }) {
@@ -38,8 +39,7 @@ export default function StaffManagement({ eventId }) {
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => base44.entities.Event.filter({ id: eventId }),
-    select: (d) => d[0],
+    queryFn: () => loadEventById(eventId),
   });
 
   useEffect(() => {

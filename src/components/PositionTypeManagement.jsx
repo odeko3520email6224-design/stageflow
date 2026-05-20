@@ -10,6 +10,7 @@ import PositionPresetManager from "@/components/PositionPresetManager";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTheme } from "@/lib/ThemeProvider";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
+import { loadEventById } from "@/lib/eventLoader";
 import {
   applyPositionSideSettingsToTypes,
   loadPositionSideSettings,
@@ -51,8 +52,7 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => base44.entities.Event.filter({ id: eventId }),
-    select: (d) => d[0],
+    queryFn: () => loadEventById(eventId),
   });
 
   const { data: staffList = [] } = useQuery({
