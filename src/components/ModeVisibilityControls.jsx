@@ -11,7 +11,7 @@ const normalizeMode = (mode) => (mode === "public" || mode === "edit" ? mode : "
 export function useResolvedEventMode(eventId, field, eventMode, options = {}) {
   const [localMode, setLocalMode] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const preferLocal = options.preferLocal === true;
+  const preferEvent = options.preferEvent === true;
 
   useEffect(() => {
     setLocalMode(null);
@@ -28,7 +28,7 @@ export function useResolvedEventMode(eventId, field, eventMode, options = {}) {
     return () => window.removeEventListener(modeEventName, handleModeChange);
   }, [eventId, field]);
 
-  const resolvedMode = preferLocal && localMode ? localMode : normalizeMode(eventMode);
+  const resolvedMode = localMode && !preferEvent ? normalizeMode(localMode) : normalizeMode(eventMode);
 
   return {
     mode: resolvedMode,
@@ -47,14 +47,19 @@ export function ModeVisibilityControls({ eventId, field, mode = "edit", canManag
 
   const updateMode = useMutation({
     mutationFn: async (nextMode) => {
-      const response = await base44.functions.invoke("updateEventMode", {
-        eventId,
-        field,
-        mode: nextMode,
-      });
-      const payload = unwrapFunctionResponse(response);
-      if (payload?.error) throw new Error(payload.error);
-      return payload?.event;
+      try {
+        const response = await base44.functions.invoke("updateEventMode", {
+          eventId,
+          field,
+          mode: nextMode,
+        });
+        const payload = unwrapFunctionResponse(response);
+        if (payload?.error) throw new Error(payload.error);
+        return payload?.event;
+      } catch {
+        const event = await base44.entities.Event.update(eventId, { [field]: nextMode });
+        return { ...(event || {}), id: eventId, [field]: nextMode };
+      }
     },
     onMutate: async (nextMode) => {
       rememberMode(eventId, field, nextMode);
@@ -65,6 +70,10 @@ export function ModeVisibilityControls({ eventId, field, mode = "edit", canManag
           return old.map((item) => item.id === eventId ? { ...item, [field]: nextMode } : item);
         }
         return old ? { ...old, [field]: nextMode } : old;
+      });
+      queryClient.setQueriesData({ queryKey: ["events"] }, (old) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((item) => item.id === eventId ? { ...item, [field]: nextMode } : item);
       });
       return { previousEvent };
     },
@@ -82,6 +91,10 @@ export function ModeVisibilityControls({ eventId, field, mode = "edit", canManag
           return old.map((item) => item.id === eventId ? { ...item, [field]: savedMode } : item);
         }
         return old ? { ...old, [field]: savedMode } : old;
+      });
+      queryClient.setQueriesData({ queryKey: ["events"] }, (old) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((item) => item.id === eventId ? { ...item, [field]: savedMode } : item);
       });
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
       queryClient.invalidateQueries({ queryKey: ["events"] });
