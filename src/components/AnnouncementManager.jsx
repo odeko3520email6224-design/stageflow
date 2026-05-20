@@ -706,7 +706,7 @@ export default function AnnouncementManager({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-2 mb-2">
+      <div className="flex flex-col gap-1.5 mb-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1 min-w-0">
           <Megaphone className="w-4 h-4 text-primary" />連絡事項
           {urgentCount > 0 && (
@@ -715,7 +715,7 @@ export default function AnnouncementManager({ eventId }) {
             </span>
           )}
         </h2>
-        <div className="flex items-center gap-1.5 justify-end shrink-0 flex-nowrap overflow-x-auto max-w-[62vw] sm:max-w-none">
+        <div className="flex items-center gap-1.5 justify-end flex-wrap sm:flex-nowrap sm:ml-auto">
           {notifPermission !== "granted" && (
             <button
               onClick={() => {
@@ -723,7 +723,7 @@ export default function AnnouncementManager({ eventId }) {
                   Notification.requestPermission().then((p) => setNotifPermission(p));
                 }
               }}
-              className={`h-7 text-[11px] px-2 rounded-lg border font-medium transition-colors flex items-center ${
+              className={`h-8 shrink-0 whitespace-nowrap text-[11px] px-2 rounded-lg border font-medium transition-colors flex items-center ${
                 notifPermission === "denied"
                   ? "bg-red-50 border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300 cursor-not-allowed"
                   : "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900/50"
@@ -732,7 +732,7 @@ export default function AnnouncementManager({ eventId }) {
               {notifPermission === "denied" ? "通知ブロック中" : "通知を有効にする"}
             </button>
           )}
-          <Button size="sm" onClick={() => setShowForm(true)} className="gap-1 h-7 text-xs shrink-0">
+          <Button size="sm" onClick={() => setShowForm(true)} className="gap-1 h-8 text-xs px-2 shrink-0">
             <Plus className="w-3 h-3" />新規作成
           </Button>
         </div>

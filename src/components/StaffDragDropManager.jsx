@@ -375,7 +375,7 @@ export default function StaffDragDropManager({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-2 mb-2">
+      <div className="flex flex-col gap-1.5 mb-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex-1 min-w-0">
           <h2 className="text-sm font-bold flex items-center gap-1.5"><ClipboardList className="w-4 h-4 text-primary" />配置表</h2>
           {positions.length > 0 && (() => {
@@ -383,7 +383,7 @@ export default function StaffDragDropManager({ eventId }) {
             return <div className="text-sm font-medium text-foreground mt-0.5">全時間帯合計：{totalAssigned}名配置済み</div>;
           })()}
         </div>
-        <div className="flex items-center gap-1.5 shrink-0 justify-end flex-nowrap overflow-x-auto max-w-[62vw] sm:max-w-none">
+        <div className="flex items-center gap-1.5 justify-end flex-wrap sm:flex-nowrap sm:ml-auto">
           <ModeVisibilityControls
             eventId={eventId}
             field="assignment_mode"
@@ -392,7 +392,7 @@ export default function StaffDragDropManager({ eventId }) {
             label="配置表"
           />
           {isAdmin && <PresetSelector eventId={eventId} compact />}
-          <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2" onClick={handleExportPDF} disabled={!isVisibilityReady || hideForUser || exportingPDF || positions.length === 0}>
+          <Button size="sm" variant="outline" className="gap-1 h-8 text-xs px-2 shrink-0" onClick={handleExportPDF} disabled={!isVisibilityReady || hideForUser || exportingPDF || positions.length === 0}>
             <Download className="w-3 h-3" />{exportingPDF ? '...' : 'PDF'}
           </Button>
         </div>

@@ -191,14 +191,14 @@ export default function StaffManagement({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-2 mb-2">
+      <div className="flex flex-col gap-1.5 mb-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex-1 min-w-0">
           <h2 className="text-sm font-bold flex items-center gap-1.5"><UserCog className="w-4 h-4 text-primary" />スタッフ管理</h2>
           {isVisibilityReady && !hideForUser && (
             <div className="text-xs font-medium text-foreground mt-0.5">登録スタッフ数：{staffList.length}名</div>
           )}
         </div>
-        <div className="flex items-center gap-1.5 shrink-0 justify-end flex-nowrap overflow-x-auto max-w-[62vw] sm:max-w-none">
+        <div className="flex items-center gap-1.5 justify-end flex-wrap sm:flex-nowrap sm:ml-auto">
           <ModeVisibilityControls
             eventId={eventId}
             field="staff_management_mode"
@@ -209,7 +209,7 @@ export default function StaffManagement({ eventId }) {
           <Button
             size="sm"
             variant="outline"
-            className="gap-1 h-7 text-xs px-2 shrink-0"
+            className="gap-1 h-8 text-xs px-2 shrink-0"
             onClick={() => canUseEditTools && setShowScrapeModal(true)}
             disabled={!canUseEditTools}
           >
