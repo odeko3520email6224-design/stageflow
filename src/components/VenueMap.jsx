@@ -376,7 +376,7 @@ export default function VenueMap({ eventId }) {
 
   return (
     <div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center mb-3">
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center mb-2">
         <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1">
           <Map className="w-4 h-4 text-primary" />
           会場マップ
@@ -422,7 +422,7 @@ export default function VenueMap({ eventId }) {
         </div>
       </div>
 
-      <div className="flex gap-0 border-b border-border mb-3">
+      <div className="flex gap-0 border-b border-border mb-2">
         {TIME_SLOTS.map((slot) => (
           <button
             key={slot}
@@ -431,7 +431,7 @@ export default function VenueMap({ eventId }) {
               setTooltip(null);
               setDraggingPin(null);
             }}
-            className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
+            className={`px-2.5 py-1 text-xs font-medium border-b-2 transition-colors ${
               slotFilter === slot
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -452,9 +452,9 @@ export default function VenueMap({ eventId }) {
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-4">
+      <div className="flex flex-col lg:flex-row gap-3">
         <div className="flex-1 -mx-4 lg:mx-0 overflow-x-auto lg:overflow-visible">
-          <div className="px-4 lg:px-0 lg:max-w-[560px] lg:mx-auto" style={{ minWidth: 320 }}>
+          <div className="px-2 lg:px-0 lg:max-w-[520px] lg:mx-auto" style={{ minWidth: 320 }}>
             <div
               ref={mapRef}
               onClick={handleMapClick}

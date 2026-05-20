@@ -89,7 +89,7 @@ export default function TaskChecklist({ eventId }) {
 
   return (
     <div>
-      <div className="flex flex-col gap-1.5 mb-3">
+      <div className="flex flex-col gap-1 mb-2">
         <h2 className="text-sm font-bold flex items-center gap-1.5">
           <ClipboardCheck className="w-4 h-4 text-primary" />
           準備・残作業チェックリスト
@@ -101,7 +101,7 @@ export default function TaskChecklist({ eventId }) {
 
       {/* 追加フォーム */}
       {canEdit && (
-        <div className="mb-3 bg-card border border-border rounded-xl p-3 space-y-2">
+        <div className="mb-2 bg-card border border-border rounded-lg p-2 space-y-1.5">
           <Input
             placeholder="タスク名を入力..."
             value={newTitle}
@@ -129,7 +129,7 @@ export default function TaskChecklist({ eventId }) {
       )}
 
       {/* 未完了 */}
-      <div className="space-y-1.5 mb-3">
+      <div className="space-y-1 mb-2">
         {pending.length === 0 && (
           <p className="text-[11px] text-muted-foreground text-center py-3">未完了のタスクはありません</p>
         )}
@@ -158,7 +158,7 @@ export default function TaskChecklist({ eventId }) {
           <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-1">
             完了済み ({done.length})
           </div>
-          <div className="space-y-1.5 opacity-60">
+          <div className="space-y-1 opacity-60">
             {done.map((task) => (
               <TaskRow
                 key={task.id}
@@ -196,7 +196,7 @@ function TaskRow({ task, canEdit, editingId, editTitle, editNote, setEditTitle, 
   const isEditing = editingId === task.id;
 
   return (
-    <div className={`flex items-start gap-2 bg-card border rounded-xl px-3 py-2 ${task.is_done ? "border-border" : "border-border"}`}>
+    <div className={`flex items-start gap-2 bg-card border rounded-lg px-2.5 py-1.5 ${task.is_done ? "border-border" : "border-border"}`}>
       <button
         onClick={() => onToggle(task)}
         className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary transition-colors"

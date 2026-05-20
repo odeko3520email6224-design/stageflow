@@ -53,14 +53,14 @@ export default function EventFormModal({ event, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+      <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md mx-2 p-4">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold">{event ? "イベント編集" : "新規イベント"}</h2>
+          <h2 className="text-lg font-bold">{event ? "イベント編集" : "新規イベント"}</h2>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div>
             <Label>イベント名 *</Label>
             <Input className="mt-1" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="例：〇〇コンサート2026" />
@@ -105,7 +105,7 @@ export default function EventFormModal({ event, onClose, onSaved }) {
             <Input className="mt-1" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="メモなど" />
           </div>
         </div>
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-2 mt-4">
           <Button variant="outline" className="flex-1" onClick={onClose}>閉じる</Button>
           {!event && (
             <Button

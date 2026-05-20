@@ -20,7 +20,7 @@ export default function PositionCard({
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden hover:border-primary/30 transition-colors"
       onDragOver={onDragOver} onDrop={onDrop}>
-      <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-border/60 bg-muted/20 select-none">
+      <div className="flex items-center gap-1.5 px-2 py-1 border-b border-border/60 bg-muted/20 select-none">
         <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: pos.color || "#6366f1" }} />
         <span className="text-xs font-semibold text-foreground">{pos.name}</span>
         {onRequiredCountChange && isAdmin ? (
@@ -52,7 +52,7 @@ export default function PositionCard({
             <div key={draggable ? `${pos.id}-${name}` : i}
               draggable={draggable && isAdmin}
               onDragStart={draggable && isAdmin && onStaffDragStart ? (e) => onStaffDragStart(e, name, pos.id) : undefined}
-              className={["flex items-center justify-between gap-2 px-2 py-1 select-none",
+              className={["flex items-center justify-between gap-2 px-2 py-0.5 select-none",
                 draggable && isAdmin ? "cursor-move hover:bg-muted/50" : "",
                 draggable && draggedStaff === name ? "opacity-50" : ""].join(" ")}>
               <div className="flex-1 min-w-0">
@@ -67,7 +67,7 @@ export default function PositionCard({
             </div>
           );
         }) : (
-          <div className="px-2 py-1 text-[11px] text-muted-foreground">{emptyLabel}</div>
+          <div className="px-2 py-0.5 text-[11px] text-muted-foreground">{emptyLabel}</div>
         )}
       </div>
     </div>

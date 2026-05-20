@@ -224,7 +224,7 @@ export default function StaffDragDropManager({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <div>
           <h2 className="text-sm font-bold flex items-center gap-1.5"><ClipboardList className="w-4 h-4 text-primary" />配置表</h2>
           <p className="text-[11px] text-muted-foreground">スタッフそれぞれの配置管理が可能です。</p>
@@ -241,15 +241,15 @@ export default function StaffDragDropManager({ eventId }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
         {TIME_SLOTS.map((slot) => {
           const style = TIME_SLOT_STYLES[slot];
           const slotPositions = grouped[slot];
           const slotStaffCount = [...new Set(slotPositions.flatMap((p) => p.staff_names || []))].length;
           const slotBorderClass = slot === "開場中" ? "border-amber-400 dark:border-amber-500" : slot === "開演中" ? "border-blue-400 dark:border-blue-500" : "border-slate-400 dark:border-slate-400";
           return (
-            <div key={slot} className={`border-2 rounded-xl overflow-hidden ${slotBorderClass}`}>
-              <div className={`flex items-center justify-between px-2.5 py-1.5 ${style.header}`}>
+            <div key={slot} className={`border-2 rounded-lg overflow-hidden ${slotBorderClass}`}>
+              <div className={`flex items-center justify-between px-2 py-1 ${style.header}`}>
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-xs">{slot}</span>
                   <span className="text-[10px] opacity-70">{slotPositions.length}件</span>
@@ -278,11 +278,11 @@ export default function StaffDragDropManager({ eventId }) {
                   </div>
                 )}
               </div>
-              <div className="bg-card p-1.5">
+              <div className="bg-card p-1">
                 {slotPositions.length === 0 ? (
                   <p className="text-[11px] text-muted-foreground text-center py-1.5">ポジションがありません</p>
                 ) : (
-                  <div className="grid gap-1">
+                  <div className="grid gap-0.5">
                     {slotPositions.map((pos) => (
                       <div key={pos.id}
                         data-pos-id={pos.id}
@@ -338,13 +338,13 @@ export default function StaffDragDropManager({ eventId }) {
       </div>
 
       {unassigned.length > 0 && (
-        <div className="mt-1.5 border border-amber-300 dark:border-amber-700 rounded-xl overflow-hidden">
+        <div className="mt-1.5 border border-amber-300 dark:border-amber-700 rounded-lg overflow-hidden">
           <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 dark:bg-amber-900/40 border-b border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300">
             <AlertCircle className="w-3 h-3" />
             <span className="font-bold text-xs">未配置スタッフ</span>
             <span className="text-[10px] opacity-70">{unassigned.length}名</span>
           </div>
-          <div className="bg-card p-1.5 grid gap-1 min-h-[32px]" onDragOver={isAdmin ? handleDragOver : undefined} onDrop={isAdmin ? handleDropUnassigned : undefined}>
+          <div className="bg-card p-1 grid gap-0.5 min-h-[28px]" onDragOver={isAdmin ? handleDragOver : undefined} onDrop={isAdmin ? handleDropUnassigned : undefined}>
             {unassigned.map((s) => (
               <div key={s.id} draggable={isAdmin}
                 onDragStart={isAdmin ? (e) => handleStaffDragStart(e, s.name) : undefined}
@@ -360,7 +360,7 @@ export default function StaffDragDropManager({ eventId }) {
         </div>
       )}
 
-      <div className="mt-2 border border-border rounded-xl overflow-hidden">
+      <div className="mt-1.5 border border-border rounded-lg overflow-hidden">
         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted border-b border-border">
           <Users className="w-3 h-3 text-muted-foreground" />
           <span className="font-bold text-xs">スタッフ一覧</span>
@@ -376,7 +376,7 @@ export default function StaffDragDropManager({ eventId }) {
                 positions: positions.filter((p) => (p.time_slot || "開場中") === slot && (p.staff_names || []).includes(s.name)),
               })).filter((sa) => sa.positions.length > 0);
               return (
-                <div key={s.id} className="flex items-start gap-2 px-2.5 py-1.5">
+                <div key={s.id} className="flex items-start gap-2 px-2 py-1">
                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] shrink-0 mt-0.5">
                     {s.name.charAt(0)}
                   </div>

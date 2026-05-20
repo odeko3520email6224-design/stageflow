@@ -96,16 +96,16 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-card border border-border rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-5 max-h-[92vh] overflow-y-auto scrollbar-hide">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-2" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-card border border-border rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-md p-4 max-h-[92vh] overflow-y-auto scrollbar-hide">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold">{position ? "ポジション編集" : "ポジション追加"}</h2>
+          <h2 className="text-base font-bold">{position ? "ポジション編集" : "ポジション追加"}</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="閉じる">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Position type selector */}
           <div>
             <Label>ポジション</Label>
@@ -144,7 +144,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
             {staffList.length === 0 ? (
               <p className="text-xs text-muted-foreground mt-2">スタッフ管理タブでスタッフを登録してください</p>
             ) : (
-              <div className="mt-2 border border-border rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+              <div className="mt-1.5 border border-border rounded-lg overflow-hidden max-h-44 overflow-y-auto">
                 {staffList.map((staff) => {
                   const selected = form.staff_names.includes(staff.name);
                   return (
@@ -152,7 +152,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
                       key={staff.id}
                       type="button"
                       onClick={() => toggleStaff(staff.name)}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left border-b border-border/50 last:border-b-0 transition-colors ${
+                      className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left border-b border-border/50 last:border-b-0 transition-colors ${
                         selected ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/50"
                       }`}
                     >

@@ -156,7 +156,7 @@ export default function StaffManagement({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-2 mb-3">
+      <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
           <h2 className="text-sm font-bold flex items-center gap-1.5 mb-0.5"><UserCog className="w-4 h-4 text-primary" />スタッフ管理</h2>
           <p className="text-[11px] text-muted-foreground">スタッフの追加・編集・削除が可能です。</p>
@@ -168,7 +168,7 @@ export default function StaffManagement({ eventId }) {
       </div>
 
       {/* Add form */}
-      <div className="bg-card border border-border rounded-xl p-1.5 mb-1.5">
+      <div className="bg-card border border-border rounded-lg p-1 mb-1.5">
         <div className="flex gap-1.5">
           <Input
             value={name}
@@ -189,7 +189,7 @@ export default function StaffManagement({ eventId }) {
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-xl p-2 mb-2">
+      <div className="bg-card border border-border rounded-lg p-1.5 mb-1.5">
         <div className="flex items-center gap-1.5 mb-2">
           <ShieldCheck className="w-4 h-4 text-primary" />
           <h3 className="text-xs font-bold">チーフ・システム管理者</h3>
@@ -234,7 +234,7 @@ export default function StaffManagement({ eventId }) {
           const assigned = assignedMap[staff.name] || [];
           const unassigned = assigned.length === 0;
           return (
-            <div key={staff.id} className={`bg-card border rounded-lg px-2 py-1 ${unassigned ? "border-amber-300" : "border-border"}`}>
+            <div key={staff.id} className={`bg-card border rounded-md px-2 py-0.5 ${unassigned ? "border-amber-300" : "border-border"}`}>
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
                     {staff.name.charAt(0)}
@@ -265,7 +265,7 @@ export default function StaffManagement({ eventId }) {
                   </button>
                 </div>
                 {assigned.length > 0 &&
-              <div className="mt-1 flex flex-wrap gap-0.5 pl-8">
+              <div className="mt-0.5 flex flex-wrap gap-0.5 pl-8">
                     {assigned.map((a, i) =>
                 <span key={i} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${TIME_SLOT_STYLES[a.slot]?.badge || "bg-slate-100 border-slate-200 text-slate-700"}`}>
                         {a.slot}：{a.posName}

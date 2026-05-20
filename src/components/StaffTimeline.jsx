@@ -59,7 +59,7 @@ export default function StaffTimeline({ eventId }) {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 mb-2">
         <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1"><CalendarClock className="w-4 h-4 text-primary" />担当者別タイムライン</h2>
         <span className="text-sm font-medium text-foreground sm:ml-auto shrink-0">
           全時間帯：{totalAssigned}名配置済み
@@ -69,7 +69,7 @@ export default function StaffTimeline({ eventId }) {
       {/* Always show desktop grid table, with horizontal scroll on mobile */}
       <div className="overflow-x-auto -mx-2 px-2">
         <div style={{ minWidth: "480px" }}>
-          <div className="grid grid-cols-4 gap-2 mb-2 px-1">
+          <div className="grid grid-cols-4 gap-1.5 mb-1.5 px-1">
             <div className="text-xs font-semibold text-muted-foreground">スタッフ</div>
             {TIME_SLOTS.map((slot) => (
               <div key={slot} className={`text-xs font-semibold px-2 py-1 rounded-lg border text-center ${TIME_SLOT_STYLES[slot].bg}`}>
@@ -77,12 +77,12 @@ export default function StaffTimeline({ eventId }) {
               </div>
             ))}
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {allNames.map((name) => {
               const timeline = staffTimeline[name];
               const hasAnyAssignment = TIME_SLOTS.some((s) => timeline[s].length > 0);
               return (
-                <div key={name} className={`grid grid-cols-4 gap-2 bg-card border rounded-xl px-3 py-2 items-start ${!hasAnyAssignment ? "border-amber-200 bg-amber-50/30" : "border-border"}`}>
+                <div key={name} className={`grid grid-cols-4 gap-1.5 bg-card border rounded-lg px-2 py-1 items-start ${!hasAnyAssignment ? "border-amber-200 bg-amber-50/30" : "border-border"}`}>
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
                       {name.charAt(0)}

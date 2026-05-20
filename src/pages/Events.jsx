@@ -65,22 +65,22 @@ export default function Events() {
           <div className="w-6 h-6 border-3 border-primary/30 border-t-primary rounded-full animate-spin" style={{ opacity: pullDistance / 100 }} />
         </div>
       }
-      <div className="max-w-5xl mx-auto px-3 py-3 pb-24 sm:pb-3">
+      <div className="max-w-5xl mx-auto px-2 py-2 pb-16 sm:pb-2">
       {/* Header */}
-      <div className="mb-3">
+      <div className="mb-2">
         {/* Row 1: Title */}
-        <div className="mb-1.5">
-          <h1 className="text-lg font-bold text-foreground tracking-tight">イベント一覧</h1>
+        <div className="mb-1">
+          <h1 className="text-base font-bold text-foreground tracking-tight">イベント一覧</h1>
           <p className="text-muted-foreground text-[10px]">イベント・コンサートの配置管理を行うアプリケーションです
 スマートフォンやタブレット、パソコンからご利用いただけます</p>
         </div>
         {/* Row 2: New button + Account */}
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-1.5">
           <Button onClick={() => {setEditingEvent(null);setShowModal(true);}} className="gap-1 select-none" size="sm" disabled={!canEdit}>
             <Plus className="w-3.5 h-3.5" />
             新規
           </Button>
-          {currentUser && <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2 py-1 min-w-0 group">
+          {currentUser && <div className="flex items-center gap-1.5 bg-muted rounded-md px-1.5 py-0.5 min-w-0 group">
               <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                 <User className="w-3 h-3 text-primary" />
               </div>
@@ -130,7 +130,7 @@ export default function Events() {
           <Link
             key={event.id}
             to={`/events/${event.id}`}
-            className="group block bg-card border border-border rounded-xl px-3 py-2.5 hover:border-primary/40 hover:shadow-sm transition-all duration-200">
+            className="group block bg-card border border-border rounded-lg px-2.5 py-1.5 hover:border-primary/40 hover:shadow-sm transition-all duration-200">
             
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">

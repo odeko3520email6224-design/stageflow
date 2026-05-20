@@ -99,12 +99,12 @@ export default function EventDetail() {
 
       {/* Top bar */}
       <div className="bg-card border-b border-border sticky top-0 z-50 safe-area-top">
-        <div className="max-w-6xl mx-auto px-3 pb-2 pt-1 flex items-center gap-2">
+        <div className="max-w-6xl mx-auto px-2 pb-1.5 pt-1 flex items-center gap-1.5">
           <Link to="/" className="relative z-[100] p-1.5 rounded-lg hover:bg-muted transition-colors shrink-0" aria-label="戻る">
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <div className="min-w-0 flex-1">
-            <h1 className="font-bold text-base leading-snug truncate">{event.name}</h1>
+            <h1 className="font-bold text-sm leading-snug truncate">{event.name}</h1>
             {(event.date || event.venue) && (
               <div className="text-xs text-muted-foreground leading-snug mt-0.5">
                 {event.date && format(new Date(event.date), "M月d日（E）", { locale: ja })}
@@ -113,7 +113,7 @@ export default function EventDetail() {
             )}
           </div>
           {currentUser && (
-            <div className="flex items-center gap-1.5 bg-muted rounded-lg px-2 py-1 shrink-0">
+            <div className="flex items-center gap-1.5 bg-muted rounded-md px-1.5 py-0.5 shrink-0">
               <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
                 <User className="w-3 h-3 text-primary" />
               </div>
@@ -137,12 +137,12 @@ export default function EventDetail() {
         {/* Desktop tab bar */}
         <div className="hidden sm:block border-t border-border">
           <div className="max-w-6xl mx-auto px-3">
-            <div className="flex gap-5 overflow-x-auto scrollbar-hide">
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide">
               {desktopTabs.map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
                   onClick={() => setTab(id)}
-                  className={`flex items-center gap-1.5 py-2.5 text-xs font-medium border-b-2 whitespace-nowrap transition-colors focus-visible:outline-none select-none shrink-0 ${
+                  className={`flex items-center gap-1.5 py-2 text-xs font-medium border-b-2 whitespace-nowrap transition-colors focus-visible:outline-none select-none shrink-0 ${
                     tab === id
                       ? "border-primary text-primary"
                       : "border-transparent text-muted-foreground hover:text-foreground"
@@ -158,7 +158,7 @@ export default function EventDetail() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-2 py-2 pb-20 sm:pb-12">
+      <div className="max-w-6xl mx-auto px-1.5 py-1.5 pb-16 sm:pb-8">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={tab}
