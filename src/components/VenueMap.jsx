@@ -7,6 +7,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 import { getStaffDisplayName } from "@/lib/staffName";
 import * as pdfjsLib from "pdfjs-dist";
+import pdfWorkerSource from "@/lib/pdfWorkerSource";
 
 const ROLE_COLORS = {
   "受付": "#3b82f6",
@@ -17,11 +18,15 @@ const ROLE_COLORS = {
 
 const TIME_SLOTS = ["開場中", "開演中", "終演後"];
 const PIN_RADIUS_PX = 11;
-const PDF_WORKER_PATH = `${import.meta.env.BASE_URL || "/"}pdf.worker.min.mjs`;
+let pdfWorkerPort = null;
 
 function ensurePDFWorker() {
-  if (typeof window === "undefined") return;
-  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(PDF_WORKER_PATH, window.location.href).href;
+  if (typeof window === "undefined" || !("Worker" in window)) return;
+  if (!pdfWorkerPort) {
+    const workerUrl = URL.createObjectURL(new Blob([pdfWorkerSource], { type: "text/javascript" }));
+    pdfWorkerPort = new Worker(workerUrl, { type: "module" });
+  }
+  pdfjsLib.GlobalWorkerOptions.workerPort = pdfWorkerPort;
 }
 
 async function renderPDFPageToCanvas({ file, url, canvas, scale = 2 }) {
