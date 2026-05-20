@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Download, FileText, Loader2, Map, MapPin, Move, Upload, X } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
-import { HiddenInEditMode, ModeVisibilityControls } from "@/components/ModeVisibilityControls";
+import { HiddenInEditMode, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 
 const ROLE_COLORS = {
   "受付": "#3b82f6",
@@ -150,7 +150,7 @@ export default function VenueMap({ eventId }) {
   const effectivePdfUrl = localPdfUrl || event?.map_pdf_url || "";
   const effectiveMapImageUrl = localMapImageUrl || storedMapImageUrl;
   const hasPDF = Boolean(effectiveMapImageUrl || effectivePdfUrl);
-  const venueMapMode = event?.venue_map_mode || "public";
+  const venueMapMode = useResolvedEventMode(eventId, "venue_map_mode", event?.venue_map_mode);
   const isEditMode = venueMapMode === "edit";
   const hideForUser = role === "user" && isEditMode;
   const canUseEditTools = canEdit && isEditMode;

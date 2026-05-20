@@ -1,7 +1,41 @@
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Eye, Pencil, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
+
+const getModeStorageKey = (eventId, field) => `stageflow:event-mode:${eventId}:${field}`;
+const modeEventName = "stageflow:event-mode-change";
+
+export function useResolvedEventMode(eventId, field, eventMode) {
+  const [localMode, setLocalMode] = useState(null);
+  const storageKey = getModeStorageKey(eventId, field);
+
+  useEffect(() => {
+    const savedMode = window.localStorage.getItem(storageKey);
+    setLocalMode(savedMode === "edit" || savedMode === "public" ? savedMode : null);
+  }, [storageKey]);
+
+  useEffect(() => {
+    const handleModeChange = (event) => {
+      if (event.detail?.eventId === eventId && event.detail?.field === field) {
+        setLocalMode(event.detail.mode);
+      }
+    };
+    window.addEventListener(modeEventName, handleModeChange);
+    return () => window.removeEventListener(modeEventName, handleModeChange);
+  }, [eventId, field]);
+
+  return localMode || eventMode || "public";
+}
+
+function rememberMode(eventId, field, mode) {
+  const storageKey = getModeStorageKey(eventId, field);
+  window.localStorage.setItem(storageKey, mode);
+  window.dispatchEvent(new CustomEvent(modeEventName, {
+    detail: { eventId, field, mode },
+  }));
+}
 
 export function ModeVisibilityControls({ eventId, field, mode = "public", canManage, label }) {
   const queryClient = useQueryClient();
@@ -17,6 +51,7 @@ export function ModeVisibilityControls({ eventId, field, mode = "public", canMan
       return response.data?.event;
     },
     onMutate: async (nextMode) => {
+      rememberMode(eventId, field, nextMode);
       await queryClient.cancelQueries({ queryKey: ["event", eventId] });
       const previousEvent = queryClient.getQueryData(["event", eventId]);
       queryClient.setQueryData(["event", eventId], (old) => {
@@ -28,11 +63,20 @@ export function ModeVisibilityControls({ eventId, field, mode = "public", canMan
       return { previousEvent };
     },
     onError: (_, __, context) => {
+      const previousMode = context?.previousEvent?.[field] || context?.previousEvent?.[0]?.[field] || "public";
+      rememberMode(eventId, field, previousMode);
       queryClient.setQueryData(["event", eventId], context?.previousEvent);
       toast.error("モードの保存に失敗しました");
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+    onSuccess: (updatedEvent, nextMode) => {
+      const savedMode = updatedEvent?.[field] || nextMode;
+      rememberMode(eventId, field, savedMode);
+      queryClient.setQueryData(["event", eventId], (old) => {
+        if (Array.isArray(old)) {
+          return old.map((item) => item.id === eventId ? { ...item, [field]: savedMode } : item);
+        }
+        return old ? { ...old, [field]: savedMode } : old;
+      });
       toast.success("モードを保存しました");
     },
   });

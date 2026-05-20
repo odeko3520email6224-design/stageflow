@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
       [field]: mode,
     });
 
-    return Response.json({ event });
+    return Response.json({ event: { ...(event || {}), id: eventId, [field]: mode } });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

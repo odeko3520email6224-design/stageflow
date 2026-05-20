@@ -10,7 +10,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import PresetSelector from "@/components/PresetSelector";
-import { HiddenInEditMode, ModeVisibilityControls } from "@/components/ModeVisibilityControls";
+import { HiddenInEditMode, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 
 export default function StaffDragDropManager({ eventId }) {
   const queryClient = useQueryClient();
@@ -221,7 +221,7 @@ export default function StaffDragDropManager({ eventId }) {
     );
     return slotsWithAssignment.length < TIME_SLOTS.length;
   });
-  const assignmentMode = event?.assignment_mode || "public";
+  const assignmentMode = useResolvedEventMode(eventId, "assignment_mode", event?.assignment_mode);
   const isEditMode = assignmentMode === "edit";
   const hideForUser = role === "user" && isEditMode;
   const isAdmin = canEdit && isEditMode;
