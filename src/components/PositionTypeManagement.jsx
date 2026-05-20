@@ -47,6 +47,11 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
     queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
   });
 
+  const { data: positions = [] } = useQuery({
+    queryKey: ["positions", eventId],
+    queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
+  });
+
   useEffect(() => {
     const saved = window.localStorage.getItem(debugStorageKey);
     setLocalDebugEnabled(saved === null ? null : saved === "true");
@@ -153,11 +158,36 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
     queryClient.setQueryData(["positionTypes"], (old = []) =>
       old.map((pt) => pt.id === positionType.id ? { ...pt, split_by_side: splitBySide } : pt)
     );
-    base44.entities.PositionType.update(positionType.id, { split_by_side: splitBySide })
-      .then(() => queryClient.invalidateQueries({ queryKey: ["positionTypes"] }))
+    const matchingPositions = positions.filter((position) => position.name === positionType.name);
+    queryClient.setQueryData(["positions", eventId], (old = []) =>
+      old.map((position) => position.name === positionType.name
+        ? {
+            ...position,
+            split_by_side: splitBySide,
+            staff_names_kamite: position.staff_names_kamite || [],
+            staff_names_shimote: position.staff_names_shimote || [],
+          }
+        : position)
+    );
+    Promise.all([
+      base44.entities.PositionType.update(positionType.id, { split_by_side: splitBySide }),
+      ...matchingPositions.map((position) => base44.entities.Position.update(position.id, {
+        split_by_side: splitBySide,
+        staff_names_kamite: position.staff_names_kamite || [],
+        staff_names_shimote: position.staff_names_shimote || [],
+        staff_names: splitBySide
+          ? [...new Set([...(position.staff_names_kamite || []), ...(position.staff_names_shimote || []), ...(position.staff_names || [])])]
+          : position.staff_names || [],
+      })),
+    ])
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["positionTypes"] });
+        queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+      })
       .catch(() => {
         queryClient.invalidateQueries({ queryKey: ["positionTypes"] });
-        toast.error("上手・下手設定の保存に失敗しました");
+        queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+        toast.error("\u4e0a\u624b\u30fb\u4e0b\u624b\u8a2d\u5b9a\u306e\u4fdd\u5b58\u306b\u5931\u6557\u3057\u307e\u3057\u305f");
       });
   };
 

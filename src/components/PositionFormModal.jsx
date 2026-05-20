@@ -147,38 +147,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
           <div>
             <Label>ポジション</Label>
             {positionTypes.length === 0 ? (
-              <p className="text-xs text-muted-foreground mt-1">管理タブでポジションを登録してください</p>
-            ) : form.split_by_side ? (
-              <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {[
-                  { key: "kamite", label: "上手", selected: form.staff_names_kamite },
-                  { key: "shimote", label: "下手", selected: form.staff_names_shimote },
-                ].map((side) => (
-                  <div key={side.key} className="border border-border rounded-lg overflow-hidden max-h-44 overflow-y-auto">
-                    <div className="sticky top-0 bg-muted px-3 py-1 text-xs font-bold">{side.label}</div>
-                    {staffList.map((staff) => {
-                      const selected = side.selected.includes(staff.name);
-                      return (
-                        <button
-                          key={`${side.key}-${staff.id}`}
-                          type="button"
-                          onClick={() => toggleStaff(staff.name, side.key)}
-                          className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left border-b border-border/50 last:border-b-0 transition-colors ${
-                            selected ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/50"
-                          }`}
-                        >
-                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${
-                            selected ? "bg-primary border-primary" : "border-border"
-                          }`}>
-                            {selected && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
-                          </div>
-                          <span className="min-w-0 truncate">{staff.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
+              <p className="text-xs text-muted-foreground mt-1">{"\u7ba1\u7406\u30bf\u30d6\u3067\u30dd\u30b8\u30b7\u30e7\u30f3\u3092\u767b\u9332\u3057\u3066\u304f\u3060\u3055\u3044"}</p>
             ) : (
               <ResponsiveSelect
                 value={positionTypes.find((pt) => pt.name === form.name)?.id || ""}
@@ -187,7 +156,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
                   value: pt.id,
                   label: pt.name,
                 }))}
-                placeholder="ポジションを選択"
+                placeholder={"\u30dd\u30b8\u30b7\u30e7\u30f3\u3092\u9078\u629e"}
               />
             )}
           </div>
@@ -210,7 +179,39 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
           <div>
             <Label>担当スタッフ</Label>
             {staffList.length === 0 ? (
-              <p className="text-xs text-muted-foreground mt-2">スタッフ管理タブでスタッフを登録してください</p>
+              <p className="text-xs text-muted-foreground mt-2">{"\u30b9\u30bf\u30c3\u30d5\u304c\u767b\u9332\u3055\u308c\u3066\u3044\u307e\u305b\u3093"}</p>
+            ) : form.split_by_side ? (
+              <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  { key: "kamite", label: "\u4e0a\u624b", selected: form.staff_names_kamite },
+                  { key: "shimote", label: "\u4e0b\u624b", selected: form.staff_names_shimote },
+                ].map((side) => (
+                  <div key={side.key} className="border border-border rounded-lg overflow-hidden max-h-44 overflow-y-auto">
+                    <div className="sticky top-0 bg-muted px-3 py-1 text-xs font-bold">{side.label}</div>
+                    {staffList.map((staff) => {
+                      const selected = side.selected.includes(staff.name);
+                      return (
+                        <button
+                          key={`${side.key}-${staff.id}`}
+                          type="button"
+                          onClick={() => toggleStaff(staff.name, side.key)}
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left border-b border-border/50 last:border-b-0 transition-colors ${
+                            selected ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/50"
+                          }`}
+                        >
+                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${
+                            selected ? "bg-primary border-primary" : "border-border"
+                          }`}>
+                            {selected && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                          </div>
+                          <span className="min-w-0 truncate">{staff.name}</span>
+                          {staff.note && <span className="text-xs text-muted-foreground ml-auto">({staff.note})</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="mt-1.5 border border-border rounded-lg overflow-hidden max-h-44 overflow-y-auto">
                 {staffList.map((staff) => {
