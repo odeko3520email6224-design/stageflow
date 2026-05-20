@@ -125,9 +125,25 @@ export default function StaffManagement({ eventId }) {
   });
 
   const updateChiefMutation = useMutation({
-    mutationFn: (chief_staff_name) => base44.entities.Event.update(eventId, { chief_staff_name }),
+    mutationFn: (chief_staff_name) => base44.entities.Event.update(event?.id || eventId, { chief_staff_name }),
+    onMutate: async (chief_staff_name) => {
+      await queryClient.cancelQueries({ queryKey: ["event", eventId] });
+      const previousEvent = queryClient.getQueryData(["event", eventId]);
+      queryClient.setQueryData(["event", eventId], (old) => {
+        if (Array.isArray(old)) {
+          return old.map((item) => item.id === (event?.id || eventId) ? { ...item, chief_staff_name } : item);
+        }
+        return old ? { ...old, chief_staff_name } : old;
+      });
+      return { previousEvent };
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(["event", eventId], context?.previousEvent);
+      toast.error("チーフの保存に失敗しました");
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      toast.success("チーフを保存しました");
     },
   });
 
@@ -189,18 +205,18 @@ export default function StaffManagement({ eventId }) {
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-lg p-1.5 mb-1.5">
-        <div className="flex items-center gap-1.5 mb-2">
-          <ShieldCheck className="w-4 h-4 text-primary" />
-          <h3 className="text-xs font-bold">チーフ・システム管理者</h3>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div>
-            <label className="text-[10px] font-medium text-muted-foreground">チーフ</label>
+      <div className="bg-card border border-border rounded-lg px-2 py-1.5 mb-1.5">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+            <h3 className="text-xs font-bold">チーフ・管理者</h3>
+          </div>
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <span className="text-[10px] font-medium text-muted-foreground shrink-0">チーフ</span>
             <select
               value={event?.chief_staff_name || ""}
               onChange={(e) => updateChiefMutation.mutate(e.target.value)}
-              className="mt-1 h-8 w-full rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="h-7 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               disabled={staffList.length === 0 || updateChiefMutation.isPending}
             >
               <option value="">未選択</option>
@@ -209,11 +225,9 @@ export default function StaffManagement({ eventId }) {
               ))}
             </select>
           </div>
-          <div>
-            <label className="text-[10px] font-medium text-muted-foreground">システム管理者</label>
-            <div className="mt-1 h-8 rounded-md border border-border bg-muted/40 px-2 flex items-center text-xs font-medium">
-              髙岡 永輝
-            </div>
+          <div className="flex items-center gap-1.5 shrink-0 text-xs">
+            <span className="text-[10px] font-medium text-muted-foreground">管理者</span>
+            <span className="font-medium">髙岡 永輝</span>
           </div>
         </div>
       </div>
