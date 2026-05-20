@@ -9,6 +9,8 @@ import StaffScrapeModal from "@/components/StaffScrapeModal";
 import { TIME_SLOT_STYLES } from "@/lib/constants";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { motion } from "framer-motion";
+import { useUserRole } from "@/hooks/useUserRole";
+import { getStaffDisplayName } from "@/lib/staffName";
 
 function EditModal({ staff, onClose, onSaved }) {
   const [name, setName] = useState(staff.name);
@@ -111,6 +113,8 @@ export default function StaffManagement({ eventId }) {
   const [showScrapeModal, setShowScrapeModal] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const queryClient = useQueryClient();
+  const { role } = useUserRole();
+  const shouldMaskStaffNames = role !== "admin" && role !== "chief";
 
 
   const { data: staffList = [], isLoading } = useQuery({
@@ -301,7 +305,7 @@ export default function StaffManagement({ eventId }) {
             >
               <option value="">未選択</option>
               {staffList.map((staff) => (
-                <option key={staff.id} value={staff.name}>{staff.name}</option>
+                <option key={staff.id} value={staff.name}>{getStaffDisplayName(staff.name, shouldMaskStaffNames)}</option>
               ))}
             </select>
           </div>
@@ -326,16 +330,17 @@ export default function StaffManagement({ eventId }) {
       <div className="space-y-1">
           {staffList.map((staff) => {
           const assigned = assignedMap[staff.name] || [];
+          const displayName = getStaffDisplayName(staff.name, shouldMaskStaffNames);
           const unassigned = assigned.length === 0;
           return (
             <div key={staff.id} className={`bg-card border rounded-md px-2 py-0.5 ${unassigned ? "border-amber-300" : "border-border"}`}>
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
-                    {staff.name.charAt(0)}
+                    {displayName.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="font-medium text-xs">{staff.name}</p>
+                      <p className="font-medium text-xs">{displayName}</p>
                       {staff.note && <span className="text-[10px] text-muted-foreground">({staff.note})</span>}
                       {unassigned &&
                     <span className="flex items-center gap-0.5 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700">

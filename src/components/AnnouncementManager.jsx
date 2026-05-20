@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { motion } from "framer-motion";
+import { useUserRole } from "@/hooks/useUserRole";
+import { getStaffDisplayName } from "@/lib/staffName";
 
 const PRIORITY_STYLES = {
   "通常": { badge: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700", icon: Bell },
@@ -15,7 +17,7 @@ const PRIORITY_STYLES = {
   "緊急": { badge: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700", icon: ShieldAlert },
 };
 
-function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
+function AnnouncementForm({ eventId, staffList, onClose, onSaved, maskStaffNames = false }) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef(null);
   const [form, setForm] = useState({
@@ -234,7 +236,7 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
                         : "bg-card border-border text-foreground"
                     }`}
                   >
-                    {s.name}
+                    {getStaffDisplayName(s.name, maskStaffNames)}
                   </button>
                 ))}
               </div>
@@ -256,7 +258,7 @@ function AnnouncementForm({ eventId, staffList, onClose, onSaved }) {
   );
 }
 
-function AnnouncementEditForm({ ann, staffList, onClose, onSaved }) {
+function AnnouncementEditForm({ ann, staffList, onClose, onSaved, maskStaffNames = false }) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef(null);
   const [form, setForm] = useState({
@@ -398,7 +400,7 @@ function AnnouncementEditForm({ ann, staffList, onClose, onSaved }) {
                 {staffList.map((s) => (
                   <button key={s.id} onClick={() => toggleStaff(s.name)}
                     className={`text-xs px-2 py-1 rounded-full border transition-all ${form.target_staff.includes(s.name) ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-foreground"}`}>
-                    {s.name}
+                    {getStaffDisplayName(s.name, maskStaffNames)}
                   </button>
                 ))}
               </div>
@@ -416,7 +418,7 @@ function AnnouncementEditForm({ ann, staffList, onClose, onSaved }) {
   );
 }
 
-function AnnouncementCard({ ann, staffList, onDelete }) {
+function AnnouncementCard({ ann, staffList, onDelete, maskStaffNames = false }) {
   const [expanded, setExpanded] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -560,7 +562,7 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
                     }`}
                   >
                     {alreadyRead && <CheckCircle2 className="w-3 h-3" />}
-                    {s.name}
+                    {getStaffDisplayName(s.name, maskStaffNames)}
                   </button>
                 );
               })}
@@ -594,7 +596,7 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
           </p>
           <div className="flex flex-wrap gap-1">
             {ann.read_by.map((name) => (
-              <span key={name} className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700">{name}</span>
+              <span key={name} className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700">{getStaffDisplayName(name, maskStaffNames)}</span>
             ))}
           </div>
         </div>
@@ -604,6 +606,7 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
         <AnnouncementEditForm
           ann={ann}
           staffList={staffList}
+          maskStaffNames={maskStaffNames}
           onClose={() => setShowEdit(false)}
           onSaved={() => setShowEdit(false)}
         />
@@ -627,6 +630,8 @@ export default function AnnouncementManager({ eventId }) {
   );
   const queryClient = useQueryClient();
   const prevIdsRef = useRef(new Set());
+  const { role } = useUserRole();
+  const shouldMaskStaffNames = role !== "admin" && role !== "chief";
 
   // Request browser notification permission on mount
   useEffect(() => {
@@ -750,6 +755,7 @@ export default function AnnouncementManager({ eventId }) {
               key={ann.id}
               ann={ann}
               staffList={staffList}
+              maskStaffNames={shouldMaskStaffNames}
               onDelete={(id) => deleteMutation.mutate(id)}
             />
           ))}
@@ -760,6 +766,7 @@ export default function AnnouncementManager({ eventId }) {
         <AnnouncementForm
           eventId={eventId}
           staffList={staffList}
+          maskStaffNames={shouldMaskStaffNames}
           onClose={() => setShowForm(false)}
           onSaved={() => setShowForm(false)}
         />

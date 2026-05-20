@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, MapPin, ChevronRight, Trash2, Pencil, LogOut, User } from "lucide-react";
+import { Plus, Calendar, MapPin, ChevronRight, Trash2, Pencil, LogOut, User, LogIn } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { motion } from "framer-motion";
 import EventFormModal from "@/components/EventFormModal";
@@ -89,7 +89,7 @@ export default function Events() {
             <Plus className="w-3.5 h-3.5" />
             新規
           </Button>
-          {currentUser && <div className="flex items-center gap-1.5 bg-muted rounded-md px-1.5 py-0.5 min-w-0 group">
+          {currentUser ? <div className="flex items-center gap-1.5 bg-muted rounded-md px-1.5 py-0.5 min-w-0 group">
               <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                 <User className="w-3 h-3 text-primary" />
               </div>
@@ -114,6 +114,9 @@ export default function Events() {
                 </button>
               </div>
             </div>
+            : <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2 shrink-0" onClick={() => base44.auth.redirectToLogin(window.location.href)}>
+                <LogIn className="w-3 h-3" />ログイン
+              </Button>
             }
         </div>
       </div>

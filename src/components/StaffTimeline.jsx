@@ -2,8 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Clock, CalendarClock } from "lucide-react";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
+import { useUserRole } from "@/hooks/useUserRole";
+import { getStaffDisplayName } from "@/lib/staffName";
 
 export default function StaffTimeline({ eventId }) {
+  const { role } = useUserRole();
+  const shouldMaskStaffNames = role !== "admin" && role !== "chief";
+
   const { data: positions = [], isLoading: loadingPos } = useQuery({
     queryKey: ["positions", eventId],
     queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
@@ -80,14 +85,15 @@ export default function StaffTimeline({ eventId }) {
           <div className="space-y-1">
             {allNames.map((name) => {
               const timeline = staffTimeline[name];
+              const displayName = getStaffDisplayName(name, shouldMaskStaffNames);
               const hasAnyAssignment = TIME_SLOTS.some((s) => timeline[s].length > 0);
               return (
                 <div key={name} className={`grid grid-cols-4 gap-1.5 bg-card border rounded-lg px-2 py-1 items-start ${!hasAnyAssignment ? "border-amber-200 bg-amber-50/30" : "border-border"}`}>
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
-                      {name.charAt(0)}
+                      {displayName.charAt(0)}
                     </div>
-                    <span className="text-xs font-medium truncate">{name}</span>
+                    <span className="text-xs font-medium truncate">{displayName}</span>
                   </div>
                   {TIME_SLOTS.map((slot) => (
                     <div key={slot} className="min-h-[1.5rem]">

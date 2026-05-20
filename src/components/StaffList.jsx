@@ -8,13 +8,15 @@ import PositionCard from "@/components/PositionCard.jsx";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
+import { getStaffDisplayName } from "@/lib/staffName";
 
 export default function StaffList({ eventId }) {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [defaultSlot, setDefaultSlot] = useState("開場前");
   const queryClient = useQueryClient();
-  const { canEdit: isAdmin } = useUserRole();
+  const { canEdit: isAdmin, role } = useUserRole();
+  const shouldMaskStaffNames = role !== "admin" && role !== "chief";
   const { exporting: exportingPDF, exportPDF: handleExportPDF } = usePDFExport(eventId, "staff", "配置表");
 
   const { data: staffList = [] } = useQuery({
@@ -111,6 +113,7 @@ export default function StaffList({ eventId }) {
                           isAdmin={isAdmin}
                           onEdit={(p) => { setEditing(p); setShowModal(true); }}
                           onDelete={(id) => deleteMutation.mutate(id)}
+                          maskStaffNames={shouldMaskStaffNames}
                         />
                       ))}
                     </div>
@@ -135,15 +138,18 @@ export default function StaffList({ eventId }) {
               <span className="text-[10px] opacity-70">{unassigned.length}名</span>
             </div>
             <div className="bg-card p-2 grid gap-1">
-              {unassigned.map((s) => (
+              {unassigned.map((s) => {
+                const displayName = getStaffDisplayName(s.name, shouldMaskStaffNames);
+                return (
                 <div key={s.id} className="flex items-center gap-2 px-2 py-1 rounded-lg bg-amber-50/50 border border-amber-100">
                   <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-[10px] shrink-0">
-                    {s.name.charAt(0)}
+                    {displayName.charAt(0)}
                   </div>
-                  <span className="text-xs font-medium">{s.name}</span>
+                  <span className="text-xs font-medium">{displayName}</span>
                   {s.note && <span className="text-[10px] text-muted-foreground">{s.note}</span>}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );

@@ -1,10 +1,12 @@
 import { Pencil, Trash2, Minus, Plus } from "lucide-react";
+import { getStaffDisplayName } from "@/lib/staffName";
 
 export default function PositionCard({
   pos, isAdmin, draggable = false, draggedStaff = null,
   onEdit, onDelete, onDragOver, onDrop, onStaffDragStart, onStaffRemove,
   emptyLabel = "スタッフ未登録", staffList = [],
   requiredCount = 0, onRequiredCountChange, occupiedInSlot = [],
+  maskStaffNames = false,
 }) {
   const staffNames = pos.staff_names || [];
   const assignedCount = staffNames.length;
@@ -48,6 +50,7 @@ export default function PositionCard({
       <div className="divide-y divide-border/40">
         {staffNames.length > 0 ? staffNames.map((name, i) => {
           const staffData = staffList.find((s) => s.name === name);
+          const displayName = getStaffDisplayName(name, maskStaffNames);
           return (
             <div key={draggable ? `${pos.id}-${name}` : i}
               draggable={draggable && isAdmin}
@@ -56,7 +59,7 @@ export default function PositionCard({
                 draggable && isAdmin ? "cursor-move hover:bg-muted/50" : "",
                 draggable && draggedStaff === name ? "opacity-50" : ""].join(" ")}>
               <div className="flex-1 min-w-0">
-                <span className="text-xs text-foreground">{name}</span>
+                <span className="text-xs text-foreground">{displayName}</span>
                 {staffData?.note && <span className="text-[10px] text-muted-foreground ml-1.5">({staffData.note})</span>}
               </div>
               {onStaffRemove && isAdmin && (

@@ -9,6 +9,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePDFExport } from "@/hooks/usePDFExport";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
+import { getStaffDisplayName } from "@/lib/staffName";
 import PresetSelector from "@/components/PresetSelector";
 import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 
@@ -226,6 +227,7 @@ export default function StaffDragDropManager({ eventId }) {
   const hideForUser = role === "user" && isEditMode;
   const isVisibilityReady = Boolean(role) && isModeReady;
   const isAdmin = canEdit && isEditMode;
+  const shouldMaskStaffNames = role !== "admin" && role !== "chief";
 
   return (
     <div>
@@ -344,6 +346,7 @@ export default function StaffDragDropManager({ eventId }) {
                             occupiedInSlot={[...new Set(
                               slotPositions.filter((p) => p.id !== pos.id).flatMap((p) => p.staff_names || [])
                             )]}
+                            maskStaffNames={shouldMaskStaffNames}
                           />
                         </div>
                       </div>
@@ -364,17 +367,20 @@ export default function StaffDragDropManager({ eventId }) {
             <span className="text-[10px] opacity-70">{unassigned.length}名</span>
           </div>
           <div className="bg-card p-1 grid gap-0.5 min-h-[28px]" onDragOver={isAdmin ? handleDragOver : undefined} onDrop={isAdmin ? handleDropUnassigned : undefined}>
-            {unassigned.map((s) => (
+            {unassigned.map((s) => {
+              const displayName = getStaffDisplayName(s.name, shouldMaskStaffNames);
+              return (
               <div key={s.id} draggable={isAdmin}
                 onDragStart={isAdmin ? (e) => handleStaffDragStart(e, s.name) : undefined}
                 className={`flex items-center gap-2 px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 ${isAdmin ? "cursor-move hover:bg-amber-100 dark:hover:bg-amber-900/50" : "cursor-default"} ${draggedStaff === s.name ? "opacity-50" : ""}`}>
                 <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center text-amber-700 dark:text-amber-300 font-bold text-[10px] shrink-0">
-                  {s.name.charAt(0)}
+                  {displayName.charAt(0)}
                 </div>
-                <span className="text-xs font-medium text-foreground">{s.name}</span>
+                <span className="text-xs font-medium text-foreground">{displayName}</span>
                 {s.note && <span className="text-[10px] text-muted-foreground">({s.note})</span>}
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -390,6 +396,7 @@ export default function StaffDragDropManager({ eventId }) {
             <p className="text-[11px] text-muted-foreground text-center py-3">スタッフが登録されていません</p>
           ) : (
             staffList.map((s) => {
+              const displayName = getStaffDisplayName(s.name, shouldMaskStaffNames);
               const slotAssignments = TIME_SLOTS.map((slot) => ({
                 slot,
                 positions: positions.filter((p) => (p.time_slot || "開場中") === slot && (p.staff_names || []).includes(s.name)),
@@ -397,11 +404,11 @@ export default function StaffDragDropManager({ eventId }) {
               return (
                 <div key={s.id} className="flex items-start gap-2 px-2 py-1">
                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] shrink-0 mt-0.5">
-                    {s.name.charAt(0)}
+                    {displayName.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="text-xs font-medium">{s.name}</p>
+                      <p className="text-xs font-medium">{displayName}</p>
                       {s.note && <span className="text-[10px] text-muted-foreground">({s.note})</span>}
                     </div>
                     {slotAssignments.length === 0 ? (

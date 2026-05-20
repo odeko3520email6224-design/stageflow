@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ChevronLeft, User, LogOut, Users, ClipboardList, MapPin, Clock, Bell, Settings, CheckSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, User, LogOut, Users, ClipboardList, MapPin, Clock, Bell, Settings, CheckSquare, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import VenueMap from "@/components/VenueMap";
 import StaffManagement from "@/components/StaffManagement";
@@ -47,7 +48,7 @@ export default function EventDetail() {
     }
   });
 
-  const canShowTimeline = showTimeline || !isPrivileged;
+  const canShowTimeline = Boolean(role) && showTimeline && role !== "user";
 
   const handleToggleTimeline = (val) => {
     setShowTimeline(val);
@@ -63,6 +64,12 @@ export default function EventDetail() {
   const handleActiveTabReset = () => {
     setTabResetKey((key) => key + 1);
   };
+
+  useEffect(() => {
+    if (role && !canShowTimeline && tab === "timeline") {
+      setTab("staff", { replace: true, reset: true });
+    }
+  }, [role, canShowTimeline, tab, setTab]);
 
   useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -123,7 +130,7 @@ export default function EventDetail() {
               </div>
             )}
           </div>
-          {currentUser && (
+          {currentUser ? (
             <div className="flex items-center gap-1.5 bg-muted rounded-md px-1.5 py-0.5 shrink-0">
               <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
                 <User className="w-3 h-3 text-primary" />
@@ -142,6 +149,10 @@ export default function EventDetail() {
                 <LogOut className="w-3 h-3" />
               </button>
             </div>
+          ) : (
+            <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2 shrink-0" onClick={() => base44.auth.redirectToLogin(window.location.href)}>
+              <LogIn className="w-3 h-3" />ログイン
+            </Button>
           )}
         </div>
 

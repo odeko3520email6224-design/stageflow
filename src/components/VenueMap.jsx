@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, Download, FileText, Loader2, Map, MapPin, Move, Upload, X } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
+import { getStaffDisplayName } from "@/lib/staffName";
 
 const ROLE_COLORS = {
   "受付": "#3b82f6",
@@ -48,8 +49,8 @@ function getPinColor(pos) {
   return pos.color || ROLE_COLORS[pos.role] || "#6366f1";
 }
 
-function getStaffLabel(pos) {
-  return (pos.staff_names || []).join("・");
+function getStaffLabel(pos, maskStaffNames = false) {
+  return (pos.staff_names || []).map((name) => getStaffDisplayName(name, maskStaffNames)).join("・");
 }
 
 function drawRoundedRect(ctx, x, y, width, height, radius) {
@@ -63,7 +64,7 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
-function UnplacedPanel({ positions, draggingPin, onSelectPin, onDragStart, disabled }) {
+function UnplacedPanel({ positions, draggingPin, onSelectPin, onDragStart, disabled, maskStaffNames = false }) {
   const notOnMap = positions.filter((p) => p.map_x == null || p.map_y == null);
 
   return (
@@ -97,8 +98,8 @@ function UnplacedPanel({ positions, draggingPin, onSelectPin, onDragStart, disab
               />
               <span className="min-w-0">
                 <span className="block text-xs font-medium truncate">{pos.name}</span>
-                {getStaffLabel(pos) && (
-                  <span className="block text-[10px] text-muted-foreground truncate">{getStaffLabel(pos)}</span>
+                {getStaffLabel(pos, maskStaffNames) && (
+                  <span className="block text-[10px] text-muted-foreground truncate">{getStaffLabel(pos, maskStaffNames)}</span>
                 )}
               </span>
             </button>
@@ -155,6 +156,7 @@ export default function VenueMap({ eventId }) {
   const hideForUser = role === "user" && isEditMode;
   const isVisibilityReady = Boolean(role) && isModeReady;
   const canUseEditTools = canEdit && isEditMode;
+  const shouldMaskStaffNames = role !== "admin" && role !== "chief";
 
   useEffect(() => {
     let cancelled = false;
@@ -324,7 +326,8 @@ export default function VenueMap({ eventId }) {
         const x = (Number(pos.map_x) / 100) * exportCanvas.width;
         const y = (Number(pos.map_y) / 100) * exportCanvas.height;
         const color = getPinColor(pos);
-        const label = getStaffLabel(pos) ? `${pos.name} / ${getStaffLabel(pos)}` : pos.name;
+        const staffLabel = getStaffLabel(pos, shouldMaskStaffNames);
+        const label = staffLabel ? `${pos.name} / ${staffLabel}` : pos.name;
         const fontSize = Math.max(18, Math.round(exportCanvas.width * 0.014));
         ctx.font = `600 ${fontSize}px "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif`;
         const paddingX = Math.round(fontSize * 0.45);
@@ -553,7 +556,7 @@ export default function VenueMap({ eventId }) {
                       </span>
                       <span className="mt-0.5 max-w-[96px] rounded bg-white/95 px-1 py-0.5 text-center text-[9px] font-medium leading-tight shadow pointer-events-none">
                         <span className="block truncate">{pos.name}</span>
-                        {getStaffLabel(pos) && <span className="block truncate text-muted-foreground">{getStaffLabel(pos)}</span>}
+                        {getStaffLabel(pos, shouldMaskStaffNames) && <span className="block truncate text-muted-foreground">{getStaffLabel(pos, shouldMaskStaffNames)}</span>}
                       </span>
                     </button>
 
@@ -574,7 +577,7 @@ export default function VenueMap({ eventId }) {
                         </button>
                         <div className="pr-4 text-xs font-semibold">{pos.name}</div>
                         <div className="mt-1 text-xs text-muted-foreground">
-                          {getStaffLabel(pos) || "担当スタッフ未設定"}
+                          {getStaffLabel(pos, shouldMaskStaffNames) || "担当スタッフ未設定"}
                         </div>
                         {canUseEditTools && (
                           <button
@@ -601,6 +604,7 @@ export default function VenueMap({ eventId }) {
           positions={filteredPositions}
           draggingPin={draggingPin}
           disabled={!canUseEditTools || !hasPDF}
+          maskStaffNames={shouldMaskStaffNames}
           onSelectPin={(pos) => {
             if (!canUseEditTools || !hasPDF) return;
             setDraggingPin(pos);
