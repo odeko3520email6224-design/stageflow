@@ -21,12 +21,18 @@ export function useResolvedEventMode(eventId, field, eventMode, options = {}) {
   useEffect(() => {
     const handleModeChange = (event) => {
       if (event.detail?.eventId === eventId && event.detail?.field === field) {
-        setLocalMode(event.detail.mode);
+        setLocalMode(normalizeMode(event.detail.mode));
       }
     };
     window.addEventListener(modeEventName, handleModeChange);
     return () => window.removeEventListener(modeEventName, handleModeChange);
   }, [eventId, field]);
+
+  useEffect(() => {
+    if (localMode && normalizeMode(eventMode) === localMode) {
+      setLocalMode(null);
+    }
+  }, [eventMode, localMode]);
 
   const resolvedMode = localMode && !preferEvent ? normalizeMode(localMode) : normalizeMode(eventMode);
 

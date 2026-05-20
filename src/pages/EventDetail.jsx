@@ -22,7 +22,7 @@ import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTabNavigation } from "@/hooks/useTabNavigation";
-import { loadEventById } from "@/lib/eventLoader";
+import { EVENT_MODE_REFETCH_INTERVAL, loadEventById } from "@/lib/eventLoader";
 
 const TIMELINE_STORAGE_KEY = "stageflow_timeline_enabled";
 
@@ -81,6 +81,8 @@ export default function EventDetail() {
   const { data: event, isLoading, refetch: refetchEvent } = useQuery({
     queryKey: ["event", eventId],
     queryFn: () => loadEventById(eventId),
+    refetchInterval: EVENT_MODE_REFETCH_INTERVAL,
+    refetchIntervalInBackground: true,
   });
 
   const { isPulling, pullDistance } = usePullToRefresh(async () => {
