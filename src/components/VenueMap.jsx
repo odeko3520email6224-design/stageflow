@@ -60,6 +60,16 @@ async function renderPDFFileToImageFile(file) {
   return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
 }
 
+async function saveVenueMapAssets(eventId, { map_pdf_url, map_image_url }) {
+  const response = await base44.functions.invoke("updateVenueMap", {
+    eventId,
+    map_pdf_url,
+    map_image_url,
+  });
+  if (response.data?.error) throw new Error(response.data.error);
+  return response.data?.event;
+}
+
 function getPinColor(pos) {
   return pos.color || ROLE_COLORS[pos.role] || "#6366f1";
 }
@@ -290,11 +300,18 @@ export default function VenueMap({ eventId }) {
       const imageUrl = isPDF ? results[1].file_url : results[0].file_url;
       setLocalPdfUrl(pdfUrl);
       setLocalMapImageUrl(imageUrl);
-      await base44.entities.Event.update(eventId, {
+      const updatedEvent = await saveVenueMapAssets(eventId, {
         map_pdf_url: pdfUrl,
         map_image_url: imageUrl,
       });
+      queryClient.setQueryData(["event", eventId], (old) => {
+        if (Array.isArray(old)) {
+          return old.map((item) => item.id === eventId ? { ...item, ...updatedEvent } : item);
+        }
+        return old ? { ...old, ...updatedEvent } : updatedEvent;
+      });
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
     } catch (error) {
       console.error("Map file upload error:", error);
       alert("ファイルの読み込みに失敗しました: " + error.message);
@@ -308,8 +325,15 @@ export default function VenueMap({ eventId }) {
     if (!confirm("会場マップPDFを削除しますか？ピンの座標は残ります。")) return;
     setLocalPdfUrl("");
     setLocalMapImageUrl("");
-    await base44.entities.Event.update(eventId, { map_pdf_url: null, map_image_url: null });
+    const updatedEvent = await saveVenueMapAssets(eventId, { map_pdf_url: null, map_image_url: null });
+    queryClient.setQueryData(["event", eventId], (old) => {
+      if (Array.isArray(old)) {
+        return old.map((item) => item.id === eventId ? { ...item, ...updatedEvent } : item);
+      }
+      return old ? { ...old, ...updatedEvent } : updatedEvent;
+    });
     queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+    queryClient.invalidateQueries({ queryKey: ["events"] });
   };
 
   const handleExportPDF = async () => {
