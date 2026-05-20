@@ -13,6 +13,7 @@ import TaskChecklist from "@/components/TaskChecklist";
 import AnnouncementAlert from "@/components/AnnouncementAlert";
 import StaffDragDropManager from "@/components/StaffDragDropManager";
 import BottomTabBar from "@/components/BottomTabBar";
+import UserNameEditor, { getUserDisplayName } from "@/components/UserNameEditor";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -117,9 +118,10 @@ export default function EventDetail() {
                 <User className="w-3 h-3 text-primary" />
               </div>
               <div className="text-right hidden sm:block">
-                <div className="text-xs font-medium leading-none">{currentUser.full_name || currentUser.email}</div>
-                {currentUser.full_name && <div className="text-[10px] text-muted-foreground leading-none mt-0.5">{currentUser.email}</div>}
+                <div className="text-xs font-medium leading-none">{getUserDisplayName(currentUser)}</div>
+                {getUserDisplayName(currentUser) !== currentUser.email && <div className="text-[10px] text-muted-foreground leading-none mt-0.5">{currentUser.email}</div>}
               </div>
+              <UserNameEditor user={currentUser} onSaved={setCurrentUser} />
               <button
                 onClick={() => base44.auth.logout()}
                 className="ml-1 p-1 rounded text-muted-foreground hover:text-destructive transition-colors"

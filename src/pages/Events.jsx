@@ -9,6 +9,7 @@ import { Plus, Calendar, MapPin, ChevronRight, Trash2, Pencil, LogOut, User } fr
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { motion } from "framer-motion";
 import EventFormModal from "@/components/EventFormModal";
+import UserNameEditor, { getUserDisplayName } from "@/components/UserNameEditor";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 
@@ -84,10 +85,11 @@ export default function Events() {
                 <User className="w-3 h-3 text-primary" />
               </div>
               <div className="text-right min-w-0">
-                <div className="text-xs font-medium leading-none truncate">{currentUser.full_name || currentUser.email}</div>
-                {currentUser.full_name && <div className="text-[10px] text-muted-foreground leading-none mt-0.5 truncate">{currentUser.email}</div>}
+                <div className="text-xs font-medium leading-none truncate">{getUserDisplayName(currentUser)}</div>
+                {getUserDisplayName(currentUser) !== currentUser.email && <div className="text-[10px] text-muted-foreground leading-none mt-0.5 truncate">{currentUser.email}</div>}
               </div>
               <div className="ml-1 flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <UserNameEditor user={currentUser} onSaved={setCurrentUser} />
                 <button
                 onClick={() => setConfirmDeleteEvent({ id: "__account__", name: "アカウント（ログアウトします）" })}
                 className="p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none"
