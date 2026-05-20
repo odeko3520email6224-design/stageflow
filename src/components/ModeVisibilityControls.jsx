@@ -29,7 +29,7 @@ export function useResolvedEventMode(eventId, field, eventMode) {
   }, [eventId, field]);
 
   return {
-    mode: localMode || eventMode || "public",
+    mode: eventMode || localMode || "public",
     isReady: isLoaded || eventMode === "edit" || eventMode === "public",
   };
 }

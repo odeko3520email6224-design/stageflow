@@ -224,8 +224,8 @@ export default function StaffDragDropManager({ eventId }) {
   });
   const { mode: assignmentMode, isReady: isModeReady } = useResolvedEventMode(eventId, "assignment_mode", event?.assignment_mode);
   const isEditMode = assignmentMode === "edit";
-  const hideForUser = role === "user" && isEditMode;
-  const isVisibilityReady = Boolean(role) && isModeReady;
+  const hideForUser = !canEdit && isEditMode;
+  const isVisibilityReady = Boolean(role) && isModeReady && Boolean(event);
   const isAdmin = canEdit && isEditMode;
   const shouldMaskStaffNames = role !== "admin" && role !== "chief";
 
