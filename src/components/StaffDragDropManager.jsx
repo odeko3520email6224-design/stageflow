@@ -13,6 +13,7 @@ import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 import { getStaffDisplayName } from "@/lib/staffName";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
 import {
+  applyPositionSideMutation,
   applyPositionSideSettingsToPositions,
   applyPositionSideSettingsToTypes,
   loadPositionSideSettings,
@@ -54,12 +55,14 @@ export default function StaffDragDropManager({ eventId }) {
   const { data: sideSettings } = useQuery({
     queryKey: ["positionSideSettings", eventId],
     queryFn: () => loadPositionSideSettings(base44, eventId),
+    staleTime: 30_000,
   });
 
   const positionTypes = applyPositionSideSettingsToTypes(rawPositionTypes, sideSettings);
   const positions = applyPositionSideSettingsToPositions(rawPositions, positionTypes, sideSettings);
 
   const updatePositionMutation = useMutation({
+    scope: { id: `position-side-${eventId}` },
     mutationFn: async ({ positionId, data }) => {
       if (
         Object.prototype.hasOwnProperty.call(data, "staff_names") ||
@@ -81,21 +84,32 @@ export default function StaffDragDropManager({ eventId }) {
     },
     onMutate: async ({ positionId, data }) => {
       await queryClient.cancelQueries({ queryKey: ["positions", eventId] });
+      await queryClient.cancelQueries({ queryKey: ["positionSideSettings", eventId] });
       const previousPositions = queryClient.getQueryData(["positions", eventId]);
+      const previousSideSettings = queryClient.getQueryData(["positionSideSettings", eventId]);
       queryClient.setQueryData(["positions", eventId], (old) =>
         (old || []).map((p) => (p.id === positionId ? { ...p, ...data } : p))
       );
-      return { previousPositions };
+      if (
+        Object.prototype.hasOwnProperty.call(data, "staff_names_kamite") ||
+        Object.prototype.hasOwnProperty.call(data, "staff_names_shimote") ||
+        Object.prototype.hasOwnProperty.call(data, "split_by_side")
+      ) {
+        queryClient.setQueryData(["positionSideSettings", eventId], (old) =>
+          applyPositionSideMutation(old, positionId, data)
+        );
+      }
+      return { previousPositions, previousSideSettings };
     },
     onError: (err, newData, context) => {
-      queryClient.setQueryData(["positions", eventId], context.previousPositions);
+      queryClient.setQueryData(["positions", eventId], context?.previousPositions);
+      queryClient.setQueryData(["positionSideSettings", eventId], context?.previousSideSettings);
     },
     onSuccess: (result) => {
       if (result?.sideSettings) {
         queryClient.setQueryData(["positionSideSettings", eventId], result.sideSettings);
       }
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
-      queryClient.invalidateQueries({ queryKey: ["positionSideSettings", eventId] });
     },
   });
 

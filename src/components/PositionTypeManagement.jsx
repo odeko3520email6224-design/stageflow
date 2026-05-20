@@ -44,6 +44,7 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
   const { data: sideSettings } = useQuery({
     queryKey: ["positionSideSettings", eventId],
     queryFn: () => loadPositionSideSettings(base44, eventId),
+    staleTime: 30_000,
   });
 
   const positionTypes = applyPositionSideSettingsToTypes(rawPositionTypes, sideSettings);
@@ -134,6 +135,7 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
   });
 
   const autoPlaceMutation = useMutation({
+    scope: { id: `position-side-${eventId}` },
     mutationFn: async () => {
       const response = await base44.functions.invoke("debugTools", {
         action: "autoPlace",
@@ -152,7 +154,6 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
         queryClient.setQueryData(["positionSideSettings", eventId], result.sideSettings);
       }
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
-      queryClient.invalidateQueries({ queryKey: ["positionSideSettings", eventId] });
       toast.success(`自動配置しました（作成${result.created}件・更新${result.updated}件）`);
     },
   });
@@ -208,7 +209,6 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
         }
         queryClient.invalidateQueries({ queryKey: ["positionTypes"] });
         queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
-        queryClient.invalidateQueries({ queryKey: ["positionSideSettings", eventId] });
       })
       .catch(() => {
         queryClient.invalidateQueries({ queryKey: ["positionTypes"] });

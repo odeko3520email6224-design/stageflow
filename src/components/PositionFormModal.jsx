@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
 import {
+  applyPositionSideMutation,
   applyPositionSideSettingsToTypes,
   loadPositionSideSettings,
 } from "@/lib/positionSideSettings";
@@ -48,6 +49,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
   const { data: sideSettings } = useQuery({
     queryKey: ["positionSideSettings", eventId],
     queryFn: () => loadPositionSideSettings(base44, eventId),
+    staleTime: 30_000,
   });
 
   const positionTypes = applyPositionSideSettingsToTypes(rawPositionTypes, sideSettings);
@@ -55,6 +57,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
+    scope: { id: `position-side-${eventId}` },
     mutationFn: async (data) => {
       const {
         staff_names_kamite,
@@ -96,10 +99,18 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
       }
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
       queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
-      queryClient.invalidateQueries({ queryKey: ["positionSideSettings", eventId] });
       onSaved();
     },
   });
+
+  const savePosition = (nextForm, options) => {
+    if (position?.id) {
+      queryClient.setQueryData(["positionSideSettings", eventId], (old) =>
+        applyPositionSideMutation(old, position.id, nextForm)
+      );
+    }
+    mutation.mutate(nextForm, options);
+  };
 
   // Auto-save on form changes (only for existing positions)
   // Text fields (name, notes) use 500ms debounce; all other changes save instantly
@@ -123,7 +134,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
 
     const delay = nonTextChanged ? 0 : 500;
     const timer = setTimeout(() => {
-      mutation.mutate({ ...form }, {
+      savePosition({ ...form }, {
         onSuccess: () => {
           toast.success("保存しました");
           prevFormRef.current = form;
@@ -316,7 +327,7 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
             <Button
               className="flex-1"
               disabled={!form.name || mutation.isPending}
-              onClick={() => mutation.mutate({ ...form }, {
+              onClick={() => savePosition({ ...form }, {
                 onSuccess: () => {
                   toast.success("作成しました");
                   setTimeout(onClose, 500);
