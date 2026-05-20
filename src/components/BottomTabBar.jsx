@@ -11,8 +11,8 @@ const ALL_TABS = [
 ];
 
 export default function BottomTabBar({ activeTab, onTabChange, onActiveTabReset, showTimeline = false, isPrivileged = true }) {
-  // userロール: 配置表・タイムライン・連絡事項・チェックリストのみ
-  const USER_VISIBLE = ["dragdrop", "timeline", "notice", "tasks"];
+  // 未ログイン・userロール: 管理画面以外を閲覧可能にする
+  const USER_VISIBLE = ["staff", "dragdrop", "map", "timeline", "notice", "tasks"];
   const TABS = ALL_TABS.filter((t) => {
     if (t.id === "timeline" && !showTimeline) return false;
     if (!isPrivileged && !USER_VISIBLE.includes(t.id)) return false;

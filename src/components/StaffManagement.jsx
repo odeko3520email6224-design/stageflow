@@ -9,6 +9,7 @@ import StaffScrapeModal from "@/components/StaffScrapeModal";
 import { TIME_SLOT_STYLES } from "@/lib/constants";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { motion } from "framer-motion";
+import { useUserRole } from "@/hooks/useUserRole";
 
 function EditModal({ staff, onClose, onSaved }) {
   const [name, setName] = useState(staff.name);
@@ -111,6 +112,7 @@ export default function StaffManagement({ eventId }) {
   const [showScrapeModal, setShowScrapeModal] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const queryClient = useQueryClient();
+  const { canEdit } = useUserRole();
 
 
   const { data: staffList = [], isLoading } = useQuery({
@@ -228,6 +230,7 @@ export default function StaffManagement({ eventId }) {
   });
 
   const handleAdd = () => {
+    if (!canEdit) return;
     if (!name.trim()) return;
     createMutation.mutate({ event_id: eventId, name: name.trim(), note: note.trim() });
   };
@@ -258,7 +261,7 @@ export default function StaffManagement({ eventId }) {
           <p className="text-[11px] text-muted-foreground">スタッフの追加・編集・削除が可能です。</p>
           <div className="text-xs font-medium text-foreground mt-0.5">登録スタッフ数：{staffList.length}名</div>
         </div>
-        <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2 shrink-0" onClick={() => setShowScrapeModal(true)}>
+        <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2 shrink-0" onClick={() => setShowScrapeModal(true)} disabled={!canEdit}>
           <Download className="w-3 h-3" />A-CAST取得
         </Button>
       </div>
@@ -279,7 +282,7 @@ export default function StaffManagement({ eventId }) {
             placeholder="備考"
             className="w-24 h-8 text-sm" />
           
-          <Button onClick={handleAdd} disabled={!name.trim() || createMutation.isPending} size="sm" className="gap-0.5 h-8 px-2 shrink-0">
+          <Button onClick={handleAdd} disabled={!canEdit || !name.trim() || createMutation.isPending} size="sm" className="gap-0.5 h-8 px-2 shrink-0">
             <Plus className="w-3 h-3" />追加
           </Button>
         </div>
@@ -297,7 +300,7 @@ export default function StaffManagement({ eventId }) {
               value={event?.chief_staff_name || ""}
               onChange={(e) => updateChiefMutation.mutate(e.target.value)}
               className="h-7 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              disabled={staffList.length === 0 || updateChiefMutation.isPending}
+              disabled={!canEdit || staffList.length === 0 || updateChiefMutation.isPending}
             >
               <option value="">未選択</option>
               {staffList.map((staff) => (
@@ -346,6 +349,7 @@ export default function StaffManagement({ eventId }) {
                   </div>
                   <button
                   onClick={() => setEditingStaff(staff)}
+                  disabled={!canEdit}
                   className="p-1 rounded-lg hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   title="編集">
                   
@@ -353,6 +357,7 @@ export default function StaffManagement({ eventId }) {
                   </button>
                   <button
                   onClick={() => setConfirmDelete({ id: staff.id, name: staff.name })}
+                  disabled={!canEdit}
                   className="p-1 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   title="削除">
                     <Trash2 className="w-3 h-3" />

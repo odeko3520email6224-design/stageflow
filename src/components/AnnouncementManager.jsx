@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { motion } from "framer-motion";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const PRIORITY_STYLES = {
   "通常": { badge: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700", icon: Bell },
@@ -416,7 +417,7 @@ function AnnouncementEditForm({ ann, staffList, onClose, onSaved }) {
   );
 }
 
-function AnnouncementCard({ ann, staffList, onDelete }) {
+function AnnouncementCard({ ann, staffList, onDelete, canEdit }) {
   const [expanded, setExpanded] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -516,12 +517,13 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
         <div className="flex gap-1 shrink-0">
           <button
             onClick={() => setShowConfirm(!showConfirm)}
-            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700 dark:hover:bg-green-900/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            disabled={!canEdit}
+            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-green-100 text-green-700 border border-green-200 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700 dark:hover:bg-green-900/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30 disabled:pointer-events-none"
             title="確認を行う"
           >
             <CheckCircle2 className="w-3 h-3" />確認を行う
           </button>
-          <button onClick={() => setShowEdit(true)} className="p-1 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="編集">
+          <button onClick={() => setShowEdit(true)} disabled={!canEdit} className="p-1 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30 disabled:pointer-events-none" title="編集">
             <Pencil className="w-3.5 h-3.5" />
           </button>
           {ann.body && (
@@ -529,7 +531,7 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
               {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
           )}
-          <button onClick={() => setShowDeleteConfirm(true)} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="削除">
+          <button onClick={() => setShowDeleteConfirm(true)} disabled={!canEdit} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30 disabled:pointer-events-none" title="削除">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -551,8 +553,8 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
                 return (
                   <button
                     key={s.id}
-                    onClick={() => !alreadyRead && readMutation.mutate(s.name)}
-                    disabled={alreadyRead || readMutation.isPending}
+                    onClick={() => canEdit && !alreadyRead && readMutation.mutate(s.name)}
+                    disabled={!canEdit || alreadyRead || readMutation.isPending}
                     className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-all ${
                       alreadyRead
                         ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700 cursor-default"
@@ -576,7 +578,7 @@ function AnnouncementCard({ ann, staffList, onDelete }) {
               />
               <button
                 onClick={handleConfirm}
-                disabled={!confirmName.trim() || readMutation.isPending}
+                disabled={!canEdit || !confirmName.trim() || readMutation.isPending}
                 className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
                 {readMutation.isPending ? "..." : "確認"}
@@ -626,6 +628,7 @@ export default function AnnouncementManager({ eventId }) {
     typeof Notification !== "undefined" ? Notification.permission : "denied"
   );
   const queryClient = useQueryClient();
+  const { canEdit } = useUserRole();
   const prevIdsRef = useRef(new Set());
 
   // Request browser notification permission on mount
@@ -727,7 +730,7 @@ export default function AnnouncementManager({ eventId }) {
               {notifPermission === "denied" ? "通知ブロック中" : "通知を有効にする"}
             </button>
           )}
-          <Button size="sm" onClick={() => setShowForm(true)} className="gap-1 h-7 text-xs">
+          <Button size="sm" onClick={() => setShowForm(true)} className="gap-1 h-7 text-xs" disabled={!canEdit}>
             <Plus className="w-3 h-3" />新規作成
           </Button>
         </div>
@@ -751,6 +754,7 @@ export default function AnnouncementManager({ eventId }) {
               ann={ann}
               staffList={staffList}
               onDelete={(id) => deleteMutation.mutate(id)}
+              canEdit={canEdit}
             />
           ))}
         </div>
