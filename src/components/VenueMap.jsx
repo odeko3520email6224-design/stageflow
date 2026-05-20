@@ -7,6 +7,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { HiddenInEditMode, ModeLoadingPlaceholder, ModeVisibilityControls, useResolvedEventMode } from "@/components/ModeVisibilityControls";
 import { getStaffDisplayName } from "@/lib/staffName";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
+import { appParams } from "@/lib/app-params";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorkerSource from "@/lib/pdfWorkerSource";
 
@@ -22,6 +23,30 @@ const PIN_RADIUS_PX = 11;
 const VENUE_MAP_FALLBACK_PREFIX = "__venue_map_asset__";
 let pdfWorkerPort = null;
 
+function normalizeBase44FileUrl(url) {
+  if (!url) return "";
+  try {
+    const parsed = new URL(url);
+    const match = parsed.pathname.match(/\/files\/mp\/public\/([^/]+)\/(.+)$/);
+    if (!match) return url;
+    const [, appId, fileName] = match;
+    const isImage = /\.(png|jpe?g|webp|gif)$/i.test(fileName);
+    const mediaType = isImage ? "images" : "files";
+    return `https://media.base44.com/${mediaType}/public/${appId}/${fileName}`;
+  } catch {
+    return url;
+  }
+}
+
+async function fetchBase44Entity(entityName, path = "") {
+  if (!appParams.appId) throw new Error("Base44 app id is not configured");
+  const response = await fetch(`/api/apps/${appParams.appId}/entities/${entityName}${path}`);
+  if (!response.ok) {
+    throw new Error(`${entityName} request failed: ${response.status}`);
+  }
+  return response.json();
+}
+
 function ensurePDFWorker() {
   if (typeof window === "undefined" || !("Worker" in window)) return;
   if (!pdfWorkerPort) {
@@ -33,7 +58,7 @@ function ensurePDFWorker() {
 
 async function renderPDFPageToCanvas({ file, url, canvas, scale = 2 }) {
   ensurePDFWorker();
-  const source = file ? { data: await file.arrayBuffer() } : { url };
+  const source = file ? { data: await file.arrayBuffer() } : { url: normalizeBase44FileUrl(url) };
   const pdf = await pdfjsLib.getDocument(source).promise;
   const page = await pdf.getPage(1);
   const viewport = page.getViewport({ scale });
@@ -77,19 +102,28 @@ async function saveVenueMapAssets(eventId, { map_pdf_url, map_image_url }) {
 }
 
 async function loadVenueMapAsset(eventId) {
+  const fallbackName = `${VENUE_MAP_FALLBACK_PREFIX}:${eventId}`;
+  try {
+    const templates = await fetchBase44Entity("MapTemplate");
+    const fallback = templates?.find((item) => item.name === fallbackName)?.areas?.[0] || null;
+    if (fallback?.map_image_url || fallback?.map_pdf_url) return fallback;
+  } catch (restError) {
+    console.warn("Venue map REST fallback read failed; trying SDK.", restError);
+  }
+
   const [functionResult, fallbackResult, fallbackListResult] = await Promise.allSettled([
     base44.functions.invoke("getVenueMap", { eventId }),
-    base44.entities.MapTemplate.filter({ name: `${VENUE_MAP_FALLBACK_PREFIX}:${eventId}` }),
+    base44.entities.MapTemplate.filter({ name: fallbackName }),
     base44.entities.MapTemplate.list(),
   ]);
   if (functionResult.status === "fulfilled") {
     const payload = unwrapFunctionResponse(functionResult.value);
-    if (payload?.error) throw new Error(payload.error);
     if (payload?.asset?.map_image_url || payload?.asset?.map_pdf_url) {
       return payload.asset;
     }
+  } else {
+    console.warn("Venue map function read failed; falling back to entities.", functionResult.reason);
   }
-  const fallbackName = `${VENUE_MAP_FALLBACK_PREFIX}:${eventId}`;
   const fallback = fallbackResult.status === "fulfilled" ? fallbackResult.value?.[0]?.areas?.[0] : null;
   const fallbackFromList = fallbackListResult.status === "fulfilled"
     ? fallbackListResult.value?.find((item) => item.name === fallbackName)?.areas?.[0]
@@ -97,6 +131,22 @@ async function loadVenueMapAsset(eventId) {
   if (fallback?.map_image_url || fallback?.map_pdf_url) return fallback;
   if (fallbackFromList?.map_image_url || fallbackFromList?.map_pdf_url) return fallbackFromList;
   return fallback || null;
+}
+
+async function loadVenueMapEvent(eventId) {
+  try {
+    return await fetchBase44Entity("Event", `/${eventId}`);
+  } catch (restError) {
+    console.warn("Venue map REST Event.get failed; trying SDK.", restError);
+  }
+
+  try {
+    return await base44.entities.Event.get(eventId);
+  } catch (getError) {
+    console.warn("Venue map Event.get failed; falling back to Event.filter.", getError);
+    const events = await base44.entities.Event.filter({ id: eventId });
+    return events?.[0] || null;
+  }
 }
 
 function getPinColor(pos) {
@@ -170,6 +220,7 @@ export default function VenueMap({ eventId }) {
   const fileInputRef = useRef(null);
   const mapRef = useRef(null);
   const canvasRef = useRef(null);
+  const imageRef = useRef(null);
   const dragPinRef = useRef(null);
 
   const [slotFilter, setSlotFilter] = useState(TIME_SLOTS[0]);
@@ -182,6 +233,7 @@ export default function VenueMap({ eventId }) {
   const [exportingPDF, setExportingPDF] = useState(false);
   const [localPdfUrl, setLocalPdfUrl] = useState("");
   const [localMapImageUrl, setLocalMapImageUrl] = useState("");
+  const [imageLoadError, setImageLoadError] = useState(false);
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
@@ -190,8 +242,7 @@ export default function VenueMap({ eventId }) {
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => base44.entities.Event.filter({ id: eventId }),
-    select: (d) => d[0],
+    queryFn: () => loadVenueMapEvent(eventId),
   });
 
   const { data: venueMapAsset } = useQuery({
@@ -207,8 +258,9 @@ export default function VenueMap({ eventId }) {
   const filteredPositions = positions.filter((p) => (p.time_slot || TIME_SLOTS[0]) === slotFilter);
   const positionsOnMap = filteredPositions.filter((p) => p.map_x != null && p.map_y != null);
   const storedMapImageUrl = venueMapAsset?.map_image_url || event?.map_image_url || "";
-  const effectivePdfUrl = localPdfUrl || venueMapAsset?.map_pdf_url || event?.map_pdf_url || "";
-  const effectiveMapImageUrl = localMapImageUrl || storedMapImageUrl;
+  const storedMapPdfUrl = venueMapAsset?.map_pdf_url || event?.map_pdf_url || "";
+  const effectivePdfUrl = normalizeBase44FileUrl(localPdfUrl || storedMapPdfUrl);
+  const effectiveMapImageUrl = normalizeBase44FileUrl(localMapImageUrl || storedMapImageUrl);
   const hasPDF = Boolean(effectiveMapImageUrl || effectivePdfUrl);
   const { mode: venueMapMode, isReady: isModeReady } = useResolvedEventMode(eventId, "venue_map_mode", event?.venue_map_mode);
   const isEditMode = venueMapMode === "edit";
@@ -218,10 +270,14 @@ export default function VenueMap({ eventId }) {
   const shouldMaskStaffNames = role !== "admin" && role !== "chief";
 
   useEffect(() => {
+    setImageLoadError(false);
+  }, [effectiveMapImageUrl]);
+
+  useEffect(() => {
     let cancelled = false;
     const renderMap = async () => {
       const canvas = canvasRef.current;
-      if (!canvas || (!effectiveMapImageUrl && !effectivePdfUrl)) {
+      if (!canvas || (effectiveMapImageUrl && !imageLoadError) || (!effectiveMapImageUrl && !effectivePdfUrl)) {
         setPdfSize(null);
         setPdfError("");
         return;
@@ -230,27 +286,7 @@ export default function VenueMap({ eventId }) {
       setLoadingPDF(true);
       setPdfError("");
       try {
-        const context = canvas.getContext("2d");
-        if (effectiveMapImageUrl) {
-          try {
-            const image = await new Promise((resolve, reject) => {
-              const img = new Image();
-              img.crossOrigin = "anonymous";
-              img.onload = () => resolve(img);
-              img.onerror = reject;
-              img.src = effectiveMapImageUrl;
-            });
-            canvas.width = image.naturalWidth;
-            canvas.height = image.naturalHeight;
-            context.drawImage(image, 0, 0);
-          } catch (imageError) {
-            if (!effectivePdfUrl) throw imageError;
-            console.warn("Venue map preview image failed; rendering saved PDF instead.", imageError);
-            await renderPDFPageToCanvas({ url: effectivePdfUrl, canvas });
-          }
-        } else {
-          await renderPDFPageToCanvas({ url: effectivePdfUrl, canvas });
-        }
+        await renderPDFPageToCanvas({ url: effectivePdfUrl, canvas });
         if (!cancelled) {
           setPdfSize({ width: canvas.width, height: canvas.height });
         }
@@ -269,7 +305,7 @@ export default function VenueMap({ eventId }) {
     return () => {
       cancelled = true;
     };
-  }, [effectiveMapImageUrl, effectivePdfUrl]);
+  }, [effectiveMapImageUrl, effectivePdfUrl, imageLoadError]);
 
   const getMapCoords = useCallback((clientX, clientY) => {
     const rect = mapRef.current.getBoundingClientRect();
@@ -382,7 +418,8 @@ export default function VenueMap({ eventId }) {
 
   const handleExportPDF = async () => {
     const canvas = canvasRef.current;
-    if (!canvas || !pdfSize) {
+    const image = imageRef.current;
+    if ((!canvas && !image) || !pdfSize) {
       alert("PDFの読み込み完了後に出力してください。");
       return;
     }
@@ -390,10 +427,14 @@ export default function VenueMap({ eventId }) {
     setExportingPDF(true);
     try {
       const exportCanvas = document.createElement("canvas");
-      exportCanvas.width = canvas.width;
-      exportCanvas.height = canvas.height;
+      exportCanvas.width = pdfSize.width;
+      exportCanvas.height = pdfSize.height;
       const ctx = exportCanvas.getContext("2d");
-      ctx.drawImage(canvas, 0, 0);
+      if (effectiveMapImageUrl && image?.complete && image.naturalWidth > 0) {
+        ctx.drawImage(image, 0, 0, exportCanvas.width, exportCanvas.height);
+      } else {
+        ctx.drawImage(canvas, 0, 0);
+      }
 
       positionsOnMap.forEach((pos) => {
         const x = (Number(pos.map_x) / 100) * exportCanvas.width;
@@ -568,7 +609,27 @@ export default function VenueMap({ eventId }) {
                 minHeight: 280,
               }}
             >
-              <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+              {effectiveMapImageUrl && !imageLoadError && (
+                <img
+                  ref={imageRef}
+                  src={effectiveMapImageUrl}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-fill"
+                  crossOrigin="anonymous"
+                  onLoad={(e) => {
+                    setPdfSize({
+                      width: e.currentTarget.naturalWidth,
+                      height: e.currentTarget.naturalHeight,
+                    });
+                    setPdfError("");
+                  }}
+                  onError={() => {
+                    setImageLoadError(true);
+                    if (!effectivePdfUrl) setPdfError("Map image could not be displayed.");
+                  }}
+                />
+              )}
+              <canvas ref={canvasRef} className={`absolute inset-0 h-full w-full ${effectiveMapImageUrl && !imageLoadError ? "hidden" : ""}`} />
 
               {(loadingPDF || uploadingPDF) && (
                 <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/80 text-sm text-muted-foreground">

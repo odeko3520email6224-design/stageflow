@@ -25,6 +25,15 @@ import { useTabNavigation } from "@/hooks/useTabNavigation";
 
 const TIMELINE_STORAGE_KEY = "stageflow_timeline_enabled";
 
+async function loadEventById(eventId) {
+  try {
+    return await base44.entities.Event.get(eventId);
+  } catch {
+    const events = await base44.entities.Event.filter({ id: eventId });
+    return events?.[0] || null;
+  }
+}
+
 const tabVariants = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.2 } },
@@ -79,8 +88,7 @@ export default function EventDetail() {
 
   const { data: event, isLoading, refetch: refetchEvent } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => base44.entities.Event.filter({ id: eventId }),
-    select: (d) => d[0],
+    queryFn: () => loadEventById(eventId),
   });
 
   const { isPulling, pullDistance } = usePullToRefresh(async () => {
