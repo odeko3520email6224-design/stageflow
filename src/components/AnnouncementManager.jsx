@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { fetchPublicAnnouncements, fetchPublicStaff } from "@/lib/publicData";
 import { Button } from "@/components/ui/button";
 import {
   Bell, Plus, Trash2, Users, CheckCircle2, Clock, AlertTriangle,
@@ -646,13 +647,13 @@ export default function AnnouncementManager({ eventId }) {
 
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
-    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+    queryFn: () => fetchPublicStaff(eventId),
   });
 
   const { data: announcements = [], isLoading } = useQuery({
     queryKey: ["announcements", eventId],
-    queryFn: () => base44.entities.Announcement.filter({ event_id: eventId }),
-    select: (d) => d.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)),
+    queryFn: () => fetchPublicAnnouncements(eventId),
+    select: (d) => [...d].sort((a, b) => new Date(b.created_date) - new Date(a.created_date)),
     refetchInterval: 15000, // poll every 15s for new announcements
   });
 

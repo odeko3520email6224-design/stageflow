@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { fetchPublicEvents } from "@/lib/publicData";
 import { Link } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
@@ -28,7 +29,7 @@ export default function Events() {
 
   const { data: events = [], isLoading, refetch } = useQuery({
     queryKey: ["events"],
-    queryFn: () => base44.entities.Event.list("-created_date")
+    queryFn: fetchPublicEvents
   });
 
   const { isPulling, pullDistance } = usePullToRefresh(async () => {

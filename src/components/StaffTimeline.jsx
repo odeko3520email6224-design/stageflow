@@ -1,17 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { fetchPublicPositions, fetchPublicStaff } from "@/lib/publicData";
 import { Clock, CalendarClock } from "lucide-react";
 import { TIME_SLOTS, TIME_SLOT_STYLES } from "@/lib/constants";
 
 export default function StaffTimeline({ eventId }) {
   const { data: positions = [], isLoading: loadingPos } = useQuery({
     queryKey: ["positions", eventId],
-    queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
+    queryFn: () => fetchPublicPositions(eventId),
   });
 
   const { data: staffList = [], isLoading: loadingStaff } = useQuery({
     queryKey: ["staff", eventId],
-    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+    queryFn: () => fetchPublicStaff(eventId),
   });
 
   if (loadingPos || loadingStaff) {

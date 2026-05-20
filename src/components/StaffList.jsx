@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { fetchPublicEvent, fetchPublicPositionPresets, fetchPublicPositions, fetchPublicStaff } from "@/lib/publicData";
 import { Button } from "@/components/ui/button";
 import { Plus, AlertCircle, ClipboardList, Download, BookOpen } from "lucide-react";
 import PositionFormModal from "@/components/PositionFormModal";
@@ -19,25 +20,24 @@ export default function StaffList({ eventId }) {
 
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
-    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+    queryFn: () => fetchPublicStaff(eventId),
   });
 
   const { data: positions = [], isLoading } = useQuery({
     queryKey: ["positions", eventId],
-    queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
+    queryFn: () => fetchPublicPositions(eventId),
   });
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => base44.entities.Event.filter({ id: eventId }),
-    select: (d) => d[0],
+    queryFn: () => fetchPublicEvent(eventId),
   });
 
   const { data: activePreset } = useQuery({
     queryKey: ["positionPreset", event?.active_preset_id],
-    queryFn: () => base44.entities.PositionPreset.filter({ id: event.active_preset_id }),
+    queryFn: () => fetchPublicPositionPresets(eventId),
     enabled: !!event?.active_preset_id,
-    select: (d) => d[0],
+    select: (d) => d.find((preset) => preset.id === event.active_preset_id),
   });
 
   const deleteMutation = useMutation({
