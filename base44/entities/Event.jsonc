@@ -40,6 +40,11 @@
     "chief_staff_name": {
       "type": "string",
       "description": "\u30c1\u30fc\u30d5\u3068\u3057\u3066\u9078\u629e\u3055\u308c\u305f\u30b9\u30bf\u30c3\u30d5\u540d"
+    },
+    "debug_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "\u30c7\u30d0\u30c3\u30b0\u7528\u81ea\u52d5\u914d\u7f6e\u6a5f\u80fd\u306e\u6709\u52b9\u72b6\u614b"
     }
   },
   "required": [

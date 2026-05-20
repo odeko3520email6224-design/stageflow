@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Settings, Moon, Sun, GripVertical, Clock } from "lucide-react";
+import { Plus, Trash2, Settings, Moon, Sun, GripVertical, Clock, Bug, Wand2, Loader2 } from "lucide-react";
 import MapTemplateManagement from "@/components/MapTemplateManagement";
 import PositionPresetManager from "@/components/PositionPresetManager";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -31,6 +32,17 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
     select: (d) => [...d].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   });
 
+  const { data: event } = useQuery({
+    queryKey: ["event", eventId],
+    queryFn: () => base44.entities.Event.filter({ id: eventId }),
+    select: (d) => d[0],
+  });
+
+  const { data: staffList = [] } = useQuery({
+    queryKey: ["staff", eventId],
+    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.PositionType.create(data),
     onSuccess: () => {
@@ -45,6 +57,55 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["positionTypes"] });
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+    },
+  });
+
+  const toggleDebugMutation = useMutation({
+    mutationFn: async (debug_enabled) => {
+      const response = await base44.functions.invoke("debugTools", {
+        action: "setDebugEnabled",
+        eventId: event?.id || eventId,
+        debug_enabled,
+      });
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data?.event;
+    },
+    onMutate: async (debug_enabled) => {
+      await queryClient.cancelQueries({ queryKey: ["event", eventId] });
+      const previousEvent = queryClient.getQueryData(["event", eventId]);
+      queryClient.setQueryData(["event", eventId], (old) => {
+        if (Array.isArray(old)) {
+          return old.map((item) => item.id === (event?.id || eventId) ? { ...item, debug_enabled } : item);
+        }
+        return old ? { ...old, debug_enabled } : old;
+      });
+      return { previousEvent };
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(["event", eventId], context?.previousEvent);
+      toast.error("デバッグ設定の保存に失敗しました");
+    },
+    onSuccess: (_, debug_enabled) => {
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      toast.success(debug_enabled ? "デバッグ機能をONにしました" : "デバッグ機能をOFFにしました");
+    },
+  });
+
+  const autoPlaceMutation = useMutation({
+    mutationFn: async () => {
+      const response = await base44.functions.invoke("debugTools", {
+        action: "autoPlace",
+        eventId: event?.id || eventId,
+      });
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data;
+    },
+    onError: (error) => {
+      toast.error(error.message || "自動配置に失敗しました");
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+      toast.success(`自動配置しました（作成${result.created}件・更新${result.updated}件）`);
     },
   });
 
@@ -82,6 +143,9 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
     setDraggingId(null); setDragOverId(null);
   };
 
+  const debugEnabled = Boolean(event?.debug_enabled);
+  const canAutoPlace = isAdmin && debugEnabled && positionTypes.length > 0 && staffList.length > 0;
+
   return (
     <div>
       {/* Header */}
@@ -114,6 +178,42 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
         >
           <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${showTimeline ? "translate-x-4" : "translate-x-0"}`} />
         </button>
+      </div>
+
+      {/* Debug tools */}
+      <div className="bg-card border border-border rounded-xl p-3 mb-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Bug className="w-4 h-4 text-primary shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold">デバッグ機能</p>
+              <p className="text-[10px] text-muted-foreground truncate">各時間帯にポジションとスタッフを自動配置します</p>
+            </div>
+          </div>
+          <button
+            onClick={() => isAdmin && toggleDebugMutation.mutate(!debugEnabled)}
+            disabled={!isAdmin || toggleDebugMutation.isPending}
+            className={`relative w-10 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${debugEnabled ? "bg-primary" : "bg-muted-foreground/30"}`}
+            aria-label="デバッグ機能切り替え"
+          >
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${debugEnabled ? "translate-x-4" : "translate-x-0"}`} />
+          </button>
+        </div>
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <p className="text-[10px] text-muted-foreground">
+            {staffList.length === 0 ? "スタッフ登録後に実行できます" : `登録スタッフ${staffList.length}名を順番に割り当てます`}
+          </p>
+          <Button
+            onClick={() => autoPlaceMutation.mutate()}
+            disabled={!canAutoPlace || autoPlaceMutation.isPending}
+            size="sm"
+            variant="outline"
+            className="gap-1 h-7 text-xs px-2 shrink-0"
+          >
+            {autoPlaceMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+            自動配置
+          </Button>
+        </div>
       </div>
 
       {/* Position type section */}
