@@ -375,16 +375,15 @@ export default function StaffDragDropManager({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <div>
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex-1 min-w-0">
           <h2 className="text-sm font-bold flex items-center gap-1.5"><ClipboardList className="w-4 h-4 text-primary" />配置表</h2>
-          <p className="text-[11px] text-muted-foreground">スタッフそれぞれの配置管理が可能です。</p>
           {positions.length > 0 && (() => {
             const totalAssigned = [...new Set(positions.flatMap((p) => p.staff_names || []))].length;
             return <div className="text-sm font-medium text-foreground mt-0.5">全時間帯合計：{totalAssigned}名配置済み</div>;
           })()}
         </div>
-        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+        <div className="flex items-center gap-1.5 shrink-0 justify-end flex-nowrap overflow-x-auto max-w-[62vw] sm:max-w-none">
           <ModeVisibilityControls
             eventId={eventId}
             field="assignment_mode"

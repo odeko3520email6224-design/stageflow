@@ -706,8 +706,8 @@ export default function AnnouncementManager({ eventId }) {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 mb-2">
-        <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1 min-w-0">
           <Megaphone className="w-4 h-4 text-primary" />連絡事項
           {urgentCount > 0 && (
             <span className="h-7 inline-flex items-center text-xs font-bold px-2 rounded-full bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700">
@@ -715,7 +715,7 @@ export default function AnnouncementManager({ eventId }) {
             </span>
           )}
         </h2>
-        <div className="flex items-center gap-2 sm:ml-auto shrink-0">
+        <div className="flex items-center gap-1.5 justify-end shrink-0 flex-nowrap overflow-x-auto max-w-[62vw] sm:max-w-none">
           {notifPermission !== "granted" && (
             <button
               onClick={() => {
@@ -732,7 +732,7 @@ export default function AnnouncementManager({ eventId }) {
               {notifPermission === "denied" ? "通知ブロック中" : "通知を有効にする"}
             </button>
           )}
-          <Button size="sm" onClick={() => setShowForm(true)} className="gap-1 h-7 text-xs">
+          <Button size="sm" onClick={() => setShowForm(true)} className="gap-1 h-7 text-xs shrink-0">
             <Plus className="w-3 h-3" />新規作成
           </Button>
         </div>

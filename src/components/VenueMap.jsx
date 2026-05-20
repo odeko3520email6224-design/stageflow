@@ -499,12 +499,12 @@ export default function VenueMap({ eventId }) {
 
   return (
     <div>
-      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center mb-2">
-        <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1 min-w-0">
           <Map className="w-4 h-4 text-primary" />
           会場マップ
         </h2>
-        <div className="flex gap-1.5 flex-wrap justify-end sm:ml-auto">
+        <div className="flex items-center gap-1.5 justify-end flex-nowrap overflow-x-auto max-w-[68vw] sm:max-w-none shrink-0">
           <ModeVisibilityControls
             eventId={eventId}
             field="venue_map_mode"
@@ -519,7 +519,7 @@ export default function VenueMap({ eventId }) {
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingPDF}
-                className="gap-1 h-7 text-xs"
+                className="gap-1 h-7 text-xs shrink-0"
               >
                 {uploadingPDF ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
                 PDF/画像読込
@@ -538,13 +538,13 @@ export default function VenueMap({ eventId }) {
             variant="outline"
             onClick={handleExportPDF}
             disabled={!isVisibilityReady || hideForUser || !hasPDF || loadingPDF || exportingPDF || positionsOnMap.length === 0}
-            className="gap-1 h-7 text-xs"
+            className="gap-1 h-7 text-xs shrink-0"
           >
             {exportingPDF ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
             PDF出力
           </Button>
           {canUseEditTools && hasPDF && (
-            <Button size="sm" variant="outline" onClick={handlePDFRemove} className="gap-1 h-7 text-xs">
+            <Button size="sm" variant="outline" onClick={handlePDFRemove} className="gap-1 h-7 text-xs shrink-0">
               <X className="w-3 h-3" />
               PDF削除
             </Button>

@@ -191,15 +191,14 @@ export default function StaffManagement({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-2 mb-2">
+      <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-bold flex items-center gap-1.5 mb-0.5"><UserCog className="w-4 h-4 text-primary" />スタッフ管理</h2>
-          <p className="text-[11px] text-muted-foreground">スタッフの追加・編集・削除が可能です。</p>
+          <h2 className="text-sm font-bold flex items-center gap-1.5"><UserCog className="w-4 h-4 text-primary" />スタッフ管理</h2>
           {isVisibilityReady && !hideForUser && (
             <div className="text-xs font-medium text-foreground mt-0.5">登録スタッフ数：{staffList.length}名</div>
           )}
         </div>
-        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+        <div className="flex items-center gap-1.5 shrink-0 justify-end flex-nowrap overflow-x-auto max-w-[62vw] sm:max-w-none">
           <ModeVisibilityControls
             eventId={eventId}
             field="staff_management_mode"
