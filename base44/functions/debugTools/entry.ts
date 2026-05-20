@@ -91,10 +91,16 @@ Deno.serve(async (req) => {
           (position.time_slot || TIME_SLOTS[0]) === slot && position.name === positionType.name
         );
 
+        const splitBySide = Boolean(positionType.split_by_side);
+        const kamiteStaffNames = splitBySide ? staffNames.filter((_, staffIndex) => staffIndex % 2 === 0) : [];
+        const shimoteStaffNames = splitBySide ? staffNames.filter((_, staffIndex) => staffIndex % 2 === 1) : [];
         const payload = {
           name: positionType.name,
           time_slot: slot,
-          staff_names: staffNames,
+          staff_names: splitBySide ? [...new Set([...kamiteStaffNames, ...shimoteStaffNames])] : staffNames,
+          staff_names_kamite: kamiteStaffNames,
+          staff_names_shimote: shimoteStaffNames,
+          split_by_side: splitBySide,
           color: positionType.color || '#6366f1',
           required_count: requiredCount,
           order: existing?.order ?? index,

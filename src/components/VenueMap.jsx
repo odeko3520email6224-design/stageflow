@@ -68,13 +68,17 @@ async function saveVenueMapAssets(eventId, { map_pdf_url, map_image_url }) {
     map_image_url,
   });
   if (response.data?.error) throw new Error(response.data.error);
+  if ((map_pdf_url || map_image_url) && !response.data?.asset?.map_image_url && !response.data?.asset?.map_pdf_url) {
+    throw new Error("会場マップの保存結果を確認できませんでした");
+  }
   return response.data;
 }
 
 async function loadVenueMapAsset(eventId) {
-  const [functionResult, fallbackResult] = await Promise.allSettled([
+  const [functionResult, fallbackResult, fallbackListResult] = await Promise.allSettled([
     base44.functions.invoke("getVenueMap", { eventId }),
     base44.entities.MapTemplate.filter({ name: `${VENUE_MAP_FALLBACK_PREFIX}:${eventId}` }),
+    base44.entities.MapTemplate.list(),
   ]);
   if (functionResult.status === "fulfilled") {
     const payload = functionResult.value?.data;
@@ -83,7 +87,13 @@ async function loadVenueMapAsset(eventId) {
       return payload.asset;
     }
   }
+  const fallbackName = `${VENUE_MAP_FALLBACK_PREFIX}:${eventId}`;
   const fallback = fallbackResult.status === "fulfilled" ? fallbackResult.value?.[0]?.areas?.[0] : null;
+  const fallbackFromList = fallbackListResult.status === "fulfilled"
+    ? fallbackListResult.value?.find((item) => item.name === fallbackName)?.areas?.[0]
+    : null;
+  if (fallback?.map_image_url || fallback?.map_pdf_url) return fallback;
+  if (fallbackFromList?.map_image_url || fallbackFromList?.map_pdf_url) return fallbackFromList;
   return fallback || null;
 }
 
@@ -326,12 +336,12 @@ export default function VenueMap({ eventId }) {
       const results = await Promise.all(uploadTasks);
       const pdfUrl = isPDF ? results[0].file_url : null;
       const imageUrl = isPDF ? results[1].file_url : results[0].file_url;
-      setLocalPdfUrl(pdfUrl);
-      setLocalMapImageUrl(imageUrl);
       const { event: updatedEvent, asset: updatedAsset } = await saveVenueMapAssets(eventId, {
         map_pdf_url: pdfUrl,
         map_image_url: imageUrl,
       });
+      setLocalPdfUrl(updatedAsset?.map_pdf_url || pdfUrl || "");
+      setLocalMapImageUrl(updatedAsset?.map_image_url || imageUrl || "");
       queryClient.setQueryData(["event", eventId], (old) => {
         if (Array.isArray(old)) {
           return old.map((item) => item.id === eventId ? { ...item, ...updatedEvent } : item);

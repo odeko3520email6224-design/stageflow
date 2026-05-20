@@ -169,17 +169,17 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
           }
         : position)
     );
-    Promise.all([
-      base44.entities.PositionType.update(positionType.id, { split_by_side: splitBySide }),
-      ...matchingPositions.map((position) => base44.entities.Position.update(position.id, {
-        split_by_side: splitBySide,
-        staff_names_kamite: position.staff_names_kamite || [],
-        staff_names_shimote: position.staff_names_shimote || [],
-        staff_names: splitBySide
-          ? [...new Set([...(position.staff_names_kamite || []), ...(position.staff_names_shimote || []), ...(position.staff_names || [])])]
-          : position.staff_names || [],
-      })),
-    ])
+    base44.functions.invoke("updatePositionSide", {
+      action: "setSplitBySide",
+      eventId,
+      positionTypeId: positionType.id,
+      positionTypeName: positionType.name,
+      split_by_side: splitBySide,
+    })
+      .then((response) => {
+        if (response.data?.error) throw new Error(response.data.error);
+        return response.data;
+      })
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ["positionTypes"] });
         queryClient.invalidateQueries({ queryKey: ["positions", eventId] });

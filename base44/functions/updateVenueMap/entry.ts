@@ -50,7 +50,11 @@ Deno.serve(async (req) => {
 
     try {
       const fallbackName = `${FALLBACK_TEMPLATE_PREFIX}:${eventId}`;
-      const existingFallbacks = await base44.asServiceRole.entities.MapTemplate.filter({ name: fallbackName });
+      let existingFallbacks = await base44.asServiceRole.entities.MapTemplate.filter({ name: fallbackName });
+      if (!existingFallbacks?.length) {
+        const allFallbacks = await base44.asServiceRole.entities.MapTemplate.list();
+        existingFallbacks = allFallbacks?.filter((item: Record<string, any>) => item.name === fallbackName) || [];
+      }
       const fallbackPayload = {
         name: fallbackName,
         description: 'StageFlow venue map asset fallback',
@@ -83,6 +87,11 @@ Deno.serve(async (req) => {
         ...assetPayload,
       },
       fallback: fallback || null,
+      persisted: {
+        event: Boolean(event),
+        asset: Boolean(asset),
+        fallback: Boolean(fallback),
+      },
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

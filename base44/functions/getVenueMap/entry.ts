@@ -30,7 +30,11 @@ Deno.serve(async (req) => {
 
     try {
       const fallbackName = `${FALLBACK_TEMPLATE_PREFIX}:${eventId}`;
-      const fallbacks = await base44.asServiceRole.entities.MapTemplate.filter({ name: fallbackName });
+      let fallbacks = await base44.asServiceRole.entities.MapTemplate.filter({ name: fallbackName });
+      if (!fallbacks?.length) {
+        const allFallbacks = await base44.asServiceRole.entities.MapTemplate.list();
+        fallbacks = allFallbacks?.filter((item: Record<string, any>) => item.name === fallbackName) || [];
+      }
       fallbackAsset = fallbacks?.[0]?.areas?.[0] || null;
     } catch (fallbackError) {
       console.warn('Venue map fallback read failed:', fallbackError.message);

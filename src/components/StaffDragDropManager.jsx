@@ -59,7 +59,24 @@ export default function StaffDragDropManager({ eventId }) {
   });
 
   const updatePositionMutation = useMutation({
-    mutationFn: ({ positionId, data }) => base44.entities.Position.update(positionId, data),
+    mutationFn: async ({ positionId, data }) => {
+      if (
+        Object.prototype.hasOwnProperty.call(data, "staff_names") ||
+        Object.prototype.hasOwnProperty.call(data, "staff_names_kamite") ||
+        Object.prototype.hasOwnProperty.call(data, "staff_names_shimote") ||
+        Object.prototype.hasOwnProperty.call(data, "split_by_side")
+      ) {
+        const response = await base44.functions.invoke("updatePositionSide", {
+          action: "updatePositionStaff",
+          eventId,
+          positionId,
+          ...data,
+        });
+        if (response.data?.error) throw new Error(response.data.error);
+        return response.data?.position;
+      }
+      return base44.entities.Position.update(positionId, data);
+    },
     onMutate: async ({ positionId, data }) => {
       await queryClient.cancelQueries({ queryKey: ["positions", eventId] });
       const previousPositions = queryClient.getQueryData(["positions", eventId]);

@@ -43,10 +43,19 @@ export default function PositionFormModal({ position, eventId, defaultTimeSlot =
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: (data) =>
-      position
-        ? base44.entities.Position.update(position.id, data)
-        : base44.entities.Position.create(data),
+    mutationFn: async (data) => {
+      if (position) {
+        const response = await base44.functions.invoke("updatePositionSide", {
+          action: "updatePositionStaff",
+          eventId,
+          positionId: position.id,
+          ...data,
+        });
+        if (response.data?.error) throw new Error(response.data.error);
+        return response.data?.position;
+      }
+      return base44.entities.Position.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
       queryClient.invalidateQueries({ queryKey: ["staff", eventId] });
