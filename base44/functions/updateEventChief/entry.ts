@@ -13,11 +13,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'eventId is required' }, { status: 400 });
     }
 
+    const nextChiefName = chief_staff_name || '';
     const event = await base44.asServiceRole.entities.Event.update(eventId, {
-      chief_staff_name: chief_staff_name || '',
+      chief_staff_name: nextChiefName,
     });
 
-    return Response.json({ event });
+    return Response.json({ event: { ...(event || {}), id: eventId, chief_staff_name: nextChiefName } });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

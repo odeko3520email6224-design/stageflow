@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
@@ -19,6 +19,7 @@ export default function StaffManagement({ eventId }) {
   const [editingStaff, setEditingStaff] = useState(null);
   const [showScrapeModal, setShowScrapeModal] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [localChiefName, setLocalChiefName] = useState("");
   const queryClient = useQueryClient();
   const { canEdit, canManageSettings, role } = useUserRole();
   const shouldMaskStaffNames = role !== "admin" && role !== "chief";
@@ -39,6 +40,12 @@ export default function StaffManagement({ eventId }) {
     queryFn: () => base44.entities.Event.filter({ id: eventId }),
     select: (d) => d[0],
   });
+
+  useEffect(() => {
+    const storageKey = `stageflow:event-chief:${eventId}`;
+    const savedChiefName = window.localStorage.getItem(storageKey);
+    setLocalChiefName(savedChiefName || event?.chief_staff_name || "");
+  }, [eventId, event?.chief_staff_name]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Staff.create(data),
@@ -120,20 +127,33 @@ export default function StaffManagement({ eventId }) {
     onMutate: async (chief_staff_name) => {
       await queryClient.cancelQueries({ queryKey: ["event", eventId] });
       const previousEvent = queryClient.getQueryData(["event", eventId]);
+      const previousLocalChiefName = localChiefName;
+      setLocalChiefName(chief_staff_name);
+      window.localStorage.setItem(`stageflow:event-chief:${eventId}`, chief_staff_name);
       queryClient.setQueryData(["event", eventId], (old) => {
         if (Array.isArray(old)) {
           return old.map((item) => item.id === (event?.id || eventId) ? { ...item, chief_staff_name } : item);
         }
         return old ? { ...old, chief_staff_name } : old;
       });
-      return { previousEvent };
+      return { previousEvent, previousLocalChiefName };
     },
     onError: (_, __, context) => {
       queryClient.setQueryData(["event", eventId], context?.previousEvent);
+      setLocalChiefName(context?.previousLocalChiefName || "");
+      window.localStorage.setItem(`stageflow:event-chief:${eventId}`, context?.previousLocalChiefName || "");
       toast.error("チーフの保存に失敗しました");
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+    onSuccess: (updatedEvent, chief_staff_name) => {
+      const savedChiefName = updatedEvent?.chief_staff_name ?? chief_staff_name;
+      setLocalChiefName(savedChiefName);
+      window.localStorage.setItem(`stageflow:event-chief:${eventId}`, savedChiefName);
+      queryClient.setQueryData(["event", eventId], (old) => {
+        if (Array.isArray(old)) {
+          return old.map((item) => item.id === (event?.id || eventId) ? { ...item, chief_staff_name: savedChiefName } : item);
+        }
+        return old ? { ...old, chief_staff_name: savedChiefName } : old;
+      });
       toast.success("チーフを保存しました");
     },
   });
@@ -237,7 +257,7 @@ export default function StaffManagement({ eventId }) {
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
             <span className="text-[10px] font-medium text-muted-foreground shrink-0">チーフ</span>
             <select
-              value={event?.chief_staff_name || ""}
+              value={localChiefName}
               onChange={(e) => updateChiefMutation.mutate(e.target.value)}
               className="h-7 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               disabled={!canUseEditTools || staffList.length === 0 || updateChiefMutation.isPending}
@@ -253,6 +273,9 @@ export default function StaffManagement({ eventId }) {
             <span className="font-medium">髙岡 永輝</span>
           </div>
         </div>
+        <p className="mt-1.5 border-t border-border pt-1.5 text-[11px] font-medium text-destructive">
+          バグ・不具合の緊急対応はシステム管理者までご報告ください
+        </p>
       </div>
 
       {/* Staff list */}
