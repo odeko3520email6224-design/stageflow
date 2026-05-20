@@ -72,9 +72,17 @@ async function saveVenueMapAssets(eventId, { map_pdf_url, map_image_url }) {
 }
 
 async function loadVenueMapAsset(eventId) {
-  const [fallbackResult] = await Promise.allSettled([
+  const [functionResult, fallbackResult] = await Promise.allSettled([
+    base44.functions.invoke("getVenueMap", { eventId }),
     base44.entities.MapTemplate.filter({ name: `${VENUE_MAP_FALLBACK_PREFIX}:${eventId}` }),
   ]);
+  if (functionResult.status === "fulfilled") {
+    const payload = functionResult.value?.data;
+    if (payload?.error) throw new Error(payload.error);
+    if (payload?.asset?.map_image_url || payload?.asset?.map_pdf_url) {
+      return payload.asset;
+    }
+  }
   const fallback = fallbackResult.status === "fulfilled" ? fallbackResult.value?.[0]?.areas?.[0] : null;
   return fallback || null;
 }
@@ -212,16 +220,22 @@ export default function VenueMap({ eventId }) {
       try {
         const context = canvas.getContext("2d");
         if (effectiveMapImageUrl) {
-          const image = await new Promise((resolve, reject) => {
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.onload = () => resolve(img);
-            img.onerror = reject;
-            img.src = effectiveMapImageUrl;
-          });
-          canvas.width = image.naturalWidth;
-          canvas.height = image.naturalHeight;
-          context.drawImage(image, 0, 0);
+          try {
+            const image = await new Promise((resolve, reject) => {
+              const img = new Image();
+              img.crossOrigin = "anonymous";
+              img.onload = () => resolve(img);
+              img.onerror = reject;
+              img.src = effectiveMapImageUrl;
+            });
+            canvas.width = image.naturalWidth;
+            canvas.height = image.naturalHeight;
+            context.drawImage(image, 0, 0);
+          } catch (imageError) {
+            if (!effectivePdfUrl) throw imageError;
+            console.warn("Venue map preview image failed; rendering saved PDF instead.", imageError);
+            await renderPDFPageToCanvas({ url: effectivePdfUrl, canvas });
+          }
         } else {
           await renderPDFPageToCanvas({ url: effectivePdfUrl, canvas });
         }
