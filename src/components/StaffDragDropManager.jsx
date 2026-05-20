@@ -360,12 +360,14 @@ export default function StaffDragDropManager({ eventId }) {
     return acc;
   }, {});
 
-  const unassigned = staffList.filter((s) => {
-    const slotsWithAssignment = TIME_SLOTS.filter((slot) =>
-      positions.some((p) => (p.time_slot || "開場中") === slot && (p.staff_names || []).includes(s.name))
-    );
-    return slotsWithAssignment.length < TIME_SLOTS.length;
-  });
+  const unassigned = staffList
+    .map((staff) => {
+      const missingSlots = TIME_SLOTS.filter((slot) =>
+        !positions.some((p) => (p.time_slot || "開場中") === slot && (p.staff_names || []).includes(staff.name))
+      );
+      return { ...staff, missingSlots };
+    })
+    .filter((staff) => staff.missingSlots.length > 0);
   const { mode: assignmentMode, isReady: isModeReady } = useResolvedEventMode(eventId, "assignment_mode", event?.assignment_mode);
   const isEditMode = assignmentMode === "edit";
   const hideForUser = !canEdit && assignmentMode !== "public";
@@ -512,19 +514,30 @@ export default function StaffDragDropManager({ eventId }) {
             <span className="font-bold text-xs">未配置スタッフ</span>
             <span className="text-[10px] opacity-70">{unassigned.length}名</span>
           </div>
-          <div className="bg-card p-1 grid gap-0.5 min-h-[28px]" onDragOver={isAdmin ? handleDragOver : undefined} onDrop={isAdmin ? handleDropUnassigned : undefined}>
+          <div className="bg-card p-1 grid gap-1 min-h-[28px] sm:grid-cols-2 xl:grid-cols-3" onDragOver={isAdmin ? handleDragOver : undefined} onDrop={isAdmin ? handleDropUnassigned : undefined}>
             {unassigned.map((s) => {
               const displayName = getStaffDisplayName(s.name, shouldMaskStaffNames);
               return (
               <div key={s.id} draggable={isAdmin}
                 onDragStart={isAdmin ? (e) => handleStaffDragStart(e, s.name) : undefined}
                 onDragEnd={isAdmin ? handleStaffDragEnd : undefined}
-                className={`flex items-center gap-2 px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 ${isAdmin ? "cursor-move hover:bg-amber-100 dark:hover:bg-amber-900/50" : "cursor-default"} ${draggedStaff === s.name ? "opacity-50" : ""}`}>
-                <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center text-amber-700 dark:text-amber-300 font-bold text-[10px] shrink-0">
+                className={`flex items-start gap-2 px-2 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 ${isAdmin ? "cursor-move hover:bg-amber-100 dark:hover:bg-amber-900/50" : "cursor-default"} ${draggedStaff === s.name ? "opacity-50" : ""}`}>
+                <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center text-amber-700 dark:text-amber-300 font-bold text-[10px] shrink-0 mt-0.5">
                   {displayName.charAt(0)}
                 </div>
-                <span className="text-xs font-medium text-foreground">{displayName}</span>
-                {s.note && <span className="text-[10px] text-muted-foreground">({s.note})</span>}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-xs font-medium text-foreground truncate">{displayName}</span>
+                    {s.note && <span className="text-[10px] text-muted-foreground truncate">({s.note})</span>}
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {s.missingSlots.map((slot) => (
+                      <span key={slot} className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${TIME_SLOT_STYLES[slot].header}`}>
+                        {slot}未配置
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
               );
             })}
