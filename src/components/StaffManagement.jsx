@@ -161,9 +161,9 @@ export default function StaffManagement({ eventId }) {
     assignedMap[name].sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
   });
 
-  const { mode: staffManagementMode, isReady: isModeReady } = useResolvedEventMode(eventId, "staff_management_mode", event?.staff_management_mode, { preferLocal: true });
+  const { mode: staffManagementMode, isReady: isModeReady } = useResolvedEventMode(eventId, "staff_management_mode", event?.staff_management_mode);
   const isEditMode = staffManagementMode === "edit";
-  const hideForUser = !canEdit && (event?.staff_management_mode === "edit" || staffManagementMode === "edit");
+  const hideForUser = !canEdit && event?.staff_management_mode !== "public";
   const isVisibilityReady = Boolean(role) && isModeReady && Boolean(event);
   const canUseEditTools = canEdit && isEditMode;
 
