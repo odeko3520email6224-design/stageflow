@@ -1,13 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import {
-  fetchPublicEvent,
-  fetchPublicPositionPresets,
-  fetchPublicPositions,
-  fetchPublicPositionTypes,
-  fetchPublicStaff,
-} from "@/lib/publicData";
 import { AlertCircle, ClipboardList, Plus, Download, Users, GripVertical, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PositionCard from "@/components/PositionCard";
@@ -25,27 +18,28 @@ export default function StaffDragDropManager({ eventId }) {
 
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
-    queryFn: () => fetchPublicStaff(eventId),
+    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
   });
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
-    queryFn: () => fetchPublicPositions(eventId),
+    queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
   });
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => fetchPublicEvent(eventId),
+    queryFn: () => base44.entities.Event.filter({ id: eventId }),
+    select: (d) => d[0],
   });
 
   const { data: presets = [] } = useQuery({
     queryKey: ["positionPresets"],
-    queryFn: () => fetchPublicPositionPresets(eventId),
+    queryFn: () => base44.entities.PositionPreset.list(),
   });
 
   const { data: positionTypes = [] } = useQuery({
     queryKey: ["positionTypes"],
-    queryFn: () => fetchPublicPositionTypes(eventId),
+    queryFn: () => base44.entities.PositionType.list(),
     select: (d) => [...d].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   });
 
@@ -240,7 +234,7 @@ export default function StaffDragDropManager({ eventId }) {
           })()}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {isAdmin && <PresetSelector eventId={eventId} compact />}
+          <PresetSelector eventId={eventId} compact />
           <Button size="sm" variant="outline" className="gap-1 h-7 text-xs px-2" onClick={handleExportPDF} disabled={exportingPDF || positions.length === 0}>
             <Download className="w-3 h-3" />{exportingPDF ? '...' : 'PDF'}
           </Button>

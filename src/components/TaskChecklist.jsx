@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { fetchPublicTasks } from "@/lib/publicData";
 import { CheckSquare, Square, Plus, Trash2, Pencil, Check, X, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +20,7 @@ export default function TaskChecklist({ eventId }) {
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ["tasks", eventId],
-    queryFn: () => fetchPublicTasks(eventId),
+    queryFn: () => base44.entities.Task.filter({ event_id: eventId }, "order"),
   });
 
   const createMutation = useMutation({

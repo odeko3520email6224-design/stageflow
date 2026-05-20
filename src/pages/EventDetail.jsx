@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { fetchPublicEvent } from "@/lib/publicData";
 import { ChevronLeft, User, LogOut, Users, ClipboardList, MapPin, Clock, Bell, Settings, CheckSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import VenueMap from "@/components/VenueMap";
@@ -77,7 +76,8 @@ export default function EventDetail() {
 
   const { data: event, isLoading, refetch: refetchEvent } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => fetchPublicEvent(eventId),
+    queryFn: () => base44.entities.Event.filter({ id: eventId }),
+    select: (d) => d[0],
   });
 
   const { isPulling, pullDistance } = usePullToRefresh(async () => {
@@ -99,7 +99,7 @@ export default function EventDetail() {
     { id: "staff", label: "スタッフ管理", icon: Users },
     { id: "dragdrop", label: "配置表", icon: ClipboardList },
     { id: "map", label: "会場マップ", icon: MapPin },
-    ...(canShowTimeline ? [{ id: "timeline", label: "タイムライン", icon: Clock }] : []),
+    ...(showTimeline ? [{ id: "timeline", label: "タイムライン", icon: Clock }] : []),
     { id: "notice", label: "連絡事項", icon: Bell },
     { id: "tasks", label: "チェックリスト", icon: CheckSquare },
     ...(isPrivileged ? [{ id: "admin", label: "管理", icon: Settings }] : []),
@@ -198,7 +198,7 @@ export default function EventDetail() {
               />
             )}
             {tab === "map" && <VenueMap eventId={eventId} />}
-            {tab === "timeline" && canShowTimeline && <StaffTimeline eventId={eventId} />}
+            {tab === "timeline" && showTimeline && <StaffTimeline eventId={eventId} />}
             {tab === "notice" && <AnnouncementManager eventId={eventId} />}
             {tab === "tasks" && <TaskChecklist eventId={eventId} />}
           </motion.div>
@@ -211,7 +211,7 @@ export default function EventDetail() {
           activeTab={tab}
           onTabChange={handleTabChange}
           onActiveTabReset={handleActiveTabReset}
-          showTimeline={canShowTimeline}
+          showTimeline={showTimeline}
           isPrivileged={isPrivileged}
         />
       </div>

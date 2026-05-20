@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
-import { fetchPublicEvent, fetchPublicPositions, fetchPublicStaff } from "@/lib/publicData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Users, AlertCircle, Pencil, X, UserCog, Download, ShieldCheck } from "lucide-react";
@@ -118,17 +117,18 @@ export default function StaffManagement({ eventId }) {
 
   const { data: staffList = [], isLoading } = useQuery({
     queryKey: ["staff", eventId],
-    queryFn: () => fetchPublicStaff(eventId),
+    queryFn: () => base44.entities.Staff.filter({ event_id: eventId })
   });
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
-    queryFn: () => fetchPublicPositions(eventId),
+    queryFn: () => base44.entities.Position.filter({ event_id: eventId })
   });
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => fetchPublicEvent(eventId),
+    queryFn: () => base44.entities.Event.filter({ id: eventId }),
+    select: (d) => d[0],
   });
 
   const createMutation = useMutation({

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { fetchPublicEvent, fetchPublicPositions } from "@/lib/publicData";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Download, FileText, Loader2, Map, MapPin, Move, Upload, X } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -130,12 +129,13 @@ export default function VenueMap({ eventId }) {
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
-    queryFn: () => fetchPublicPositions(eventId),
+    queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
   });
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => fetchPublicEvent(eventId),
+    queryFn: () => base44.entities.Event.filter({ id: eventId }),
+    select: (d) => d[0],
   });
 
   const updatePosition = useMutation({
