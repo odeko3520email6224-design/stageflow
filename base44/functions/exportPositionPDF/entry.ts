@@ -1,6 +1,24 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+function compareByConfiguredOrder(a, b) {
+  const parsedOrderA = Number(a?.order);
+  const parsedOrderB = Number(b?.order);
+  const orderA = Number.isFinite(parsedOrderA) ? parsedOrderA : Number.MAX_SAFE_INTEGER;
+  const orderB = Number.isFinite(parsedOrderB) ? parsedOrderB : Number.MAX_SAFE_INTEGER;
+  if (orderA !== orderB) return orderA - orderB;
+  const dateA = new Date(a?.created_date || 0).getTime();
+  const dateB = new Date(b?.created_date || 0).getTime();
+  if (dateA !== dateB) return dateA - dateB;
+  return String(a?.name || '').localeCompare(String(b?.name || ''), 'ja');
+}
+
+function normalizeSlot(slot) {
+  return slot === '開場前' ? '開場中' : (slot || '開場中');
+}
+
 function generateHTML(event, positions, staff, type) {
+  const orderedPositions = [...positions].sort(compareByConfiguredOrder);
+  const orderedStaff = [...staff].sort(compareByConfiguredOrder);
   const styles = `
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -11,19 +29,20 @@ function generateHTML(event, positions, staff, type) {
         color: #000;
         font-size: 9px;
       }
-      .title-block { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+      .title-block { display: flex; align-items: center; gap: 12px; margin: 0 8px 6px 8px; }
       .event-title { font-size: 14px; font-weight: bold; }
       .event-info { font-size: 8px; color: #555; }
       table { width: calc(100% - 16px); border-collapse: collapse; font-size: 9px; margin: 0 8px 12px 8px; }
-      td, th { border: 1px solid #999; padding: 3px 6px; vertical-align: middle; text-align: left; }
+      td, th { border: 1px solid #999; padding: 4px 6px; vertical-align: middle; text-align: left; line-height: 1.45; height: 22px; }
       
       /* 時間帯セクションヘッダー（サーモン色） */
       tr.slot-header td { 
         background: #f4a07a; 
         font-weight: bold; 
         text-align: left;
-        padding: 4px 6px;
+        padding: 5px 6px;
         font-size: 10px;
+        vertical-align: middle;
       }
       tr.slot-header td.count-cell {
         text-align: left;
@@ -35,6 +54,7 @@ function generateHTML(event, positions, staff, type) {
         font-weight: bold; 
         text-align: left;
         font-size: 8px;
+        vertical-align: middle;
       }
       
       /* ポジション名列（薄いベージュ） */
@@ -43,6 +63,7 @@ function generateHTML(event, positions, staff, type) {
         font-weight: bold; 
         text-align: left;
         white-space: nowrap;
+        vertical-align: middle;
       }
       
       /* 人数列 */
@@ -51,6 +72,7 @@ function generateHTML(event, positions, staff, type) {
         text-align: center; 
         white-space: nowrap;
         font-weight: bold;
+        vertical-align: middle;
       }
       
       /* スタッフ名セル（薄い黄色） */
@@ -58,18 +80,21 @@ function generateHTML(event, positions, staff, type) {
         background: #fffde7; 
         text-align: left;
         white-space: nowrap;
+        vertical-align: middle;
       }
       
       /* 空セル */
       td.empty { 
         background: #ffffff; 
         white-space: nowrap;
+        vertical-align: middle;
       }
       
       /* 備考列 */
       td.notes { 
         background: #ffffff; 
         text-align: left;
+        vertical-align: middle;
       }
       
       /* 空白区切り行 */
@@ -107,14 +132,14 @@ function generateHTML(event, positions, staff, type) {
 
   const timeSlots = ['開場中', '開演中', '終演後'];
   // 最大スタッフ数（列数決定用）、最大10列に制限
-  const maxStaff = Math.max(...positions.map(p => (p.staff_names || []).length), 0);
+  const maxStaff = Math.max(...orderedPositions.map(p => (p.staff_names || []).length), 0);
   const staffCols = Math.min(Math.max(maxStaff, 5), 10);
 
   if (type === 'staff') {
     content += `<table>`;
 
     timeSlots.forEach((slot) => {
-      const slotPositions = positions.filter((p) => (p.time_slot || '開場中') === slot);
+      const slotPositions = orderedPositions.filter((p) => normalizeSlot(p.time_slot) === slot);
       if (slotPositions.length === 0) return;
 
       const totalStaff = slotPositions.reduce((sum, p) => sum + (p.staff_names || []).length, 0);
@@ -164,8 +189,8 @@ function generateHTML(event, positions, staff, type) {
     });
 
     // 未配置スタッフ
-    const assignedNames = new Set(positions.flatMap(p => p.staff_names || []));
-    const unassigned = staff.filter((s) => !assignedNames.has(s.name));
+    const assignedNames = new Set(orderedPositions.flatMap(p => p.staff_names || []));
+    const unassigned = orderedStaff.filter((s) => !assignedNames.has(s.name));
     if (unassigned.length > 0) {
       content += `<tr class="slot-header"><td>未配置スタッフ</td><td class="count-cell">${unassigned.length}</td>${Array(staffCols).fill('<td></td>').join('')}<td></td></tr>`;
       content += `<tr class="col-header"><td>スタッフ名</td><td colspan="${staffCols + 2}">備考</td></tr>`;
@@ -182,11 +207,11 @@ function generateHTML(event, positions, staff, type) {
   } else if (type === 'timeline') {
     // スタッフ別タイムライン
     const staffTimeline = {};
-    staff.forEach((s) => {
+    orderedStaff.forEach((s) => {
       staffTimeline[s.name] = { '開場中': [], '開演中': [], '終演後': [] };
     });
-    positions.forEach((pos) => {
-      const slot = pos.time_slot || '開場中';
+    orderedPositions.forEach((pos) => {
+      const slot = normalizeSlot(pos.time_slot);
       (pos.staff_names || []).forEach((name) => {
         if (!staffTimeline[name]) staffTimeline[name] = { '開場中': [], '開演中': [], '終演後': [] };
         if (!staffTimeline[name][slot]) staffTimeline[name][slot] = [];
@@ -202,7 +227,12 @@ function generateHTML(event, positions, staff, type) {
       <td>終演後</td>
     </tr>`;
 
-    Object.keys(staffTimeline).sort().forEach((name) => {
+    const orderedStaffNames = orderedStaff.map((s) => s.name);
+    const timelineNames = [
+      ...orderedStaffNames,
+      ...Object.keys(staffTimeline).filter((name) => !orderedStaffNames.includes(name)),
+    ];
+    timelineNames.forEach((name) => {
       const tl = staffTimeline[name];
       const hasAny = timeSlots.some(s => tl[s].length > 0);
       content += `<tr>
