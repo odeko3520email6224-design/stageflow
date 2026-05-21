@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { unwrapFunctionResponse } from "@/lib/base44Response";
 
 /**
  * PDF出力の共通hook
@@ -14,9 +15,13 @@ export function usePDFExport(eventId, type, filename) {
     setExporting(true);
     try {
       const response = await base44.functions.invoke("exportPositionPDF", { eventId, type });
+      const payload = unwrapFunctionResponse(response);
       if (payload.error) {
         alert("エラー: " + payload.error);
         return;
+      }
+      if (!payload.html) {
+        throw new Error("PDF HTML payload is empty");
       }
 
       const container = document.createElement("div");
