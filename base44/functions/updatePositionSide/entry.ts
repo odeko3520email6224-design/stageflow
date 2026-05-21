@@ -122,14 +122,10 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'updatePositionStaff') {
-      const { positionId, staff_names = [], staff_names_kamite = [], staff_names_shimote = [], split_by_side = false } = body;
+      const { positionId, staff_names = [], staff_names_kamite = [], staff_names_shimote = [] } = body;
       if (!positionId) {
         return Response.json({ error: 'positionId is required' }, { status: 400 });
       }
-      const splitBySide = Boolean(split_by_side);
-      const kamite = unique(staff_names_kamite);
-      const shimote = unique(staff_names_shimote);
-      const staffNames = splitBySide ? unique([...kamite, ...shimote]) : unique(staff_names);
       const allowedFields = ['name', 'time_slot', 'notes', 'color', 'map_x', 'map_y', 'required_count', 'order'];
       const extraFields = Object.fromEntries(
         allowedFields
@@ -137,12 +133,19 @@ Deno.serve(async (req) => {
           .map((field) => [field, body[field]])
       );
       const sideTemplate = await loadSideTemplate(base44, eventId);
+      const existingSide = sideTemplate.data.positions[positionId] || {};
+      const splitBySide = Object.prototype.hasOwnProperty.call(body, 'split_by_side')
+        ? Boolean(body.split_by_side)
+        : Boolean(existingSide.split_by_side);
+      const kamite = unique(staff_names_kamite);
+      const shimote = unique(staff_names_shimote);
+      const staffNames = splitBySide ? unique([...kamite, ...shimote]) : unique(staff_names);
       const nextSideData = {
         ...sideTemplate.data,
         positions: {
           ...sideTemplate.data.positions,
           [positionId]: {
-            ...(sideTemplate.data.positions[positionId] || {}),
+            ...existingSide,
             split_by_side: splitBySide,
             staff_names_kamite: kamite,
             staff_names_shimote: shimote,

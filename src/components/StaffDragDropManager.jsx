@@ -306,6 +306,7 @@ export default function StaffDragDropManager({ eventId }) {
       positionId,
       data: {
         staff_names: (position.staff_names || []).filter((n) => n !== staffName),
+        split_by_side: Boolean(position.split_by_side),
         staff_names_kamite: (position.staff_names_kamite || []).filter((n) => n !== staffName),
         staff_names_shimote: (position.staff_names_shimote || []).filter((n) => n !== staffName),
       },
