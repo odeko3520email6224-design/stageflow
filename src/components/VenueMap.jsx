@@ -9,6 +9,12 @@ import { getStaffDisplayName } from "@/lib/staffName";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
 import { appParams } from "@/lib/app-params";
 import { LIVE_SYNC_INTERVAL } from "@/lib/liveSync";
+import {
+  applyPositionSideSettingsToPositions,
+  applyPositionSideSettingsToTypes,
+  loadPositionSideSettings,
+  rememberPositionSideSettings,
+} from "@/lib/positionSideSettings";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorkerSource from "@/lib/pdfWorkerSource";
 
@@ -154,8 +160,62 @@ function getPinColor(pos) {
   return pos.color || ROLE_COLORS[pos.role] || "#6366f1";
 }
 
-function getStaffLabel(pos, maskStaffNames = false) {
-  return (pos.staff_names || []).map((name) => getStaffDisplayName(name, maskStaffNames)).join("・");
+function getPinStaffNames(pos, side) {
+  if (side === "kamite") return pos.staff_names_kamite || [];
+  if (side === "shimote") return pos.staff_names_shimote || [];
+  return pos.staff_names || [];
+}
+
+function getPinStaffLabel(pin, maskStaffNames = false) {
+  return (pin.staff_names || []).map((name) => getStaffDisplayName(name, maskStaffNames)).join("・");
+}
+
+function createMapPins(positions) {
+  return (positions || []).flatMap((pos) => {
+    if (!pos.split_by_side) {
+      return [{
+        id: pos.id,
+        positionId: pos.id,
+        side: null,
+        sideLabel: "",
+        name: pos.name,
+        role: pos.role,
+        color: pos.color,
+        staff_names: getPinStaffNames(pos, null),
+        map_x: pos.map_x,
+        map_y: pos.map_y,
+        position: pos,
+      }];
+    }
+    return [
+      {
+        id: `${pos.id}:kamite`,
+        positionId: pos.id,
+        side: "kamite",
+        sideLabel: "上手",
+        name: `${pos.name} 上手`,
+        role: pos.role,
+        color: pos.color,
+        staff_names: getPinStaffNames(pos, "kamite"),
+        map_x: pos.map_x_kamite,
+        map_y: pos.map_y_kamite,
+        position: pos,
+      },
+      {
+        id: `${pos.id}:shimote`,
+        positionId: pos.id,
+        side: "shimote",
+        sideLabel: "下手",
+        name: `${pos.name} 下手`,
+        role: pos.role,
+        color: pos.color,
+        staff_names: getPinStaffNames(pos, "shimote"),
+        map_x: pos.map_x_shimote,
+        map_y: pos.map_y_shimote,
+        position: pos,
+      },
+    ];
+  });
 }
 
 function drawRoundedRect(ctx, x, y, width, height, radius) {
@@ -169,8 +229,8 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
-function UnplacedPanel({ positions, draggingPin, onSelectPin, onDragStart, disabled, maskStaffNames = false }) {
-  const notOnMap = positions.filter((p) => p.map_x == null || p.map_y == null);
+function UnplacedPanel({ pins, draggingPin, onSelectPin, onDragStart, disabled, maskStaffNames = false }) {
+  const notOnMap = pins.filter((p) => p.map_x == null || p.map_y == null);
 
   return (
     <div className="w-full lg:w-56 shrink-0">
@@ -203,8 +263,8 @@ function UnplacedPanel({ positions, draggingPin, onSelectPin, onDragStart, disab
               />
               <span className="min-w-0">
                 <span className="block text-xs font-medium truncate">{pos.name}</span>
-                {getStaffLabel(pos, maskStaffNames) && (
-                  <span className="block text-[10px] text-muted-foreground truncate">{getStaffLabel(pos, maskStaffNames)}</span>
+                {getPinStaffLabel(pos, maskStaffNames) && (
+                  <span className="block text-[10px] text-muted-foreground truncate">{getPinStaffLabel(pos, maskStaffNames)}</span>
                 )}
               </span>
             </button>
@@ -236,9 +296,22 @@ export default function VenueMap({ eventId }) {
   const [localMapImageUrl, setLocalMapImageUrl] = useState("");
   const [imageLoadError, setImageLoadError] = useState(false);
 
-  const { data: positions = [] } = useQuery({
+  const { data: rawPositions = [] } = useQuery({
     queryKey: ["positions", eventId],
     queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
+    refetchInterval: LIVE_SYNC_INTERVAL,
+  });
+
+  const { data: rawPositionTypes = [] } = useQuery({
+    queryKey: ["positionTypes"],
+    queryFn: () => base44.entities.PositionType.list(),
+    refetchInterval: LIVE_SYNC_INTERVAL,
+  });
+
+  const { data: sideSettings } = useQuery({
+    queryKey: ["positionSideSettings", eventId],
+    queryFn: () => loadPositionSideSettings(base44, eventId),
+    staleTime: 30_000,
     refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
@@ -254,13 +327,38 @@ export default function VenueMap({ eventId }) {
     refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
+  const positionTypes = applyPositionSideSettingsToTypes(rawPositionTypes, sideSettings);
+  const positions = applyPositionSideSettingsToPositions(rawPositions, positionTypes, sideSettings);
+
   const updatePosition = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Position.update(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positions", eventId] }),
+    mutationFn: async ({ id, data }) => {
+      const response = await base44.functions.invoke("updatePositionSide", {
+        action: "updatePositionStaff",
+        eventId,
+        positionId: id,
+        ...data,
+      });
+      const payload = unwrapFunctionResponse(response);
+      if (payload?.error) throw new Error(payload.error);
+      return payload;
+    },
+    onSuccess: (result) => {
+      if (result?.position) {
+        queryClient.setQueryData(["positions", eventId], (old) =>
+          (old || []).map((p) => (p.id === result.position.id ? { ...p, ...result.position } : p))
+        );
+      }
+      if (result?.sideSettings) {
+        queryClient.setQueryData(["positionSideSettings", eventId], rememberPositionSideSettings(eventId, result.sideSettings));
+      }
+      queryClient.invalidateQueries({ queryKey: ["positions", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["positionSideSettings", eventId] });
+    },
   });
 
   const filteredPositions = positions.filter((p) => (p.time_slot || TIME_SLOTS[0]) === slotFilter);
-  const positionsOnMap = filteredPositions.filter((p) => p.map_x != null && p.map_y != null);
+  const filteredPins = createMapPins(filteredPositions);
+  const pinsOnMap = filteredPins.filter((p) => p.map_x != null && p.map_y != null);
   const storedMapImageUrl = venueMapAsset?.map_image_url || event?.map_image_url || "";
   const storedMapPdfUrl = venueMapAsset?.map_pdf_url || event?.map_pdf_url || "";
   const effectivePdfUrl = normalizeBase44FileUrl(localPdfUrl || storedMapPdfUrl);
@@ -322,7 +420,19 @@ export default function VenueMap({ eventId }) {
   }, []);
 
   const placePin = (pos, x, y) => {
-    updatePosition.mutate({ id: pos.id, data: { map_x: x, map_y: y } });
+    const mapFields = pos.side === "kamite"
+      ? { map_x_kamite: x, map_y_kamite: y }
+      : pos.side === "shimote"
+        ? { map_x_shimote: x, map_y_shimote: y }
+        : { map_x: x, map_y: y };
+    const sideFields = pos.side
+      ? {
+        split_by_side: true,
+        staff_names_kamite: pos.position?.staff_names_kamite || [],
+        staff_names_shimote: pos.position?.staff_names_shimote || [],
+      }
+      : {};
+    updatePosition.mutate({ id: pos.positionId, data: { ...mapFields, ...sideFields } });
     setDraggingPin(null);
     setTooltip(null);
   };
@@ -440,11 +550,11 @@ export default function VenueMap({ eventId }) {
         ctx.drawImage(canvas, 0, 0);
       }
 
-      positionsOnMap.forEach((pos) => {
+      pinsOnMap.forEach((pos) => {
         const x = (Number(pos.map_x) / 100) * exportCanvas.width;
         const y = (Number(pos.map_y) / 100) * exportCanvas.height;
         const color = getPinColor(pos);
-        const staffLabel = getStaffLabel(pos, shouldMaskStaffNames);
+        const staffLabel = getPinStaffLabel(pos, shouldMaskStaffNames);
         const label = staffLabel ? `${pos.name} / ${staffLabel}` : pos.name;
         const fontSize = Math.max(18, Math.round(exportCanvas.width * 0.014));
         ctx.font = `600 ${fontSize}px "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif`;
@@ -541,7 +651,7 @@ export default function VenueMap({ eventId }) {
             size="sm"
             variant="outline"
             onClick={handleExportPDF}
-            disabled={!isVisibilityReady || hideForUser || !hasPDF || loadingPDF || exportingPDF || positionsOnMap.length === 0}
+            disabled={!isVisibilityReady || hideForUser || !hasPDF || loadingPDF || exportingPDF || pinsOnMap.length === 0}
             className="gap-1 h-8 text-xs px-2 shrink-0"
           >
             {exportingPDF ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
@@ -665,7 +775,7 @@ export default function VenueMap({ eventId }) {
                 </div>
               )}
 
-              {positionsOnMap.map((pos) => {
+              {pinsOnMap.map((pos) => {
                 const isActive = tooltip?.id === pos.id;
                 return (
                   <div
@@ -694,7 +804,7 @@ export default function VenueMap({ eventId }) {
                       </span>
                       <span className="mt-0.5 max-w-[96px] rounded bg-white/95 px-1 py-0.5 text-center text-[9px] font-medium leading-tight shadow pointer-events-none">
                         <span className="block truncate">{pos.name}</span>
-                        {getStaffLabel(pos, shouldMaskStaffNames) && <span className="block truncate text-muted-foreground">{getStaffLabel(pos, shouldMaskStaffNames)}</span>}
+                        {getPinStaffLabel(pos, shouldMaskStaffNames) && <span className="block truncate text-muted-foreground">{getPinStaffLabel(pos, shouldMaskStaffNames)}</span>}
                       </span>
                     </button>
 
@@ -715,13 +825,25 @@ export default function VenueMap({ eventId }) {
                         </button>
                         <div className="pr-4 text-xs font-semibold">{pos.name}</div>
                         <div className="mt-1 text-xs text-muted-foreground">
-                          {getStaffLabel(pos, shouldMaskStaffNames) || "担当スタッフ未設定"}
+                          {getPinStaffLabel(pos, shouldMaskStaffNames) || "担当スタッフ未設定"}
                         </div>
                         {canUseEditTools && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              updatePosition.mutate({ id: pos.id, data: { map_x: null, map_y: null } });
+                              const clearFields = pos.side === "kamite"
+                                ? { map_x_kamite: null, map_y_kamite: null }
+                                : pos.side === "shimote"
+                                  ? { map_x_shimote: null, map_y_shimote: null }
+                                  : { map_x: null, map_y: null };
+                              const sideFields = pos.side
+                                ? {
+                                  split_by_side: true,
+                                  staff_names_kamite: pos.position?.staff_names_kamite || [],
+                                  staff_names_shimote: pos.position?.staff_names_shimote || [],
+                                }
+                                : {};
+                              updatePosition.mutate({ id: pos.positionId, data: { ...clearFields, ...sideFields } });
                               setTooltip(null);
                             }}
                             className="mt-2 text-xs text-destructive hover:underline"
@@ -739,7 +861,7 @@ export default function VenueMap({ eventId }) {
         </div>
 
         <UnplacedPanel
-          positions={filteredPositions}
+          pins={filteredPins}
           draggingPin={draggingPin}
           disabled={!canUseEditTools || !hasPDF}
           maskStaffNames={shouldMaskStaffNames}

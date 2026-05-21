@@ -61,6 +61,22 @@
       "type": "number",
       "description": "\u30de\u30c3\u30d7\u4e0a\u306eY\u5ea7\u6a19\uff08%\uff09"
     },
+    "map_x_kamite": {
+      "type": "number",
+      "description": "\u4e0a\u624b\u30d4\u30f3\u306eX\u5ea7\u6a19\uff08%\uff09"
+    },
+    "map_y_kamite": {
+      "type": "number",
+      "description": "\u4e0a\u624b\u30d4\u30f3\u306eY\u5ea7\u6a19\uff08%\uff09"
+    },
+    "map_x_shimote": {
+      "type": "number",
+      "description": "\u4e0b\u624b\u30d4\u30f3\u306eX\u5ea7\u6a19\uff08%\uff09"
+    },
+    "map_y_shimote": {
+      "type": "number",
+      "description": "\u4e0b\u624b\u30d4\u30f3\u306eY\u5ea7\u6a19\uff08%\uff09"
+    },
     "color": {
       "type": "string",
       "description": "\u8868\u793a\u8272"
