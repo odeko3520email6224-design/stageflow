@@ -28,7 +28,7 @@ export function usePDFExport(eventId, type, filename) {
       container.style.position = "fixed";
       container.style.left = "-9999px";
       container.style.top = "-9999px";
-      container.style.width = "297mm";
+      container.style.width = type === "staff" ? "420mm" : "297mm";
       container.style.backgroundColor = "white";
       container.innerHTML = payload.html;
       document.body.appendChild(container);

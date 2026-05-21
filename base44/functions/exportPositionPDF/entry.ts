@@ -24,7 +24,7 @@ function generateHTML(event, positions, staff, type) {
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { 
         font-family: 'Noto Sans JP', 'Arial Unicode MS', sans-serif; 
-        padding: 6px;
+        padding: 2px;
         background: white;
         color: #000;
         font-size: 14px;
@@ -79,7 +79,7 @@ function generateHTML(event, positions, staff, type) {
       /* スタッフ名セル（薄い黄色） */
       td.staff-cell { 
         background: #fffde7; 
-        text-align: left;
+        text-align: center;
         white-space: nowrap;
         vertical-align: middle;
       }
