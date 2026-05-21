@@ -24,15 +24,15 @@ function generateHTML(event, positions, staff, type) {
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { 
         font-family: 'Noto Sans JP', 'Arial Unicode MS', sans-serif; 
-        padding: 12px 16px; 
+        padding: 6px;
         background: white;
         color: #000;
         font-size: 9px;
       }
-      .title-block { display: flex; align-items: center; gap: 12px; margin: 0 8px 6px 8px; }
+      .title-block { display: flex; align-items: center; gap: 12px; margin: 0 0 6px 0; }
       .event-title { font-size: 14px; font-weight: bold; }
       .event-info { font-size: 8px; color: #555; }
-      table { width: calc(100% - 16px); border-collapse: collapse; font-size: 9px; margin: 0 8px 12px 8px; }
+      table { width: 100%; border-collapse: collapse; font-size: 9px; margin: 0 0 6px 0; }
       td, th { border: 1px solid #999; padding: 4px 6px; vertical-align: middle; text-align: left; line-height: 1.45; height: 22px; }
       
       /* 時間帯セクションヘッダー（サーモン色） */
