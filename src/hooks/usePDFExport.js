@@ -58,9 +58,14 @@ export function usePDFExport(eventId, type, filename) {
       // A4横向き: 297mm x 210mm
       const pageW = 297;
       const pageH = 210;
+      const scale = Math.min(pageW / canvas.width, pageH / canvas.height);
+      const imgWidth = canvas.width * scale;
+      const imgHeight = canvas.height * scale;
+      const offsetX = (pageW - imgWidth) / 2;
+      const offsetY = (pageH - imgHeight) / 2;
 
       const doc = new jsPDF("l", "mm", "a4");
-      doc.addImage(imgData, "JPEG", 0, 0, pageW, pageH);
+      doc.addImage(imgData, "JPEG", offsetX, offsetY, imgWidth, imgHeight);
 
       doc.save(`${filename}_${new Date().toISOString().split("T")[0]}.pdf`);
     } catch (error) {
