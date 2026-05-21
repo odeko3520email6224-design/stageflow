@@ -105,7 +105,7 @@ function generateHTML(event, positions, staff, type) {
     </div>
   `;
 
-  const timeSlots = ['開場前', '開演中', '終演後'];
+  const timeSlots = ['開場中', '開演中', '終演後'];
   // 最大スタッフ数（列数決定用）、最大10列に制限
   const maxStaff = Math.max(...positions.map(p => (p.staff_names || []).length), 0);
   const staffCols = Math.min(Math.max(maxStaff, 5), 10);
@@ -114,7 +114,7 @@ function generateHTML(event, positions, staff, type) {
     content += `<table>`;
 
     timeSlots.forEach((slot) => {
-      const slotPositions = positions.filter((p) => (p.time_slot || '開場前') === slot);
+      const slotPositions = positions.filter((p) => (p.time_slot || '開場中') === slot);
       if (slotPositions.length === 0) return;
 
       const totalStaff = slotPositions.reduce((sum, p) => sum + (p.staff_names || []).length, 0);
@@ -183,12 +183,13 @@ function generateHTML(event, positions, staff, type) {
     // スタッフ別タイムライン
     const staffTimeline = {};
     staff.forEach((s) => {
-      staffTimeline[s.name] = { '開場前': [], '開演中': [], '終演後': [] };
+      staffTimeline[s.name] = { '開場中': [], '開演中': [], '終演後': [] };
     });
     positions.forEach((pos) => {
-      const slot = pos.time_slot || '開場前';
+      const slot = pos.time_slot || '開場中';
       (pos.staff_names || []).forEach((name) => {
-        if (!staffTimeline[name]) staffTimeline[name] = { '開場前': [], '開演中': [], '終演後': [] };
+        if (!staffTimeline[name]) staffTimeline[name] = { '開場中': [], '開演中': [], '終演後': [] };
+        if (!staffTimeline[name][slot]) staffTimeline[name][slot] = [];
         staffTimeline[name][slot].push(pos.name || pos.role);
       });
     });
@@ -196,7 +197,7 @@ function generateHTML(event, positions, staff, type) {
     content += `<table>`;
     content += `<tr class="tl-header">
       <td>スタッフ名</td>
-      <td>開場前</td>
+      <td>開場中</td>
       <td>開演中</td>
       <td>終演後</td>
     </tr>`;
