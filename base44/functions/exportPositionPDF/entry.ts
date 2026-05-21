@@ -27,21 +27,21 @@ function generateHTML(event, positions, staff, type) {
         padding: 6px;
         background: white;
         color: #000;
-        font-size: 12px;
+        font-size: 14px;
       }
       .title-block { display: flex; align-items: center; gap: 12px; margin: 0 0 6px 0; }
-      .event-title { font-size: 19px; font-weight: bold; }
-      .event-info { font-size: 11.5px; color: #555; }
-      table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 0 0 6px 0; }
-      td, th { border: 1px solid #999; padding: 4px 6px; vertical-align: middle; text-align: left; line-height: 1.3; height: 26px; }
+      .event-title { font-size: 21px; font-weight: bold; }
+      .event-info { font-size: 13px; color: #555; }
+      table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 0 0 6px 0; }
+      td, th { border: 1px solid #999; padding: 2px 4px; vertical-align: middle; text-align: left; line-height: 1.15; height: 23px; }
       
       /* 時間帯セクションヘッダー（サーモン色） */
       tr.slot-header td { 
         background: #f4a07a; 
         font-weight: bold; 
         text-align: left;
-        padding: 5px 6px;
-        font-size: 13.5px;
+        padding: 3px 4px;
+        font-size: 15.5px;
         vertical-align: middle;
       }
       tr.slot-header td.count-cell {
@@ -53,7 +53,7 @@ function generateHTML(event, positions, staff, type) {
         background: #c8c8c8; 
         font-weight: bold; 
         text-align: left;
-        font-size: 11.5px;
+        font-size: 13px;
         vertical-align: middle;
       }
       
