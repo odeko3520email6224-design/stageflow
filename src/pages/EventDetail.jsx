@@ -122,8 +122,8 @@ export default function EventDetail() {
       {/* Top bar */}
       <div className="bg-card border-b border-border sticky top-0 z-50 safe-area-top">
         <div className="max-w-6xl mx-auto px-2 pb-1.5 pt-1 flex items-center gap-1.5">
-          <Link to="/" className="relative z-[100] p-1.5 rounded-lg hover:bg-muted transition-colors shrink-0" aria-label="戻る">
-            <ChevronLeft className="w-5 h-5" />
+          <Link to="/" className="relative z-[100] flex items-center justify-center w-11 h-11 rounded-lg hover:bg-muted transition-colors shrink-0" aria-label="戻る">
+            <ChevronLeft className="w-6 h-6" />
           </Link>
           <div className="min-w-0 flex-1">
             <h1 className="font-bold text-sm leading-snug truncate">{event.name}</h1>
@@ -141,16 +141,16 @@ export default function EventDetail() {
               </div>
               <div className="text-right hidden sm:block">
                 <div className="text-xs font-medium leading-none">{getUserDisplayName(currentUser)}</div>
-                {getUserDisplayName(currentUser) !== currentUser.email && <div className="text-[10px] text-muted-foreground leading-none mt-0.5">{currentUser.email}</div>}
+                {getUserDisplayName(currentUser) !== currentUser.email && <div className="text-[11px] text-muted-foreground leading-none mt-0.5">{currentUser.email}</div>}
               </div>
               <UserNameEditor user={currentUser} onSaved={setCurrentUser} />
               <button
                 onClick={() => base44.auth.logout()}
-                className="ml-1 p-1 rounded text-muted-foreground hover:text-destructive transition-colors"
+                className="ml-1 flex items-center justify-center w-9 h-9 rounded text-muted-foreground hover:text-destructive transition-colors"
                 title="ログアウト"
                 aria-label="ログアウト"
               >
-                <LogOut className="w-3 h-3" />
+                <LogOut className="w-4 h-4" />
               </button>
             </div>
           ) : (

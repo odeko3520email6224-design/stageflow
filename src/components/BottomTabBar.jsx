@@ -30,7 +30,7 @@ export default function BottomTabBar({ activeTab, onTabChange, onActiveTabReset,
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 safe-area-bottom">
-      <div className="flex items-stretch justify-around min-h-12">
+      <div className="flex items-stretch justify-around min-h-14">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -41,8 +41,8 @@ export default function BottomTabBar({ activeTab, onTabChange, onActiveTabReset,
             aria-current={activeTab === id ? "page" : undefined}
             aria-label={label}
           >
-            <Icon className="w-4 h-4 shrink-0" />
-            <span className="max-w-full truncate text-[9px] font-medium leading-none">{label}</span>
+            <Icon className="w-5 h-5 shrink-0" />
+            <span className="max-w-full truncate text-[11px] font-medium leading-none">{label}</span>
           </button>
         ))}
       </div>

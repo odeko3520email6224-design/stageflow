@@ -63,6 +63,16 @@ export default function Events() {
   };
 
   const [confirmDeleteEvent, setConfirmDeleteEvent] = useState(null);
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    try {
+      if (currentUser?.id) {
+        await base44.entities.User.delete(currentUser.id);
+      }
+    } catch {}
+    base44.auth.logout();
+  };
 
   const handleDelete = (e, id, name) => {
     e.preventDefault();
@@ -84,7 +94,7 @@ export default function Events() {
         {/* Row 1: Title */}
         <div className="mb-1">
           <h1 className="text-base font-bold text-foreground tracking-tight">イベント一覧</h1>
-          <p className="text-muted-foreground text-[10px]">イベント・コンサートの配置管理を行うアプリケーションです
+          <p className="text-muted-foreground text-xs">イベント・コンサートの配置管理を行うアプリケーションです
 スマートフォンやタブレット、パソコンからご利用いただけます</p>
         </div>
         {/* Row 2: New button + Account */}
@@ -99,12 +109,12 @@ export default function Events() {
               </div>
               <div className="text-right min-w-0">
                 <div className="text-xs font-medium leading-none truncate">{getUserDisplayName(currentUser)}</div>
-                {getUserDisplayName(currentUser) !== currentUser.email && <div className="text-[10px] text-muted-foreground leading-none mt-0.5 truncate">{currentUser.email}</div>}
+                {getUserDisplayName(currentUser) !== currentUser.email && <div className="text-[11px] text-muted-foreground leading-none mt-0.5 truncate">{currentUser.email}</div>}
               </div>
               <div className="ml-1 flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <UserNameEditor user={currentUser} onSaved={setCurrentUser} />
                 <button
-                onClick={() => setConfirmDeleteEvent({ id: "__account__", name: "アカウント（ログアウトします）" })}
+                onClick={() => setConfirmDeleteAccount(true)}
                 className="p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none"
                 title="アカウント削除">
                 <Trash2 className="w-3 h-3" />
@@ -152,7 +162,7 @@ export default function Events() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <h2 className="text-sm font-semibold text-foreground truncate">{event.name}</h2>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0 ${statusColor[event.status]}`}>
+                      <span className={`text-[11px] px-1.5 py-0.5 rounded-full border font-medium shrink-0 ${statusColor[event.status]}`}>
                         {event.status}
                       </span>
                     </div>
@@ -197,20 +207,24 @@ export default function Events() {
 
       {confirmDeleteEvent && (
         <ConfirmDialog
-          message={confirmDeleteEvent.id === "__account__"
-            ? "ログアウトしますか？"
-            : `「${confirmDeleteEvent.name}」を削除しますか？`}
-          confirmLabel={confirmDeleteEvent.id === "__account__" ? "ログアウト" : "削除"}
-          confirmVariant={confirmDeleteEvent.id === "__account__" ? "default" : "destructive"}
+          message={`「${confirmDeleteEvent.name}」を削除しますか？`}
+          confirmLabel="削除"
+          confirmVariant="destructive"
           onConfirm={() => {
-            if (confirmDeleteEvent.id === "__account__") {
-              base44.auth.logout();
-            } else {
-              deleteMutation.mutate(confirmDeleteEvent.id);
-            }
+            deleteMutation.mutate(confirmDeleteEvent.id);
             setConfirmDeleteEvent(null);
           }}
           onCancel={() => setConfirmDeleteEvent(null)}
+        />
+      )}
+
+      {confirmDeleteAccount && (
+        <ConfirmDialog
+          message={"アカウントを削除しますか？\nこの操作は取り消せません。"}
+          confirmLabel="削除する"
+          confirmVariant="destructive"
+          onConfirm={() => { setConfirmDeleteAccount(false); handleDeleteAccount(); }}
+          onCancel={() => setConfirmDeleteAccount(false)}
         />
       )}
 
