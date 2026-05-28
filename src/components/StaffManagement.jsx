@@ -30,13 +30,19 @@ export default function StaffManagement({ eventId }) {
 
   const { data: staffList = [], isLoading } = useQuery({
     queryKey: ["staff", eventId],
-    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+    queryFn: async () => {
+      const res = await base44.functions.invoke("getStaffList", { eventId });
+      return res?.data?.staff ?? [];
+    },
     refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: positions = [] } = useQuery({
     queryKey: ["positions", eventId],
-    queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
+    queryFn: async () => {
+      const res = await base44.functions.invoke("getPositionList", { eventId });
+      return res?.data?.positions ?? [];
+    },
     refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
@@ -53,7 +59,10 @@ export default function StaffManagement({ eventId }) {
   }, [eventId, event?.chief_staff_name]);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Staff.create(data),
+    mutationFn: async (data) => {
+      const res = await base44.functions.invoke("updateStaffRecord", { action: "create", data });
+      return res?.data?.staff;
+    },
     onMutate: async (data) => {
       await queryClient.cancelQueries({ queryKey: ["staff", eventId] });
       const previousStaff = queryClient.getQueryData(["staff", eventId]);
@@ -80,7 +89,7 @@ export default function StaffManagement({ eventId }) {
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
       const staffToDelete = staffList.find((s) => s.id === id);
-      await base44.entities.Staff.delete(id);
+      await base44.functions.invoke("updateStaffRecord", { action: "delete", staffId: id });
       if (staffToDelete) {
         const affected = positions.filter((p) => (p.staff_names || []).includes(staffToDelete.name));
         await Promise.all(

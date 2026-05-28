@@ -649,7 +649,10 @@ export default function AnnouncementManager({ eventId }) {
 
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
-    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+    queryFn: async () => {
+      const res = await base44.functions.invoke("getStaffList", { eventId });
+      return res?.data?.staff ?? [];
+    },
     refetchInterval: LIVE_SYNC_INTERVAL,
   });
 

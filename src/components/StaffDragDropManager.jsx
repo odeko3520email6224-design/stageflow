@@ -30,13 +30,19 @@ export default function StaffDragDropManager({ eventId }) {
 
   const { data: staffList = [] } = useQuery({
     queryKey: ["staff", eventId],
-    queryFn: () => base44.entities.Staff.filter({ event_id: eventId }),
+    queryFn: async () => {
+      const res = await base44.functions.invoke("getStaffList", { eventId });
+      return res?.data?.staff ?? [];
+    },
     refetchInterval: LIVE_SYNC_INTERVAL,
   });
 
   const { data: rawPositions = [] } = useQuery({
     queryKey: ["positions", eventId],
-    queryFn: () => base44.entities.Position.filter({ event_id: eventId }),
+    queryFn: async () => {
+      const res = await base44.functions.invoke("getPositionList", { eventId });
+      return res?.data?.positions ?? [];
+    },
     refetchInterval: LIVE_SYNC_INTERVAL,
   });
 

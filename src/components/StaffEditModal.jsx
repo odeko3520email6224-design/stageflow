@@ -14,7 +14,10 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
-    mutationFn: (data) => base44.entities.Staff.update(staff.id, data),
+    mutationFn: async (data) => {
+      const res = await base44.functions.invoke("updateStaffRecord", { action: "update", staffId: staff.id, data });
+      return res?.data?.staff;
+    },
     onMutate: async (data) => {
       await queryClient.cancelQueries({ queryKey: ["staff", staff.event_id] });
       await queryClient.cancelQueries({ queryKey: ["positions", staff.event_id] });
