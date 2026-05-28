@@ -20,9 +20,49 @@
     "name"
   ],
   "rls": {
-    "create": false,
-    "read": true,
-    "update": false,
-    "delete": false
+    "create": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "admin",
+            "chief",
+            "user"
+          ]
+        }
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "admin",
+            "chief",
+            "user"
+          ]
+        }
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "admin",
+            "chief",
+            "user"
+          ]
+        }
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": {
+          "$in": [
+            "admin",
+            "chief",
+            "user"
+          ]
+        }
+      }
+    }
   }
 }
