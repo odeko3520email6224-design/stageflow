@@ -572,6 +572,7 @@ export default function StaffDragDropManager({ eventId }) {
           ) : (
             staffList.map((s) => {
               const displayName = getStaffDisplayName(s.name, shouldMaskStaffNames);
+              const nameColor = s.color || undefined;
               const slotAssignments = TIME_SLOTS.map((slot) => ({
                 slot,
                 positions: positions.filter((p) => (p.time_slot || "開場中") === slot && (p.staff_names || []).includes(s.name)),
@@ -583,7 +584,7 @@ export default function StaffDragDropManager({ eventId }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="text-xs font-medium">{displayName}</p>
+                      <p className="text-xs font-medium" style={{ color: nameColor }}>{displayName}</p>
                       {s.note && <span className="text-[10px] text-muted-foreground">({s.note})</span>}
                     </div>
                     {slotAssignments.length === 0 ? (
@@ -597,6 +598,40 @@ export default function StaffDragDropManager({ eventId }) {
                             </span>
                           ))
                         )}
+                      </div>
+                    )}
+                    {isAdmin && (
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <label className="flex items-center gap-1 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={!!s.costume_change}
+                            onChange={(e) => {
+                              const val = e.target.checked;
+                              queryClient.setQueryData(["staff", eventId], (old = []) =>
+                                old.map((item) => item.id === s.id ? { ...item, costume_change: val } : item)
+                              );
+                              base44.functions.invoke("updateStaffRecord", { action: "update", staffId: s.id, data: { costume_change: val } });
+                            }}
+                            className="w-3 h-3 accent-purple-600"
+                          />
+                          <span className="text-[11px] text-purple-700 dark:text-purple-300 font-medium">着替</span>
+                        </label>
+                        <label className="flex items-center gap-1 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={!!s.break}
+                            onChange={(e) => {
+                              const val = e.target.checked;
+                              queryClient.setQueryData(["staff", eventId], (old = []) =>
+                                old.map((item) => item.id === s.id ? { ...item, break: val } : item)
+                              );
+                              base44.functions.invoke("updateStaffRecord", { action: "update", staffId: s.id, data: { break: val } });
+                            }}
+                            className="w-3 h-3 accent-sky-600"
+                          />
+                          <span className="text-[11px] text-sky-700 dark:text-sky-300 font-medium">休憩</span>
+                        </label>
                       </div>
                     )}
                   </div>

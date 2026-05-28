@@ -7,10 +7,23 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+const PRESET_COLORS = [
+  { label: "デフォルト", value: "" },
+  { label: "赤", value: "#ef4444" },
+  { label: "オレンジ", value: "#f97316" },
+  { label: "黄", value: "#eab308" },
+  { label: "緑", value: "#22c55e" },
+  { label: "青", value: "#3b82f6" },
+  { label: "紫", value: "#a855f7" },
+  { label: "ピンク", value: "#ec4899" },
+  { label: "白", value: "#ffffff" },
+];
+
 export default function StaffEditModal({ staff, onClose, onSaved }) {
   const [localName, setLocalName] = useState(staff.name);
   const [localNote, setLocalNote] = useState(staff.note || "");
-  const prevDataRef = useRef({ name: staff.name, note: staff.note || "" });
+  const [localColor, setLocalColor] = useState(staff.color || "");
+  const prevDataRef = useRef({ name: staff.name, note: staff.note || "", color: staff.color || "" });
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
@@ -51,9 +64,10 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
 
   useEffect(() => {
     if (!localName.trim()) return;
-    if (localName === prevDataRef.current.name && localNote === prevDataRef.current.note) return;
+    const prev = prevDataRef.current;
+    if (localName === prev.name && localNote === prev.note && localColor === prev.color) return;
     const timer = setTimeout(() => {
-      const nextData = { name: localName.trim(), note: localNote.trim() };
+      const nextData = { name: localName.trim(), note: localNote.trim(), color: localColor };
       updateMutation.mutate(nextData, {
         onSuccess: () => {
           toast.success("保存しました");
@@ -62,7 +76,7 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
       });
     }, 500);
     return () => clearTimeout(timer);
-  }, [localName, localNote]);
+  }, [localName, localNote, localColor]);
 
   return (
     <motion.div
@@ -87,11 +101,39 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
         <div className="space-y-3">
           <div>
             <label className="text-xs font-medium text-muted-foreground">スタッフ名</label>
-            <Input value={localName} onChange={(e) => setLocalName(e.target.value)} className="mt-1" />
+            <Input value={localName} onChange={(e) => setLocalName(e.target.value)} className="mt-1" style={{ color: localColor || undefined }} />
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">備考</label>
             <Input value={localNote} onChange={(e) => setLocalNote(e.target.value)} placeholder="任意" className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">表示文字色</label>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {PRESET_COLORS.map((c) => (
+                <button
+                  key={c.value}
+                  onClick={() => setLocalColor(c.value)}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md border text-xs transition-colors ${localColor === c.value ? "border-primary ring-1 ring-primary" : "border-border hover:border-primary/50"}`}
+                  title={c.label}
+                >
+                  <span
+                    className="inline-block w-3 h-3 rounded-full border border-border/60"
+                    style={{ backgroundColor: c.value || "transparent", outline: !c.value ? "1px dashed #aaa" : "none" }}
+                  />
+                  <span style={{ color: c.value || undefined }}>{c.label}</span>
+                </button>
+              ))}
+              <div className="flex items-center gap-1 border border-border rounded-md px-2 py-1">
+                <span className="text-xs text-muted-foreground">カスタム</span>
+                <input
+                  type="color"
+                  value={localColor || "#000000"}
+                  onChange={(e) => setLocalColor(e.target.value)}
+                  className="w-6 h-5 cursor-pointer rounded border-0 bg-transparent p-0"
+                />
+              </div>
+            </div>
           </div>
         </div>
         <div className="flex gap-2 mt-4">

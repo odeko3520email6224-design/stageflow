@@ -13,6 +13,20 @@
     "note": {
       "type": "string",
       "description": "\u5099\u8003"
+    },
+    "color": {
+      "type": "string",
+      "description": "\u8868\u793a\u6587\u5b57\u8272\uff08\u4f8b: #ff0000\uff09"
+    },
+    "costume_change": {
+      "type": "boolean",
+      "description": "\u7740\u66ff\u30d5\u30e9\u30b0",
+      "default": false
+    },
+    "break": {
+      "type": "boolean",
+      "description": "\u4f11\u61a9\u30d5\u30e9\u30b0",
+      "default": false
     }
   },
   "required": [

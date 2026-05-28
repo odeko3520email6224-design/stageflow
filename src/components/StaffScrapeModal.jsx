@@ -16,6 +16,7 @@ export default function StaffScrapeModal({ eventId, onClose }) {
   // Confirm phase state
   const [staffList, setStaffList] = useState(null); // null = not yet fetched
   const [checked, setChecked] = useState({});
+  const [existingNames, setExistingNames] = useState(new Set());
 
   const queryClient = useQueryClient();
 
@@ -28,19 +29,26 @@ export default function StaffScrapeModal({ eventId, onClose }) {
     setResult(null);
 
     try {
-      const res = await base44.functions.invoke("scrapeStaffNames", { url: url.trim(), eventId });
-      const data = unwrapFunctionResponse(res);
-      if (data.error) {
-        setError(data.error);
-      } else if (!data.staffList || data.staffList.length === 0) {
-        setError(data.message || '名前が見つかりませんでした');
-      } else {
-        setStaffList(data.staffList);
-        // Initialize checkboxes based on defaultChecked
-        const initChecked = {};
-        data.staffList.forEach((s, i) => { initChecked[i] = s.defaultChecked; });
-        setChecked(initChecked);
-      }
+    // Fetch existing staff names to pre-uncheck already registered ones
+    const existingRes = await base44.functions.invoke("getStaffList", { eventId });
+    const fetchedExistingNames = new Set((existingRes?.data?.staff ?? []).map((s) => s.name));
+    setExistingNames(fetchedExistingNames);
+
+    const res = await base44.functions.invoke("scrapeStaffNames", { url: url.trim(), eventId });
+    const data = unwrapFunctionResponse(res);
+    if (data.error) {
+      setError(data.error);
+    } else if (!data.staffList || data.staffList.length === 0) {
+      setError(data.message || '名前が見つかりませんでした');
+    } else {
+      setStaffList(data.staffList);
+      // Initialize checkboxes: uncheck already registered staff
+      const initChecked = {};
+      data.staffList.forEach((s, i) => {
+        initChecked[i] = s.defaultChecked && !fetchedExistingNames.has(s.name);
+      });
+      setChecked(initChecked);
+    }
     } catch (err) {
       setError(err?.response?.data?.error || err.message || "取得中にエラーが発生しました");
     } finally {
@@ -165,22 +173,27 @@ export default function StaffScrapeModal({ eventId, onClose }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {staffList.map((staff, i) => (
-                      <tr
-                        key={i}
-                        onClick={() => setChecked((prev) => ({ ...prev, [i]: !prev[i] }))}
-                        className={`border-t border-border/50 cursor-pointer transition-colors ${checked[i] ? "bg-card hover:bg-muted/30" : "bg-muted/20 hover:bg-muted/40 opacity-60"}`}
-                      >
-                        <td className="px-2 py-2 text-center">
-                          <input
-                            type="checkbox"
-                            checked={!!checked[i]}
-                            onChange={() => setChecked((prev) => ({ ...prev, [i]: !prev[i] }))}
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-3.5 h-3.5 accent-primary"
-                          />
-                        </td>
-                        <td className="px-3 py-2 font-medium">{staff.name}</td>
+                    {staffList.map((staff, i) => {
+                     const isRegistered = staff.name && (existingNames && existingNames.has ? existingNames.has(staff.name) : false);
+                     return (
+                     <tr
+                       key={i}
+                       onClick={() => setChecked((prev) => ({ ...prev, [i]: !prev[i] }))}
+                       className={`border-t border-border/50 cursor-pointer transition-colors ${checked[i] ? "bg-card hover:bg-muted/30" : "bg-muted/20 hover:bg-muted/40 opacity-60"}`}
+                     >
+                       <td className="px-2 py-2 text-center">
+                         <input
+                           type="checkbox"
+                           checked={!!checked[i]}
+                           onChange={() => setChecked((prev) => ({ ...prev, [i]: !prev[i] }))}
+                           onClick={(e) => e.stopPropagation()}
+                           className="w-3.5 h-3.5 accent-primary"
+                         />
+                       </td>
+                       <td className="px-3 py-2 font-medium">
+                         {staff.name}
+                         {isRegistered && <span className="ml-1.5 text-[10px] text-muted-foreground border border-border px-1 py-0.5 rounded">登録済</span>}
+                       </td>
                         <td className="px-3 py-2 text-muted-foreground">
                           {staff.type && (
                             <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] border ${staff.type.includes('物販') ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-muted border-border text-muted-foreground'}`}>
@@ -195,8 +208,9 @@ export default function StaffScrapeModal({ eventId, onClose }) {
                             </span>
                           )}
                         </td>
-                      </tr>
-                    ))}
+                        </tr>
+                        );
+                        })}
                   </tbody>
                 </table>
               </div>

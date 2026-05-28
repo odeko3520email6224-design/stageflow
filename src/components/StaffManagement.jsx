@@ -316,8 +316,10 @@ export default function StaffManagement({ eventId }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="font-medium text-xs">{displayName}</p>
+                      <p className="font-medium text-xs" style={{ color: staff.color || undefined }}>{displayName}</p>
                       {staff.note && <span className="text-[10px] text-muted-foreground">({staff.note})</span>}
+                      {staff.costume_change && <span className="text-[10px] px-1 py-0.5 rounded bg-purple-100 border border-purple-300 text-purple-700 dark:bg-purple-900/40 dark:border-purple-700 dark:text-purple-300 font-medium">着替</span>}
+                      {staff.break && <span className="text-[10px] px-1 py-0.5 rounded bg-sky-100 border border-sky-300 text-sky-700 dark:bg-sky-900/40 dark:border-sky-700 dark:text-sky-300 font-medium">休憩</span>}
                       {unassigned &&
                     <span className="flex items-center gap-0.5 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-full dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700">
                           <AlertCircle className="w-2 h-2" />未配置
