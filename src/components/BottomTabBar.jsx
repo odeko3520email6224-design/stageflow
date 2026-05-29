@@ -10,12 +10,12 @@ const ALL_TABS = [
   { id: "admin", label: "管理", icon: Settings },
 ];
 
-export default function BottomTabBar({ activeTab, onTabChange, onActiveTabReset, showTimeline = false, isPrivileged = true }) {
-  // userロール: 管理画面以外の閲覧タブを表示
-  const USER_VISIBLE = ["staff", "dragdrop", "map", "notice", "tasks"];
+export default function BottomTabBar({ activeTab, onTabChange, onActiveTabReset, showTimeline = false, showMap = false, showTasks = true, isPrivileged = true }) {
   const TABS = ALL_TABS.filter((t) => {
     if (t.id === "timeline" && !showTimeline) return false;
-    if (!isPrivileged && !USER_VISIBLE.includes(t.id)) return false;
+    if (t.id === "map" && !showMap) return false;
+    if (t.id === "tasks" && !showTasks) return false;
+    if (!isPrivileged && t.id === "admin") return false;
     return true;
   });
 

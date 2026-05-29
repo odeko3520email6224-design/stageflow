@@ -25,6 +25,8 @@ import { useTabNavigation } from "@/hooks/useTabNavigation";
 import { EVENT_MODE_REFETCH_INTERVAL, loadEventById } from "@/lib/eventLoader";
 
 const TIMELINE_STORAGE_KEY = "stageflow_timeline_enabled";
+const MAP_STORAGE_KEY = "stageflow_map_enabled";
+const TASKS_STORAGE_KEY = "stageflow_tasks_enabled";
 
 const tabVariants = {
   initial: { opacity: 0, y: 8 },
@@ -42,22 +44,41 @@ export default function EventDetail() {
   const [currentUser, setCurrentUser] = useState(null);
   
 
-  // Timeline feature toggle (persisted in localStorage, default OFF)
+  // Feature toggles (persisted in localStorage)
   const [showTimeline, setShowTimeline] = useState(() => {
+    try { return localStorage.getItem(TIMELINE_STORAGE_KEY) === "true"; } catch { return false; }
+  });
+  const [showMap, setShowMap] = useState(() => {
     try {
-      return localStorage.getItem(TIMELINE_STORAGE_KEY) === "true";
-    } catch {
-      return false;
-    }
+      const v = localStorage.getItem(MAP_STORAGE_KEY);
+      return v === null ? false : v === "true";
+    } catch { return false; }
+  });
+  const [showTasks, setShowTasks] = useState(() => {
+    try {
+      const v = localStorage.getItem(TASKS_STORAGE_KEY);
+      return v === null ? true : v === "true";
+    } catch { return true; }
   });
 
   const canShowTimeline = Boolean(role) && showTimeline && role !== "user";
+  const canShowMap = Boolean(role) && showMap;
+  const canShowTasks = Boolean(role) && showTasks;
 
   const handleToggleTimeline = (val) => {
     setShowTimeline(val);
     try { localStorage.setItem(TIMELINE_STORAGE_KEY, String(val)); } catch {}
-    // If currently on timeline tab and disabling, switch to staff
     if (!val && tab === "timeline") setTab("staff");
+  };
+  const handleToggleMap = (val) => {
+    setShowMap(val);
+    try { localStorage.setItem(MAP_STORAGE_KEY, String(val)); } catch {}
+    if (!val && tab === "map") setTab("staff");
+  };
+  const handleToggleTasks = (val) => {
+    setShowTasks(val);
+    try { localStorage.setItem(TASKS_STORAGE_KEY, String(val)); } catch {}
+    if (!val && tab === "tasks") setTab("staff");
   };
 
   const handleTabChange = (newTab, options) => {
@@ -69,10 +90,10 @@ export default function EventDetail() {
   };
 
   useEffect(() => {
-    if (role && !canShowTimeline && tab === "timeline") {
-      setTab("staff", { replace: true, reset: true });
-    }
-  }, [role, canShowTimeline, tab, setTab]);
+    if (role && !canShowTimeline && tab === "timeline") setTab("staff", { replace: true, reset: true });
+    if (role && !canShowMap && tab === "map") setTab("staff", { replace: true, reset: true });
+    if (role && !canShowTasks && tab === "tasks") setTab("staff", { replace: true, reset: true });
+  }, [role, canShowTimeline, canShowMap, canShowTasks, tab, setTab]);
 
   useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -102,10 +123,10 @@ export default function EventDetail() {
   const desktopTabs = [
     { id: "staff", label: "スタッフ管理", icon: Users },
     { id: "dragdrop", label: "配置表", icon: ClipboardList },
-    { id: "map", label: "会場マップ", icon: MapPin },
+    ...(canShowMap ? [{ id: "map", label: "会場マップ", icon: MapPin }] : []),
     ...(canShowTimeline ? [{ id: "timeline", label: "タイムライン", icon: Clock }] : []),
     { id: "notice", label: "連絡事項", icon: Bell },
-    { id: "tasks", label: "チェックリスト", icon: CheckSquare },
+    ...(canShowTasks ? [{ id: "tasks", label: "チェックリスト", icon: CheckSquare }] : []),
     ...(isPrivileged ? [{ id: "admin", label: "管理", icon: Settings }] : []),
   ];
 
@@ -204,16 +225,20 @@ export default function EventDetail() {
                 eventId={eventId}
                 showTimeline={showTimeline}
                 onToggleTimeline={handleToggleTimeline}
+                showMap={showMap}
+                onToggleMap={handleToggleMap}
+                showTasks={showTasks}
+                onToggleTasks={handleToggleTasks}
               />
             )}
-            {tab === "map" && (
+            {tab === "map" && canShowMap && (
               <ErrorBoundary resetKey={`${eventId}:map`} label="VenueMap" title="会場マップを表示できませんでした">
                 <VenueMap eventId={eventId} />
               </ErrorBoundary>
             )}
             {tab === "timeline" && canShowTimeline && <StaffTimeline eventId={eventId} />}
             {tab === "notice" && <AnnouncementManager eventId={eventId} />}
-            {tab === "tasks" && <TaskChecklist eventId={eventId} />}
+            {tab === "tasks" && canShowTasks && <TaskChecklist eventId={eventId} />}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -225,6 +250,8 @@ export default function EventDetail() {
           onTabChange={handleTabChange}
           onActiveTabReset={handleActiveTabReset}
           showTimeline={canShowTimeline}
+          showMap={canShowMap}
+          showTasks={canShowTasks}
           isPrivileged={isPrivileged}
         />
       </div>

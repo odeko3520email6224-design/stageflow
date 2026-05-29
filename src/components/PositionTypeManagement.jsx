@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Settings, Moon, Sun, GripVertical, Clock, Bug, Wand2, Loader2, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Settings, Moon, Sun, GripVertical, Clock, Bug, Wand2, Loader2, AlertTriangle, MapPin, CheckSquare } from "lucide-react";
 import MapTemplateManagement from "@/components/MapTemplateManagement";
 import PositionPresetManager from "@/components/PositionPresetManager";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -24,7 +24,7 @@ const PRESET_COLORS = [
   "#ef4444", "#8b5cf6", "#06b6d4", "#f97316",
 ];
 
-export default function PositionTypeManagement({ eventId, showTimeline = false, onToggleTimeline }) {
+export default function PositionTypeManagement({ eventId, showTimeline = false, onToggleTimeline, showMap = false, onToggleMap, showTasks = true, onToggleTasks }) {
   const [name, setName] = useState("");
   const [color, setColor] = useState(PRESET_COLORS[0]);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -277,22 +277,29 @@ export default function PositionTypeManagement({ eventId, showTimeline = false, 
         </button>
       </div>
 
-      {/* Timeline toggle */}
-      <div className="bg-card border border-border rounded-xl p-3 mb-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-primary" />
-          <div>
-            <p className="text-xs font-semibold">タイムライン機能</p>
-            <p className="text-[10px] text-muted-foreground">スタッフの時間軸表示を有効にします</p>
+      {/* Feature toggles */}
+      <div className="space-y-2 mb-3">
+        {[
+          { icon: MapPin, label: "会場マップ機能", desc: "会場マップタブを表示します", value: showMap, onToggle: onToggleMap },
+          { icon: CheckSquare, label: "チェックリスト機能", desc: "チェックリストタブを表示します", value: showTasks, onToggle: onToggleTasks },
+          { icon: Clock, label: "タイムライン機能", desc: "スタッフの時間軸表示を有効にします（管理者・チーフのみ）", value: showTimeline, onToggle: onToggleTimeline },
+        ].map(({ icon: Icon, label, desc, value, onToggle }) => (
+          <div key={label} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Icon className="w-4 h-4 text-primary shrink-0" />
+              <div>
+                <p className="text-xs font-semibold">{label}</p>
+                <p className="text-[10px] text-muted-foreground">{desc}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => onToggle && onToggle(!value)}
+              className={`relative w-10 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0 ${value ? "bg-primary" : "bg-muted-foreground/30"}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${value ? "translate-x-4" : "translate-x-0"}`} />
+            </button>
           </div>
-        </div>
-        <button
-          onClick={() => onToggleTimeline && onToggleTimeline(!showTimeline)}
-          className={`relative w-10 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${showTimeline ? "bg-primary" : "bg-muted-foreground/30"}`}
-          aria-label="タイムライン切り替え"
-        >
-          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${showTimeline ? "translate-x-4" : "translate-x-0"}`} />
-        </button>
+        ))}
       </div>
 
       {/* Debug tools */}
