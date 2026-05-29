@@ -592,10 +592,10 @@ export default function StaffDragDropManager({ eventId }) {
                     {slotAssignments.length === 0 ? (
                       <span className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-0.5"><AlertCircle className="w-2.5 h-2.5" />全スロット未配置</span>
                     ) : (
-                      <div className="flex flex-wrap gap-1 mt-0.5">
+                      <div className="mt-0.5 grid grid-cols-2 sm:grid-cols-3 gap-1">
                         {slotAssignments.map(({ slot, positions: ps }) =>
                           ps.map((p) => (
-                            <span key={p.id} className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${TIME_SLOT_STYLES[slot].header}`}>
+                            <span key={p.id} className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium text-center truncate ${TIME_SLOT_STYLES[slot].header}`}>
                               {slot}：{p.name}
                             </span>
                           ))
