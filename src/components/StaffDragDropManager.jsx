@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { AlertCircle, ClipboardList, Plus, Download, Users, GripVertical, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PositionCard from "@/components/PositionCard";
+import PositionBulkAddModal from "@/components/PositionBulkAddModal";
 import PositionFormModal from "@/components/PositionFormModal";
 import StaffEditModal from "@/components/StaffEditModal";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -249,7 +250,8 @@ export default function StaffDragDropManager({ eventId }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positions", eventId] }),
   });
 
-  const openAdd = (slot) => { setDefaultSlot(slot); setEditing(null); setShowModal(true); };
+  const [showBulkAddModal, setShowBulkAddModal] = useState(false);
+  const openAdd = (slot) => { setDefaultSlot(slot); setShowBulkAddModal(true); };
 
   const handleStaffDragStart = (e, staffName) => {
     setDraggedStaff(staffName);
@@ -642,6 +644,11 @@ export default function StaffDragDropManager({ eventId }) {
         </div>
       </div>
 
+      {showBulkAddModal && (
+        <PositionBulkAddModal eventId={eventId} defaultTimeSlot={defaultSlot}
+          onClose={() => setShowBulkAddModal(false)}
+          onSaved={() => { queryClient.invalidateQueries({ queryKey: ["positions", eventId] }); }} />
+      )}
       {showModal && (
         <PositionFormModal position={editing} eventId={eventId} defaultTimeSlot={defaultSlot}
           onClose={() => setShowModal(false)}
