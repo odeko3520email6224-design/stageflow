@@ -531,7 +531,7 @@ export default function StaffDragDropManager({ eventId }) {
             <span className="font-bold text-xs">未配置スタッフ</span>
             <span className="text-[10px] opacity-70">{unassigned.length}名</span>
           </div>
-          <div className="bg-card p-1 grid gap-1 min-h-[28px] sm:grid-cols-2 xl:grid-cols-3" onDragOver={isAdmin ? handleDragOver : undefined} onDrop={isAdmin ? handleDropUnassigned : undefined}>
+          <div className="bg-card p-1 grid gap-1 min-h-[28px] sm:grid-cols-3" onDragOver={isAdmin ? handleDragOver : undefined} onDrop={isAdmin ? handleDropUnassigned : undefined}>
             {unassigned.map((s) => {
               const displayName = getStaffDisplayName(s.name, shouldMaskStaffNames);
               return (
@@ -568,7 +568,7 @@ export default function StaffDragDropManager({ eventId }) {
           <span className="font-bold text-xs">スタッフ一覧</span>
           <span className="text-[10px] text-muted-foreground">{staffList.length}名</span>
         </div>
-        <div className="bg-card divide-y divide-border">
+        <div className="bg-card sm:grid sm:grid-cols-3 sm:divide-y-0 divide-y divide-border sm:[&>*]:border-b sm:[&>*]:border-border/50">
           {staffList.length === 0 ? (
             <p className="text-[11px] text-muted-foreground text-center py-3">スタッフが登録されていません</p>
           ) : (
