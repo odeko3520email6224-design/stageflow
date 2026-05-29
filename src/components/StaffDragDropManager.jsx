@@ -410,7 +410,7 @@ export default function StaffDragDropManager({ eventId }) {
             canManage={canManageSettings}
             label="配置表"
           />
-          {isAdmin && <PresetSelector eventId={eventId} compact />}
+          {canManageSettings && <PresetSelector eventId={eventId} compact />}
           <Button size="sm" variant="outline" className="gap-1 h-8 text-xs px-2 shrink-0" onClick={handleExportPDF} disabled={!isVisibilityReady || hideForUser || exportingPDF || positions.length === 0}>
             <Download className="w-3 h-3" />{exportingPDF ? '...' : 'PDF'}
           </Button>

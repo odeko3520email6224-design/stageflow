@@ -91,14 +91,11 @@ export default function TaskChecklist({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <h2 className="text-sm font-bold flex items-center gap-1.5 min-w-0">
-          <ClipboardCheck className="w-4 h-4 text-primary" />
-          準備・残作業チェックリスト
-        </h2>
-        <span className="h-7 inline-flex items-center rounded-full border border-border bg-muted px-2 text-[11px] font-medium text-muted-foreground shrink-0">
-          {pending.length}件未完了 / {tasks.length}件中
-        </span>
+      <div className="flex flex-col gap-1.5 mb-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-bold flex items-center gap-1.5"><ClipboardCheck className="w-4 h-4 text-primary" />準備・残作業チェックリスト</h2>
+          <div className="text-xs font-medium text-foreground mt-0.5">{pending.length}件未完了 / {tasks.length}件中</div>
+        </div>
       </div>
 
       {/* 追加フォーム */}

@@ -2,13 +2,16 @@ import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Download, Loader2, CheckCircle2, AlertCircle, ChevronLeft } from "lucide-react";
+import { X, Download, Loader2, CheckCircle2, AlertCircle, ChevronLeft, RotateCcw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
 
+const SCRAPE_URL_KEY = (eventId) => `stageflow:scrape-url:${eventId}`;
+
 export default function StaffScrapeModal({ eventId, onClose }) {
-  const [url, setUrl] = useState("");
+  const savedUrl = typeof window !== "undefined" ? (window.localStorage.getItem(SCRAPE_URL_KEY(eventId)) || "") : "";
+  const [url, setUrl] = useState(savedUrl);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
@@ -34,6 +37,7 @@ export default function StaffScrapeModal({ eventId, onClose }) {
     const fetchedExistingNames = new Set((existingRes?.data?.staff ?? []).map((s) => s.name));
     setExistingNames(fetchedExistingNames);
 
+    window.localStorage.setItem(SCRAPE_URL_KEY(eventId), url.trim());
     const res = await base44.functions.invoke("scrapeStaffNames", { url: url.trim(), eventId });
     const data = unwrapFunctionResponse(res);
     if (data.error) {
@@ -136,15 +140,33 @@ export default function StaffScrapeModal({ eventId, onClose }) {
           {!staffList && !result && (
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">取得元URL</label>
-              <Input
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://example.com/staff-page"
-                className="text-sm"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.nativeEvent.isComposing) handleFetch();
-                }}
-              />
+              <div className="flex gap-1.5">
+                <Input
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://example.com/staff-page"
+                  className="text-sm flex-1"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.nativeEvent.isComposing) handleFetch();
+                  }}
+                />
+                {savedUrl && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 gap-1 h-8 px-2 text-xs"
+                    onClick={() => setUrl(savedUrl)}
+                    title="前回のURLを再使用"
+                  >
+                    <RotateCcw className="w-3 h-3" />再使用
+                  </Button>
+                )}
+              </div>
+              {savedUrl && (
+                <p className="text-[11px] text-muted-foreground mt-1 truncate">
+                  前回: <span className="font-medium text-foreground">{savedUrl}</span>
+                </p>
+              )}
               <p className="text-[11px] text-muted-foreground mt-1">
                 A-CAST 点呼表からスタッフリストを取得します。電話番号などの情報は収集しません。
               </p>

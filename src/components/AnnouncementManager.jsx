@@ -712,14 +712,14 @@ export default function AnnouncementManager({ eventId }) {
   return (
     <div>
       <div className="flex flex-col gap-1.5 mb-2 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1 min-w-0">
-          <Megaphone className="w-4 h-4 text-primary" />連絡事項
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-bold flex items-center gap-1.5">
+            <Megaphone className="w-4 h-4 text-primary" />連絡事項
+          </h2>
           {urgentCount > 0 && (
-            <span className="h-7 inline-flex items-center text-xs font-bold px-2 rounded-full bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700">
-              {urgentCount}件未読あり
-            </span>
+            <div className="text-xs font-medium text-amber-700 dark:text-amber-300 mt-0.5">{urgentCount}件未読あり</div>
           )}
-        </h2>
+        </div>
         <div className="flex items-center gap-1.5 justify-end flex-wrap sm:flex-nowrap sm:ml-auto">
           {notifPermission !== "granted" && (
             <button

@@ -73,11 +73,11 @@ export default function StaffTimeline({ eventId }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1 min-w-0"><CalendarClock className="w-4 h-4 text-primary" />担当者別タイムライン</h2>
-        <span className="text-sm font-medium text-foreground shrink-0">
-          全時間帯：{totalAssigned}名配置済み
-        </span>
+      <div className="flex flex-col gap-1.5 mb-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-bold flex items-center gap-1.5"><CalendarClock className="w-4 h-4 text-primary" />担当者別タイムライン</h2>
+          <div className="text-xs font-medium text-foreground mt-0.5">全時間帯：{totalAssigned}名配置済み</div>
+        </div>
       </div>
 
       {/* Always show desktop grid table, with horizontal scroll on mobile */}

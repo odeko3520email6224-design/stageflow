@@ -614,10 +614,9 @@ export default function VenueMap({ eventId }) {
   return (
     <div>
       <div className="flex flex-col gap-1.5 mb-2 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-sm font-bold flex items-center gap-1.5 flex-1 min-w-0">
-          <Map className="w-4 h-4 text-primary" />
-          会場マップ
-        </h2>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-bold flex items-center gap-1.5"><Map className="w-4 h-4 text-primary" />会場マップ</h2>
+        </div>
         <div className="flex items-center gap-1.5 justify-end flex-wrap sm:flex-nowrap sm:ml-auto">
           <ModeVisibilityControls
             eventId={eventId}
