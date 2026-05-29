@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,15 +7,18 @@ import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { unwrapFunctionResponse } from "@/lib/base44Response";
 
-const SCRAPE_URL_KEY = (eventId) => `stageflow:scrape-url:${eventId}`;
-
-function readSavedUrl(eventId) {
-  try { return localStorage.getItem(SCRAPE_URL_KEY(eventId)) || ""; } catch { return ""; }
-}
-
 export default function StaffScrapeModal({ eventId, onClose }) {
-  const [savedUrl, setSavedUrl] = useState(() => readSavedUrl(eventId));
-  const [url, setUrl] = useState(() => readSavedUrl(eventId));
+  const [savedUrl, setSavedUrl] = useState("");
+  const [url, setUrl] = useState("");
+
+  // サーバーからイベントのscrape_urlを取得
+  useEffect(() => {
+    base44.entities.Event.filter({ id: eventId }).then((events) => {
+      const scrapeUrl = events?.[0]?.scrape_url || "";
+      setSavedUrl(scrapeUrl);
+      setUrl(scrapeUrl);
+    }).catch(() => {});
+  }, [eventId]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
@@ -41,7 +44,7 @@ export default function StaffScrapeModal({ eventId, onClose }) {
     const fetchedExistingNames = new Set((existingRes?.data?.staff ?? []).map((s) => s.name));
     setExistingNames(fetchedExistingNames);
 
-    try { localStorage.setItem(SCRAPE_URL_KEY(eventId), url.trim()); } catch {}
+    base44.entities.Event.update(eventId, { scrape_url: url.trim() }).catch(() => {});
     setSavedUrl(url.trim());
     const res = await base44.functions.invoke("scrapeStaffNames", { url: url.trim(), eventId });
     const data = unwrapFunctionResponse(res);
