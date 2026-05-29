@@ -9,9 +9,13 @@ import { unwrapFunctionResponse } from "@/lib/base44Response";
 
 const SCRAPE_URL_KEY = (eventId) => `stageflow:scrape-url:${eventId}`;
 
+function readSavedUrl(eventId) {
+  try { return localStorage.getItem(SCRAPE_URL_KEY(eventId)) || ""; } catch { return ""; }
+}
+
 export default function StaffScrapeModal({ eventId, onClose }) {
-  const savedUrl = typeof window !== "undefined" ? (window.localStorage.getItem(SCRAPE_URL_KEY(eventId)) || "") : "";
-  const [url, setUrl] = useState(savedUrl);
+  const [savedUrl, setSavedUrl] = useState(() => readSavedUrl(eventId));
+  const [url, setUrl] = useState(() => readSavedUrl(eventId));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
@@ -37,7 +41,8 @@ export default function StaffScrapeModal({ eventId, onClose }) {
     const fetchedExistingNames = new Set((existingRes?.data?.staff ?? []).map((s) => s.name));
     setExistingNames(fetchedExistingNames);
 
-    window.localStorage.setItem(SCRAPE_URL_KEY(eventId), url.trim());
+    try { localStorage.setItem(SCRAPE_URL_KEY(eventId), url.trim()); } catch {}
+    setSavedUrl(url.trim());
     const res = await base44.functions.invoke("scrapeStaffNames", { url: url.trim(), eventId });
     const data = unwrapFunctionResponse(res);
     if (data.error) {
